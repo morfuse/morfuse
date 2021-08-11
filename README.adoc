@@ -1,3 +1,35 @@
-= TODO
+= Morfuse
 
-TODO
+:source-highlighter: highlight.js
+
+== Introduction
+
+Morfuse is a game scripting engine system library, it can parse, compile and interpret script files from Medal of Honor: Allied Assault. This implementation is more optimized towards games in general and not only Medal of Honor.
+This script engine was originally derived from a script system called Morpheus, from FAKK2.
+
+== Example
+
+[source,cpp]
+----
+main:
+    local.value = "Hello, world!"
+    println local.value
+end
+----
+
+No documentation, yet but more has to come. Feel free to contribute if you're interested in this script engine!
+
+== General features
+
+* Event system
+* Ability to declare a class with events into the script system so it can be used
+* Simple entity target list, something like `$entity_name.some_var = 1`
+* Can call a script label with parameters and/or retrieve the return value from thread
+* Cross-platform
+
+== TODO
+
+* [ ] Documentation and more complete README
+* [ ] Ability to add events to existing classes, like ScriptThread
+* [ ] Ability to debug scripts
+* [ ] Use an std::istream instead of a char buffer, for reading script files
