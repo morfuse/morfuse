@@ -33,3 +33,4 @@ No documentation, yet but more has to come. Feel free to contribute if you're in
 * [ ] Ability to add events to existing classes, like ScriptThread
 * [ ] Ability to debug scripts
 * [ ] Use an std::istream instead of a char buffer, for reading script files
+* [ ] JIT compiler

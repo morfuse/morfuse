@@ -25,7 +25,7 @@ namespace mfuse
 			return malloc(size);
 		}
 
-		void free(void* ptr) override
+		void free(void* ptr) noexcept override
 		{
 			::free(ptr);
 		}
@@ -56,7 +56,7 @@ namespace mfuse
 			return pmem + 1;
 		}
 
-		void free(void* ptr) override
+		void free(void* ptr) noexcept override
 		{
 			if (ptr)
 			{

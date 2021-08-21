@@ -23,22 +23,22 @@ void* operator new[](size_t size, std::align_val_t)
 	return IMemoryManager::get().allocate(size);
 }
 
-void operator delete(void* ptr)
+void operator delete(void* ptr) noexcept
 {
 	return IMemoryManager::get().free(ptr);
 }
 
-void operator delete[](void* ptr)
+void operator delete[](void* ptr) noexcept
 {
 	return IMemoryManager::get().free(ptr);
 }
 
-void operator delete(void* ptr, std::align_val_t)
+void operator delete(void* ptr, std::align_val_t) noexcept
 {
 	return IMemoryManager::get().free(ptr);
 }
 
-void operator delete[](void* ptr, std::align_val_t)
+void operator delete[](void* ptr, std::align_val_t) noexcept
 {
 	return IMemoryManager::get().free(ptr);
 }

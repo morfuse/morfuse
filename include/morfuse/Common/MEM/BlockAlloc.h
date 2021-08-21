@@ -123,8 +123,8 @@ namespace MEM
 		~BlockAlloc();
 
 		void* Alloc();
-		void Free(void* ptr);
-		void FreeAll();
+		void Free(void* ptr) noexcept;
+		void FreeAll() noexcept;
 		size_t Count();
 		size_t BlockCount();
 		size_t BlockMemory();
@@ -299,7 +299,7 @@ namespace MEM
 	}
 
 	template<typename a, size_t b>
-	void BlockAlloc<a, b>::Free(void* ptr)
+	void BlockAlloc<a, b>::Free(void* ptr) noexcept
 	{
 #ifdef _DEBUG_MEMBLOCK
 		block_s<a, b>* block = (block_s<a, b> *)ptr;
@@ -386,7 +386,7 @@ namespace MEM
 	}
 
 	template<typename a, size_t b>
-	void BlockAlloc<a, b>::FreeAll()
+	void BlockAlloc<a, b>::FreeAll() noexcept
 	{
 #ifdef _DEBUG_MEMBLOCK
 		block_t* block;
@@ -703,7 +703,7 @@ void* operator new(size_t count, mfuse::MEM::BlockAlloc<a, b>& allocator)
 }
 
 template<typename a, size_t b>
-void operator delete(void* ptr, mfuse::MEM::BlockAlloc<a, b>& allocator)
+void operator delete(void* ptr, mfuse::MEM::BlockAlloc<a, b>& allocator) noexcept
 {
 	return allocator.Free(ptr);
 }
@@ -715,7 +715,7 @@ void* operator new(size_t count, mfuse::MEM::BlockAlloc_set<a, b>& allocator)
 }
 
 template<typename a, size_t b>
-void operator delete(void* ptr, mfuse::MEM::BlockAlloc_set<a, b>& allocator)
+void operator delete(void* ptr, mfuse::MEM::BlockAlloc_set<a, b>& allocator) noexcept
 {
 	return allocator.Free(ptr);
 }

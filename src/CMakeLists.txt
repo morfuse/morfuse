@@ -18,7 +18,7 @@ if(WIN32)
 	target_compile_options(morfuse PRIVATE /W3)
 endif()
 
-#set_property(TARGET morfuse PROPERTY INTERPROCEDURAL_OPTIMIZATION true)
+set_property(TARGET morfuse PROPERTY INTERPROCEDURAL_OPTIMIZATION true)
 
 set_target_properties(morfuse PROPERTIES
 	CXX_STANDARD 17

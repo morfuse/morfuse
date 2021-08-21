@@ -27,7 +27,7 @@ namespace mfuse
 		 *
 		 * @param ptr The memory region to free.
 		 */
-		virtual void free(void* ptr) = 0;
+		virtual void free(void* ptr) noexcept = 0;
 
 		/**
 		 * Return the memory manager interface.

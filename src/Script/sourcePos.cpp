@@ -13,7 +13,7 @@ sourceLocation_t::sourceLocation_t()
 
 sourceLocation_t::sourceLocation_t(uint8_t val)
 {
-	if (val == -1)
+	if (val == uint8_t(-1))
 	{
 		sourcePos = -1;
 		line = -1;
