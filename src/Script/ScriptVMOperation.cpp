@@ -292,7 +292,7 @@ void ScriptVM::ExecCmdMethodCommon(EventSystem& eventSystem, op_parmNum_t param)
 		{
 			if (a->IsConstArray())
 			{
-				for (uintptr_t i = a->arraysize(); i > 0; i--)
+				for (uintptr_t i = arraysize; i > 0; i--)
 				{
 					Listener* const listener = a->listenerAt(i);
 					// if the listener is NULL, don't throw an exception
@@ -476,11 +476,7 @@ void ScriptVM::Execute(const ScriptVariable* data, size_t dataSize, const char* 
 	if (Director.GetStackCount() >= MAX_STACK_DEPTH)
 	{
 		state = vmState_e::Execution;
-
-		ScriptException::next_abort = -1;
-		ScriptException exc("stack overflow");
-
-		throw exc;
+		throw ScriptAbortException("stack overflow");
 	}
 
 	Director.AddStack();
@@ -1112,19 +1108,6 @@ __restart:
 					pTop = m_StackPos + 1;
 					pTop->Clear();
 				}
-
-			/*
-				if (fastEvent.dataSize)
-				{
-					pTop = fastEvent.data++;
-					fastEvent.dataSize--;
-				}
-				else
-				{
-					pTop = m_StackPos + 1;
-					pTop->Clear();
-				}
-			*/
 				break;
 			}
 
@@ -1502,12 +1485,11 @@ __restart:
 					deleteThread = true;
 					state = vmState_e::Execution;
 
-					if (Director.HasLoopDrop())
-					{
-						ScriptException::next_abort = -1;
+					if (!Director.HasLoopDrop()) {
+						throw ScriptException("Command overflow. Possible infinite loop in thread.\n");
+					} else {
+						throw ScriptAbortException("Command overflow. Possible infinite loop in thread.\n");
 					}
-
-					ScriptError("Command overflow. Possible infinite loop in thread.\n");
 				}
 
 				//VM_DPrintf("Update of script position - This is not an error.\n");
@@ -1548,6 +1530,10 @@ __restart:
 
 			cmdTime = timeManager.GetTime();
 		}
+	}
+	catch (ScriptAbortException& exc)
+	{
+		HandleScriptExceptionAbort(exc, dbg);
 	}
 	catch (ScriptException& exc)
 	{

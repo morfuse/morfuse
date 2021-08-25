@@ -250,27 +250,24 @@ void ScriptVM::HandleScriptException(ScriptException& exc, std::ostream* out)
 		const ProgramScript* const scr = m_ScriptClass->GetScript();
 		scr->PrintSourcePos(m_PrevCodePos - scr->GetProgBuffer());
 	}
-	else
-	{
-		//glbs.DPrintf("unknown source pos");
-	}
-
-	if (exc.bAbort)
-	{
-		ScriptException e(exc.string);
-
-		e.bAbort = exc.bAbort;
-		e.bIsForAnim = exc.bIsForAnim;
-
-		state = vmState_e::Execution;
-		throw e;
-	}
 
 	if (out)
 	{
 		// write debug message
 		*out << "^~^~^ Script Error : " << exc.string.c_str() << "\n\n";
 	}
+}
+
+void ScriptVM::HandleScriptExceptionAbort(ScriptException& exc, std::ostream* out)
+{
+	if (m_ScriptClass)
+	{
+		const ProgramScript* const scr = m_ScriptClass->GetScript();
+		scr->PrintSourcePos(m_PrevCodePos - scr->GetProgBuffer());
+	}
+
+	state = vmState_e::Execution;
+	throw exc;
 }
 
 void ScriptVM::SetFastData(const ScriptVariable* data, size_t dataSize)

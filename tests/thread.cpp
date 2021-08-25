@@ -64,8 +64,22 @@ static const char scriptContent_level6[] =
 
 static const char scriptContent_level7[] =
 "main:\n"
+"local.larr = local::local::local::local\n"
+"local.larr println \"4 listeners\"\n"
 "local.larr = local::local::local\n"
-"local.larr print \"3 listeners\"\n"
+"local.larr println \"3 listeners\"\n"
+"local.larr = local::local\n"
+"local.larr println \"2 listeners\"\n"
+"local.test1 = 1::2::3::4::5\n"
+"local.test2 = 5::4::3::2::1\n"
+"local.larr = local.test1::local.test2\n"
+"for(local.i = 1; local.i <= local.larr.size; local.i++) {\n"
+" local.b = local.larr[local.i]\n"
+" println (local.b)\n"
+" for(local.j = 1; local.j <= local.larr[local.i].size; local.j++) {\n"
+"  println local.b[local.j]\n"
+" }\n"
+"}\n"
 "end\n";
 
 void level1(ScriptMaster& director)
@@ -159,10 +173,19 @@ void level7(ScriptMaster& director)
 void m3l1a(ScriptMaster& director)
 {
 	std::fstream stream("m3l1a.scr", std::ios_base::in | std::ios_base::binary);
+	if (!stream.is_open())
+	{
+		// FIXME
+		return;
+	}
 
 	stream.seekg(0, stream.end);
 	const size_t fsize = stream.tellg();
 	stream.seekg(0, stream.beg);
+
+	if (!fsize) {
+		return;
+	}
 
 	char* scriptFileData = new char[fsize + 1];
 	stream.read(scriptFileData, fsize);
@@ -182,6 +205,7 @@ int main(int argc, char* argv[])
 	GlobalOutput::Get().SetOutputStream(outputLevel_e::Debug, &std::cout);
 	GlobalOutput::Get().SetOutputStream(outputLevel_e::Warn, &std::cout);
 	GlobalOutput::Get().SetOutputStream(outputLevel_e::Error, &std::cout);
+	GlobalOutput::Get().SetOutputStream(outputLevel_e::Output, &std::cout);
 
 	// Initialize the event system
 	EventSystem::Get();
@@ -191,6 +215,7 @@ int main(int argc, char* argv[])
 	context.GetOutputInfo().SetOutputStream(outputLevel_e::Debug, &std::cout);
 	context.GetOutputInfo().SetOutputStream(outputLevel_e::Warn, &std::cout);
 	context.GetOutputInfo().SetOutputStream(outputLevel_e::Error, &std::cout);
+	context.GetOutputInfo().SetOutputStream(outputLevel_e::Output, &std::cout);
 
 	ScriptSettings& settings = context.GetSettings();
 	settings.SetDeveloperEnabled(false);

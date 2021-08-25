@@ -2944,20 +2944,12 @@ void ScriptThread::EventTimeout(Event* ev)
 
 void ScriptThread::EventError(Event* ev)
 {
-	if (ev->NumArgs() > 1)
+	if (ev->NumArgs() <= 1)
 	{
-		ScriptException::next_abort = 0;
+		throw ScriptException(ev->GetString(1));
+	} else {
+		throw ScriptAbortException(ev->GetString(1));
 	}
-	else
-	{
-		ScriptException::next_abort = ev->GetInteger(2);
-		if (ScriptException::next_abort < 0)
-		{
-			ScriptException::next_abort = 0;
-		}
-	}
-
-	ScriptError(ev->GetString(1));
 }
 
 void ScriptThread::EventGoto(Event* ev)
@@ -3325,16 +3317,12 @@ void ScriptThread::Execute(Event* ev)
 			if (!returnValue.IsNone()) ev->AddValue(returnValue);
 		}
 	}
-	catch (ScriptException& exc)
+	catch (ScriptAbortException&)
 	{
-		if (exc.bAbort)
-		{
-			//glbs.Error(ERR_DROP, "%s\n", exc.string.c_str());
-		}
-		else
-		{
-			//Com_Printf("^~^~^ Script Error: %s\n", exc.string.c_str());
-		}
+		throw;
+	}
+	catch (ScriptException&)
+	{
 	}
 }
 

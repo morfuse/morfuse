@@ -166,6 +166,7 @@ namespace mfuse
 
 		const opval_t* ProgBuffer();
 		void HandleScriptException(ScriptException& exc, std::ostream* out);
+		void HandleScriptExceptionAbort(ScriptException& exc, std::ostream* out);
 
 	private:
 		/** The next VM in script class. */

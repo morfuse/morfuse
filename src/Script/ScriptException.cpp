@@ -3,22 +3,9 @@
 
 using namespace mfuse;
 
-int ScriptException::next_abort = 0;
-int ScriptException::next_bIsForAnim = 0;
-
-void ScriptException::CreateException(const rawchar_t* data)
-{
-	string = data;
-
-	bAbort = next_abort;
-	next_abort = 0;
-	bIsForAnim = next_bIsForAnim;
-	next_bIsForAnim = 0;
-}
-
 ScriptException::ScriptException(const xstr& text)
+	: string(text)
 {
-	CreateException(text.c_str());
 }
 
 ScriptException::ScriptException(const rawchar_t* format, ...)
@@ -30,17 +17,16 @@ ScriptException::ScriptException(const rawchar_t* format, ...)
 	vsprintf(data, format, va);
 	va_end(va);
 
-	CreateException(data);
+	string = data;
 }
 
-void Error(const rawchar_t* format, ...)
+ScriptAbortException::ScriptAbortException(const xstr& text)
+	: ScriptException(text)
 {
-	va_list va;
-	rawchar_t data[4100];
+}
 
-	va_start(va, format);
-	vsprintf(data, format, va);
-	va_end(va);
+ScriptAbortException::ScriptAbortException(const rawchar_t* text)
+	: ScriptException(text)
+{
 
-	throw new ScriptException((const rawchar_t*)data);
 }

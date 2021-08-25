@@ -33,7 +33,7 @@ namespace mfuse
 		Char,
 		/** An index to the string table. */
 		ConstString,
-		/** Points to another listener. */
+		/** Points to another (safe) listener. */
 		Listener,
 		/** Reference another script variable. */
 		Ref,
@@ -43,7 +43,7 @@ namespace mfuse
 		ConstArray,
 		/** Array of listeners. */
 		Container,
-		/** Safe array of listeners. */
+		/** Safe array of (safe) listeners. */
 		SafeContainer,
 		/** Pointer containing a list of script variable to set value on later. */
 		Pointer,

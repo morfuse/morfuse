@@ -519,7 +519,6 @@ void ScriptEmitter::AddJumpLocation(opval_t* pos)
 	op_offset_t offset = (op_offset_t)(code_pos() - sizeof(op_offset_t) - pos);
 
 	manager.SetValueAtCodePosition(pos, &offset, sizeof(op_offset_t));
-	//*reinterpret_cast<uint32_t*>(pos) = offset;
 	ClearPrevOpcode();
 }
 
@@ -528,8 +527,6 @@ void ScriptEmitter::AddJumpBackLocation(opval_t* pos)
 	op_offset_t offset = (op_offset_t)(code_pos() - pos);
 
 	WriteOpValue<op_offset_t>(offset);
-	//*reinterpret_cast<op_offset_t*>(code_pos) = offset;
-	//code_pos += sizeof(op_offset_t);
 
 	ClearPrevOpcode();
 }
@@ -539,8 +536,6 @@ void ScriptEmitter::AddJumpToLocation(opval_t* pos)
 	op_offset_t offset = (op_offset_t)(pos - code_pos() - 1);
 
 	WriteOpValue<op_offset_t>(offset);
-	//*reinterpret_cast<op_offset_t*>(code_pos) = offset;
-	//code_pos += sizeof(op_offset_t);
 
 	ClearPrevOpcode();
 }
@@ -683,8 +678,6 @@ void ScriptEmitter::EmitAssignmentStatement(sval_t lhs, sourceLocation_t sourceL
 	const_str index = manager.AddString(name);
 	WriteOpValue<op_name_t>(index);
 	WriteOpValue<op_evName_t>((op_evName_t)eventName);
-	//*reinterpret_cast<op_name_t*>(code_pos) = index;
-	//code_pos += sizeof(op_name_t);
 }
 
 void ScriptEmitter::EmitBoolJumpFalse(sourceLocation_t sourceLoc)
@@ -818,7 +811,6 @@ void ScriptEmitter::EmitCatch(sval_t val, const opval_t* try_begin_code_pos, sou
 
 	opval_t* old_code_pos = code_pos();
 	manager.MoveCodeForward(sizeof(op_offset_t));
-	//code_pos += sizeof(op_offset_t);
 
 	ClearPrevOpcode();
 
@@ -854,8 +846,6 @@ void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandNa
 		EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
 
 		WriteOpValue<op_name_t>(STRING_EMPTY);
-		//*reinterpret_cast<op_name_t*>(code_pos) = STRING_EMPTY;
-		//code_pos += sizeof(op_name_t);
 	}
 	else
 	{
@@ -868,7 +858,6 @@ void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandNa
 			EmitOpcodeWithStack(OP_EXEC_CMD_METHOD_COUNT1, -(int32_t)iParamCount - 1, sourceLoc);
 
 			WriteOpValue<op_parmNum_t>(iParamCount);
-			//*code_pos++ = iParamCount;
 		}
 		else
 		{
@@ -876,8 +865,6 @@ void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandNa
 		}
 
 		WriteOpValue<op_ev_t>((op_ev_t)eventnum);
-		//*reinterpret_cast<op_ev_t*>(code_pos) = (uint32_t)eventnum;
-		//code_pos += sizeof(op_ev_t);
 	}
 }
 
@@ -917,8 +904,6 @@ void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parame
 		EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
 
 		WriteOpValue<op_name_t>(STRING_EMPTY);
-		//*reinterpret_cast<op_name_t*>(code_pos) = STRING_EMPTY;
-		//code_pos += sizeof(op_name_t);
 	}
 	else
 	{
@@ -929,7 +914,6 @@ void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parame
 			EmitOpcodeWithStack(OP_EXEC_CMD_COUNT1, -(int32_t)iParamCount, sourceLoc);
 
 			WriteOpValue<op_parmNum_t>(iParamCount);
-			//*code_pos++ = iParamCount;
 		}
 		else
 		{
@@ -937,8 +921,6 @@ void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parame
 		}
 
 		WriteOpValue<op_ev_t>((op_ev_t)eventnum);
-		//*reinterpret_cast<op_ev_t*>(code_pos) = (uint32_t)eventnum;
-		//code_pos += sizeof(op_ev_t);
 	}
 }
 
@@ -961,21 +943,18 @@ void ScriptEmitter::EmitCommandScriptRet(const prchar_t* commandName, sval_t par
 
 void ScriptEmitter::EmitConstArray(sval_t lhs, sval_t rhs, sourceLocation_t sourceLoc)
 {
-	uint32_t iCount = 1;
+	uint32_t iCount = 2;
 
-	do
+	EmitValue(lhs);
+
+	while (rhs.node->type == statementType_e::ConstArrayExpr)
 	{
-		iCount++;
-
-		EmitValue(lhs);
-
-		if (rhs.node->type != statementType_e::ConstArrayExpr) {
-			break;
-		}
-
 		lhs = rhs.node[1];
 		rhs = rhs.node[2];
-	} while (rhs.node->type == statementType_e::ConstArrayExpr);
+		++iCount;
+
+		EmitValue(lhs);
+	}
 
 	EmitValue(rhs);
 	EmitConstArrayOpcode(iCount, sourceLoc);
@@ -997,8 +976,6 @@ void ScriptEmitter::EmitConstArrayOpcode(uint32_t iCount, sourceLocation_t sourc
 	EmitOpcodeWithStack(OP_LOAD_CONST_ARRAY1, 1 - iCount, sourceLoc);
 
 	WriteOpValue<op_arrayParmNum_t>(iCount);
-	//*reinterpret_cast<op_arrayParmNum_t*>(code_pos) = iCount;
-	//code_pos += sizeof(op_arrayParmNum_t);
 }
 
 void ScriptEmitter::EmitContinue(sourceLocation_t sourceLoc)
@@ -1007,7 +984,6 @@ void ScriptEmitter::EmitContinue(sourceLocation_t sourceLoc)
 	{
 		EmitOpcode(OP_JUMP4, sourceLoc);
 		opval_t* pos = code_pos();
-		//code_pos += sizeof(op_offset_t);
 		manager.MoveCodeForward(sizeof(op_offset_t));
 		ClearPrevOpcode();
 
@@ -1095,7 +1071,6 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 	const eventName_t eventName = eventSystem.GetEventConstName(field_val.stringValue);
 	const eventNum_t getterNum = eventSystem.FindGetterEventNum(eventName);
 
-	//prev_index = *reinterpret_cast<op_name_t*>(code_pos() - sizeof(op_name_t));
 	const op_name_t prev_index = ReadOpValue<op_name_t>((intptr_t)sizeof(op_name_t));
 
 	if (listener_val.node[0].type != statementType_e::Listener || (getterNum && BuiltinReadVariable(sourceLoc, listener_val.node[1].byteValue, field_val.stringValue, getterNum)))
@@ -1105,7 +1080,6 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 
 		WriteOpValue<op_name_t>(index);
 		WriteOpValue<op_evName_t>((op_evName_t)eventName);
-		//*reinterpret_cast<op_name_t*>(code_pos) = index;
 	}
 	else if (PrevOpcode() != (OP_LOAD_GAME_VAR + listener_val.node[1].byteValue) || (const_str)prev_index != index)
 	{
@@ -1113,7 +1087,6 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 
 		WriteOpValue<op_name_t>(index);
 		WriteOpValue<op_evName_t>((op_evName_t)eventName);
-		//*reinterpret_cast<op_name_t*>(code_pos) = index;
 	}
 	else
 	{
@@ -1123,8 +1096,6 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 		// Move forward because the previous opcode was replaced
 		manager.MoveCodeForward(sizeof(op_name_t));
 	}
-
-	//code_pos += sizeof(op_name_t);
 }
 
 void ScriptEmitter::EmitFloat(float value, sourceLocation_t sourceLoc)
@@ -1139,8 +1110,6 @@ void ScriptEmitter::EmitFloat(float value, sourceLocation_t sourceLoc)
 	EmitOpcode(OP_STORE_FLOAT, sourceLoc);
 
 	WriteOpValue<float>(value);
-	//*reinterpret_cast<float*>(code_pos) = value;
-	//code_pos += sizeof(float);
 }
 
 void ScriptEmitter::EmitFunc1(opval_t opcode, sourceLocation_t sourceLoc)
@@ -1188,26 +1157,17 @@ void ScriptEmitter::EmitFunction(uint32_t iParamCount, const prchar_t* functionN
 	if (!found)
 	{
 		WriteOpValue<bool>(false);
+		// no file specified, so only put the label
 		WriteOpValue<op_name_t>(manager.AddString(functionName));
-		//*code_pos++ = false;
-		// no file so only put the label
-		//*reinterpret_cast<op_name_t*>(code_pos) = Director.AddString(functionName);
 	}
 	else
 	{
 		WriteOpValue<bool>(true);
 		WriteOpValue<op_name_t>(manager.AddString(functionName));
 		WriteOpValue<op_name_t>(manager.AddString(label));
-		//*code_pos++ = true;
-		//*reinterpret_cast<op_name_t*>(code_pos) = Director.AddString(filename);
-		//code_pos += sizeof(op_name_t);
-		//*reinterpret_cast<op_name_t*>(code_pos) = Director.AddString(label);
 	}
 
-	//code_pos += sizeof(uint32_t);
-
 	WriteOpValue<op_parmNum_t>(iParamCount);
-	//*code_pos++ = iParamCount;
 }
 
 void ScriptEmitter::EmitIfElseJump(sval_t if_stmt, sval_t else_stmt, sourceLocation_t sourceLoc)
@@ -1284,31 +1244,24 @@ void ScriptEmitter::EmitInteger(uint64_t value, sourceLocation_t sourceLoc)
 		EmitOpcode(OP_STORE_INT1, sourceLoc);
 
 		WriteOpValue<uint8_t>(static_cast<uint8_t>(value));
-		//*code_pos++ = value;
 	}
 	else if (value <= (1 << 16))
 	{
 		EmitOpcode(OP_STORE_INT2, sourceLoc);
 
 		WriteOpValue<uint16_t>(static_cast<uint16_t>(value));
-		//*reinterpret_cast<uint16_t*>(code_pos) = value;
-		//code_pos += sizeof(uint16_t);
 	}
 	else if (value <= (1 << 24))
 	{
 		EmitOpcode(OP_STORE_INT3, sourceLoc);
 
 		WriteOpValue<short3>(static_cast<short3>(value));
-		//*reinterpret_cast<short3*>(code_pos) = value;
-		//code_pos += sizeof(short3);
 	}
 	else if(value <= (1ll << 32ll))
 	{
 		EmitOpcode(OP_STORE_INT4, sourceLoc);
 
 		WriteOpValue<uint32_t>(static_cast<uint32_t>(value));
-		//*reinterpret_cast<uint32_t*>(code_pos) = value;
-		//code_pos += sizeof(uint32_t);
 	}
 	else
 	{
@@ -1316,8 +1269,6 @@ void ScriptEmitter::EmitInteger(uint64_t value, sourceLocation_t sourceLoc)
 		EmitOpcode(OP_STORE_INT8, sourceLoc);
 
 		WriteOpValue<uint64_t>(value);
-		//*reinterpret_cast<uint64_t*>(code_pos) = value;
-		//code_pos += sizeof(uint64_t);
 	}
 }
 
@@ -1476,7 +1427,6 @@ void ScriptEmitter::EmitMethodExpression(uint32_t iParamCount, uintptr_t eventnu
 		EmitOpcodeWithStack(OP_EXEC_METHOD_COUNT1, -(int32_t)iParamCount, sourceLoc);
 
 		WriteOpValue<op_parmNum_t>(iParamCount);
-		//*code_pos++ = iParamCount;
 	}
 	else
 	{
@@ -1484,8 +1434,6 @@ void ScriptEmitter::EmitMethodExpression(uint32_t iParamCount, uintptr_t eventnu
 	}
 
 	WriteOpValue<op_ev_t>(static_cast<op_ev_t>(eventnum));
-	//*reinterpret_cast<op_ev_t*>(code_pos) = (op_ev_t)eventnum;
-	//code_pos += sizeof(op_ev_t);
 }
 
 void ScriptEmitter::EmitNil(sourceLocation_t sourceLoc)
@@ -1581,7 +1529,6 @@ void ScriptEmitter::EmitOpcodeWithStack(opval_t opcode, int32_t varStackOffset, 
 	AccumulatePrevOpcode(opcode, varStackOffset);
 
 	WriteOpValue<opval_t>(opcode);
-	//*(code_pos++) = opcode;
 }
 
 void ScriptEmitter::EmitParameter(sval_t lhs, sourceLocation_t sourceLoc)
@@ -1611,9 +1558,6 @@ void ScriptEmitter::EmitParameter(sval_t lhs, sourceLocation_t sourceLoc)
 		const uint32_t index = manager.AddString(name);
 		WriteOpValue<op_name_t>(index);
 		WriteOpValue<op_evName_t>(static_cast<op_evName_t>(eventName));
-
-		//*reinterpret_cast<op_name_t*>(code_pos) = index;
-		//code_pos += sizeof(op_name_t);
 	}
 }
 
@@ -1634,24 +1578,6 @@ uint32_t ScriptEmitter::EmitParameterList(sval_t event_parameter_list)
 	}
 
 	return iParamCount;
-	/*
-	const linked_node_t* node;
-	uint32_t iParamCount = 0;
-
-	for (node = event_parameter_list.node[1].node[0].linkednode; node; node = (const linked_node_t*)node->next)
-	{
-		if (node->prev->type == sval_none)
-		{
-			continue;
-		}
-
-		EmitValue(node->prev);
-
-		iParamCount++;
-	}
-
-	return iParamCount;
-	*/
 }
 
 void ScriptEmitter::EmitRef(sval_t val, sourceLocation_t sourceLoc)
@@ -1683,8 +1609,6 @@ void ScriptEmitter::EmitRef(sval_t val, sourceLocation_t sourceLoc)
 
 	WriteOpValue<op_name_t>(index);
 	WriteOpValue<op_evName_t>(static_cast<op_evName_t>(eventName));
-	//*reinterpret_cast<op_name_t*>(code_pos) = index;
-	//code_pos += sizeof(op_name_t);
 }
 
 void ScriptEmitter::EmitStatementList(sval_t val)
@@ -1693,13 +1617,6 @@ void ScriptEmitter::EmitStatementList(sval_t val)
 	{
 		EmitValue(*node);
 	}
-
-	/*
-	for (const linked_node_t* node = val.linkednode; node; node = (const linked_node_t*)node->next)
-	{
-		EmitValue(node->prev->node);
-	}
-	*/
 }
 
 void ScriptEmitter::EmitString(const prchar_t* value, sourceLocation_t sourceLoc)
@@ -1714,8 +1631,6 @@ void ScriptEmitter::EmitString(const prchar_t* value, sourceLocation_t sourceLoc
 	EmitOpcode(OP_STORE_STRING, sourceLoc);
 
 	WriteOpValue<op_name_t>(index);
-	//*reinterpret_cast<op_name_t*>(code_pos) = index;
-	//code_pos += sizeof(op_name_t);
 }
 
 void ScriptEmitter::EmitSwitch(sval_t val, sourceLocation_t sourceLoc)
@@ -1738,14 +1653,9 @@ void ScriptEmitter::EmitSwitch(sval_t val, sourceLocation_t sourceLoc)
 	// reserve number of case
 	stateScript = manager.CreateSwitchStateScript(info.numCaseLabels);
 
-	// predict the number or labels
-	//const sizeInfo_t info = CalcValue(val, 2);
-
 	EmitOpcode(OP_SWITCH, sourceLoc);
 
 	WriteOpValue<StateScript*>(stateScript);
-	//*reinterpret_cast<StateScript**>(code_pos) = stateScript;
-	//code_pos += sizeof(StateScript*);
 
 	bStartCanBreak = canBreak;
 	iStartBreakJumpLocCount = iBreakJumpLocCount;
@@ -2066,32 +1976,26 @@ bool ScriptEmitter::EvalPrevValue(ScriptVariable& var)
 		break;
 
 	case OP_STORE_INT1:
-		//var.setIntValue(*(code_pos - sizeof(prchar_t)));
 		var.setIntValue(ReadOpValue<uint8_t>(sizeof(uint8_t)));
 		break;
 
 	case OP_STORE_INT2:
-		//var.setIntValue(*reinterpret_cast<int16_t*>(code_pos - sizeof(int16_t)));
 		var.setIntValue(ReadOpValue<uint16_t>(sizeof(uint16_t)));
 		break;
 
 	case OP_STORE_INT3:
-		//var.setIntValue(*reinterpret_cast<short3*>(code_pos - sizeof(short3)));
 		var.setIntValue(ReadOpValue<short3>(sizeof(short3)));
 		break;
 
 	case OP_STORE_INT4:
-		//var.setIntValue(*reinterpret_cast<int32_t*>(code_pos - sizeof(int32_t)));
 		var.setIntValue(ReadOpValue<uint32_t>(sizeof(uint32_t)));
 		break;
 
 	case OP_STORE_INT8:
-		//var.setLongValue(*reinterpret_cast<int32_t*>(code_pos - sizeof(int32_t)));
 		var.setLongValue(ReadOpValue<uint64_t>(sizeof(uint64_t)));
 		break;
 
 	case OP_STORE_FLOAT:
-		//var.setFloatValue(*reinterpret_cast<float*>(code_pos - sizeof(float)));
 		var.setFloatValue(ReadOpValue<float>(sizeof(float)));
 		return true;
 
@@ -2207,7 +2111,6 @@ void ScriptEmitter::ProcessBreakJumpLocations(int iStartBreakJumpLocCount)
 			op_offset_t offset = (op_offset_t)(code_pos() - apucBreakJumpLocations[iBreakJumpLocCount] - sizeof(op_offset_t));
 
 			manager.SetValueAtCodePosition(apucBreakJumpLocations[iBreakJumpLocCount], &offset, sizeof(offset));
-			//*reinterpret_cast<uint32_t*>(apucBreakJumpLocations[iBreakJumpLocCount]) = offset;
 		} while (iBreakJumpLocCount > iStartBreakJumpLocCount);
 
 		ClearPrevOpcode();
@@ -2225,7 +2128,6 @@ void ScriptEmitter::ProcessContinueJumpLocations(int iStartContinueJumpLocCount)
 			const op_offset_t offset = (op_offset_t)(code_pos() - sizeof(op_offset_t) - apucContinueJumpLocations[iContinueJumpLocCount]);
 
 			manager.SetValueAtCodePosition(apucContinueJumpLocations[iBreakJumpLocCount], &offset, sizeof(offset));
-			//*reinterpret_cast<uint32_t*>(apucContinueJumpLocations[iContinueJumpLocCount]) = offset;
 		} while (iContinueJumpLocCount > iStartContinueJumpLocCount);
 
 		ClearPrevOpcode();
@@ -2234,6 +2136,7 @@ void ScriptEmitter::ProcessContinueJumpLocations(int iStartContinueJumpLocCount)
 
 bool ScriptEmitter::GetCompiledScript(ProgramScript* scr)
 {
+	// FIXME: retrieve script from bytecodes (compiled)
 	/*
 	Archiver arc;
 

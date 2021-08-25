@@ -87,7 +87,8 @@
 %precedence <val> TOKEN_LISTENER
 %precedence TOKEN_NIL TOKEN_NULL
 
-%left TOKEN_DOUBLE_COLON TOKEN_SEMICOLON TOKEN_DOLLAR TOKEN_NUMBER
+%token TOKEN_DOUBLE_COLON
+%left TOKEN_SEMICOLON TOKEN_DOLLAR TOKEN_NUMBER
 
 %left TOKEN_INCREMENT TOKEN_DECREMENT TOKEN_PERIOD
 
@@ -217,8 +218,6 @@ func_prim_expr:
 	| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON prim_expr { $$ = pt.node3(statementType_e::ConstArrayExpr, pt.node2(statementType_e::String, $1, TOKPOS(@1)), $3, TOKPOS(@2)); }
 	| nonident_prim_expr TOKEN_DOUBLE_COLON prim_expr { $$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2)); }
 	| TOKEN_MAKEARRAY makearray_statement_list[stmt] TOKEN_ENDARRAY { $$ = pt.node2(statementType_e::MakeArray, $stmt, TOKPOS(@1)); }
-	//| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON TOKEN_IDENTIFIER event_parameter_list_need { $$ = pt.node3( statementType_e::CmdEventExpr, pt.node_string( parsetree_string( str( $1.stringValue ) + "::" + $3.stringValue ) ), pt.node1( statementType_e::none, $4 ), TOKPOS(@1) ); }
-	//| nonident_prim_expr TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node4( statementType_e::MethodEventExpr, $1, pt.node_string( parsetree_string( str( $2.stringValue ) + "::" + $4.stringValue ) ), pt.node1( statementType_e::none, $5 ), TOKPOS(@2)); }
 	;
 
 event_parameter_list
@@ -243,9 +242,6 @@ prim_expr
 
 nonident_prim_expr
 	: TOKEN_DOLLAR prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_TARGETNAME), $2, TOKPOS(@1)); }
-	//TOKEN_DOLLAR TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = pt.node3( statementType_e::Func1Expr, pt.node1b( OP_UN_TARGETNAME ), $3, YYLLOC ); }
-	//| TOKEN_DOLLAR TOKEN_IDENTIFIER { $$ = pt.node3( statementType_e::Func1Expr, pt.node1b( OP_UN_TARGETNAME ), pt.node1( statementType_e::String, $2 ), YYLLOC ); }
-	//| TOKEN_DOLLAR TOKEN_STRING { $$ = pt.node3( statementType_e::Func1Expr, pt.node1b( OP_UN_TARGETNAME ), pt.node1( statementType_e::String, $2 ), YYLLOC ); }
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_IDENTIFIER { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_STRING { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_SIZE { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_SIZE), $1, TOKPOS(@3)); }
@@ -276,8 +272,6 @@ makearray_statement_list:
 	{ $$ = pt.node0(statementType_e::None); }
 	| makearray_statement_list[list] makearray_statement[ma_stmt] TOKEN_EOL { $$ = pt.append_node($list, pt.node2(statementType_e::MakeArray, $ma_stmt, TOKPOS(@ma_stmt))); }
 	| makearray_statement[ma_stmt] TOKEN_EOL { $$ = pt.linked_list_end(pt.node2(statementType_e::MakeArray, $ma_stmt, TOKPOS(@ma_stmt))); }
-	//| makearray_statement_list[list] makearray_statement[ma_stmt] TOKEN_EOL { $$ = pt.append_node($list, pt.node2(statementType_e::MakeArray, $ma_stmt, TOKPOS(@ma_stmt))); }
-	//| makearray_statement[ma_stmt] TOKEN_EOL { $$ = pt.linked_list_end(pt.node2(statementType_e::MakeArray, $ma_stmt, TOKPOS(@ma_stmt))); }
 	| TOKEN_EOL makearray_statement_list { $$ = $2; @$ = @2; }
 	;
 

@@ -1375,8 +1375,7 @@ xstr ScriptVariable::stringValue() const
 		return xstr("( ") + xstr(m_data.vectorValue[0]) + xstr(" ") + xstr(m_data.vectorValue[1]) + xstr(" ") + xstr(m_data.vectorValue[2]) + xstr(" )");
 
 	default:
-		ScriptError("Cannot cast '%s' to string", GetTypeName());
-		break;
+		return "Type: '" + xstr(GetTypeName()) + "'";
 	}
 
 	return "";

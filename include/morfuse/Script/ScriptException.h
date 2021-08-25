@@ -2,28 +2,30 @@
 
 #include "../Common/str.h"
 
+#include <utility>
+
 namespace mfuse
 {
 	class ScriptException
 	{
 	public:
-		xstr string;
-		int bAbort;
-		int bIsForAnim;
-
-	private:
-		void CreateException(const rawchar_t*data);
-
-	public:
 		ScriptException(const xstr& text);
 		ScriptException(const rawchar_t* format, ...);
 
-		static int next_abort;
-		static int next_bIsForAnim;
+	public:
+		xstr string;
 	};
 
-	void Error(const char * format, ...);
+	class ScriptAbortException : public ScriptException
+	{
+	public:
+		ScriptAbortException(const xstr& text);
+		ScriptAbortException(const rawchar_t* text);
+	};
 
-#define ScriptDeprecated( function ) throw ScriptException( function ": DEPRECATED. DON'T USE IT ANYMORE" )
-#define ScriptError throw ScriptException
+	template<typename...Args>
+	static constexpr void ScriptError(Args&&...args)
+	{
+		throw ScriptException(std::forward<Args>(args)...);
+	}
 };
