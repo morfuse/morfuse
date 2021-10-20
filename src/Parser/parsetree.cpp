@@ -1,8 +1,8 @@
 #include "parsetree.h"
 
 #include <morfuse/Common/MEM/TempAlloc.h>
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Script/ScriptOpcodes.h>
-#include <morfuse/Script/ConstStr.h>
 #include <cstring>
 
 namespace mfuse

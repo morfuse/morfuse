@@ -106,6 +106,28 @@ void ClassEventPrinter::SortEventList(con::Container<EventDef*>& sortedList)
 	std::sort(sortedList.Data(), sortedList.Data() + num, EventCompare());
 }
 
+void ClassEventPrinter::ClassEvents(const ClassDef* classDef, std::ostream& class_stream, AbstractFormater& formater, const con::Container<EventDef*>& sortedEvents)
+{
+	const ResponseDefClass* response = classDef->GetResponseList();
+	if (response && response->event)
+	{
+		const size_t sortedNum = sortedEvents.NumObjects();
+		for (uintptr_t i = 1; i <= sortedNum; ++i)
+		{
+			const EventDef* const sortedDef = sortedEvents.ObjectAt(i);
+
+			for (const ResponseDefClass* r = classDef->GetResponseList(); r->event; ++r)
+			{
+				if (r->response && r->event == sortedDef)
+				{
+					PrintEventDocumentation(*r->event, class_stream, formater);
+					break;
+				}
+			}
+		}
+	}
+}
+
 void ClassEventPrinter::DumpClass(ClassDef* classDef, std::ostream& class_stream, AbstractFormater& formater, const con::Container<EventDef*>& sortedEvents)
 {
 	formater.BeginClassHeader(class_stream, classDef->GetClassName(), classDef->GetClassID());
@@ -120,24 +142,7 @@ void ClassEventPrinter::DumpClass(ClassDef* classDef, std::ostream& class_stream
 
 	formater.BeginClassBody(class_stream);
 
-	const ResponseDefClass* response = classDef->GetResponseList();
-	if (response && response->event)
-	{
-		const size_t sortedNum = sortedEvents.NumObjects();
-		for(uintptr_t i = 1; i <= sortedNum; ++i)
-		{
-			const EventDef* const sortedDef = sortedEvents.ObjectAt(i);
-
-			for (const ResponseDefClass* r = classDef->GetResponseList(); r->event; ++r)
-			{
-				if (r->response && r->event == sortedDef)
-				{
-					PrintEventDocumentation(*r->event, class_stream, formater);
-					break;
-				}
-			}
-		}
-	}
+	ClassEvents(classDef, class_stream, formater, sortedEvents);
 
 	formater.EndClassBody(class_stream);
 }
@@ -689,7 +694,6 @@ void HTMLFormater::PrintEventDocumentation(std::ostream& stream, const rawchar_t
 	stream << "<ul>";
 
 	const rawchar_t* docStart = documentation;
-	const rawchar_t* p = docStart;
 
 	for(const rawchar_t* p = docStart; *p; ++p)
 	{

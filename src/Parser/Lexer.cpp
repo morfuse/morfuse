@@ -15,6 +15,11 @@ Lexer::~Lexer()
 
 }
 
+int Lexer::yylex()
+{
+	return 0;
+}
+
 void Lexer::yyllocset(Parser::location_type* loc, uint32_t off)
 {
 	loc->sourcePos = pos - yyleng + off;

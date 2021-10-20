@@ -65,14 +65,27 @@ const char* CompileException::UnknownCommand::getCommandName() const
 	return cmdName.c_str();
 }
 
+const mfuse::xstr& CompileException::UnknownCommand::getPrivateCommandName() const
+{
+	return cmdName;
+}
+
 const char* CompileException::UnknownCommand::what() const noexcept
 {
-	return "unknown command";
+	if (!filled()) {
+		fill("unknown command: '" + cmdName + "'");
+	}
+
+	return Messageable::what();
 }
 
 const char* CompileException::UnknownCommandRet::what() const noexcept
 {
-	return "unknown return command";
+	if (!filled()) {
+		fill("unknown return command: '" + getPrivateCommandName() + "'");
+	}
+
+	return Messageable::what();
 }
 
 CompileException::BadValue::BadValue(uint8_t typeValue, sourceLocation_t sourceLocValue)

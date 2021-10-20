@@ -32,7 +32,7 @@ namespace mfuse
 		}
 
 		template<typename T>
-		static void operator delete(void* ptr, T& placement)
+		static void operator delete(void*, T&)
 		{}
 
 		static void* operator new(size_t size, void* placement);

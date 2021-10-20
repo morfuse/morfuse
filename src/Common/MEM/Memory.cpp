@@ -73,7 +73,7 @@ namespace mfuse
 	class NoDelete
 	{
 	public:
-		void operator()(DefaultMemoryManager* manager)
+		void operator()(DefaultMemoryManager*)
 		{
 			// The static memory manager will be destroyed during program uninitialization
 		}

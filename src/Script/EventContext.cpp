@@ -36,6 +36,11 @@ EventQueue& EventContext::GetEventQueue()
 	return eventQueue;
 }
 
+const mfuse::EventQueue& EventContext::GetEventQueue() const
+{
+	return eventQueue;
+}
+
 DefaultEventAllocator& EventContext::GetAllocator()
 {
 	return allocator;

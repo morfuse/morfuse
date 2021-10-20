@@ -1,4 +1,4 @@
-#include <morfuse/Container/timer.h>
+#include <morfuse/Script/timer.h>
 #include <morfuse/Script/Archiver.h>
 #include <morfuse/Script/Archiver.h>
 
@@ -65,7 +65,7 @@ Class* con::timer::GetNextElement(uint64_t& foundtime)
 	}
 	else
 	{
-		result = NULL;
+		result = nullptr;
 		m_bDirty = false;
 	}
 
@@ -77,9 +77,14 @@ void con::timer::SetDirty()
 	m_bDirty = true;
 }
 
-bool con::timer::IsDirty()
+bool con::timer::IsDirty() const
 {
 	return m_bDirty;
+}
+
+bool con::timer::HasAnyElement() const
+{
+	return m_Elements.NumObjects() > 0;
 }
 
 void con::timer::SetTime(uint64_t time)
@@ -89,17 +94,15 @@ void con::timer::SetTime(uint64_t time)
 
 void con::timer::ArchiveElement(Archiver& arc, Element *e)
 {
-	/*
-	arc.ArchiveObjectPointer(&e->obj);
-	arc.ArchiveInteger(&e->inttime);
-	*/
+	arc.ArchiveObjectPointer((const void*&)e->obj);
+	arc.ArchiveUInt64(e->time);
 }
 
-void con::timer::Archive(Archiver& arc)
+void con::timer::Archive(Archiver&)
 {
 	/*
-	arc.ArchiveBool(&m_bDirty);
-	arc.ArchiveInteger(&m_inttime);
+	arc.ArchiveBool(m_bDirty);
+	arc.ArchiveUInt64(m_time);
 
 	m_Elements.Archive(arc, con::timer::ArchiveElement);
 	*/

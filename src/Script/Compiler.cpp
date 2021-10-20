@@ -36,23 +36,12 @@ using namespace mfuse;
 void Parser::error(const location_type& loc, const std::string& msg)
 {
 	const prchar_t* text = lexer.YYText();
-	const uint32_t lineNumber = lexer.lineno();
-	const uint32_t leng = lexer.YYLeng();
 
-	//parsetree.pos -= yyleng;
 	lexer.exception.text = text;
 	lexer.exception.msg = msg.c_str();
 	lexer.exception.loc.line = lexer.get_prev_lex() != token::TOKEN_EOL ? (loc.lineno - 1) : loc.begin.line;
 	lexer.exception.loc.column = loc.begin.column;
 	lexer.exception.loc.sourcePos = loc.sourcePos;
-
-	//xstr line = ScriptEmitter::GetLine( parsetree.sourceBuffer, parsetree.exc.yylineno );
-
-	//printf("parse error:\n%s:\n"), pt.exc.token.c_str();
-
-	// FIXME
-	//pt.gameScript->PrintSourcePos(parsetree.pos - leng);
-	//pt.pos++;
 }
 
 class mfuse::ScriptCountManager : public IScriptManager
@@ -64,33 +53,33 @@ public:
 		curop = prevop;
 	}
 
-	StateScript* CreateCatchStateScript(const opval_t* try_begin_code_pos, const opval_t* code_pos, size_t labelCount) override
+	StateScript* CreateCatchStateScript(const opval_t*, const opval_t*, size_t) override
 	{
 		++info.numCatches;
 		return nullptr;
 	}
 
-	StateScript* CreateSwitchStateScript(size_t labelCount) override
+	StateScript* CreateSwitchStateScript(size_t) override
 	{
 		++info.numSwitches;
 		return nullptr;
 	}
 
-	bool AddLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos, bool privateLabel) override
+	bool AddLabel(StateScript*, const prchar_t*, const opval_t*, bool) override
 	{
 		++info.numStrings;
 		++info.numLabels;
 		return true;
 	}
 
-	bool AddCaseLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos) override
+	bool AddCaseLabel(StateScript*, const prchar_t*, const opval_t*) override
 	{
 		++info.numStrings;
 		++info.numCaseLabels;
 		return true;
 	}
 
-	const_str AddString(const strview& value) override
+	const_str AddString(const strview&) override
 	{
 		++info.numStrings;
 		return info.numStrings;
@@ -141,7 +130,7 @@ public:
 		return op;
 	}
 
-	void SetValueAtCodePosition(opval_t* pos, const void* value, size_t size) override
+	void SetValueAtCodePosition(opval_t*, const void*, size_t) override
 	{
 	}
 
@@ -188,7 +177,7 @@ public:
 		}
 	}
 
-	void AddSourcePos(const opval_t* code_pos, sourceLocation_t sourceLoc) override
+	void AddSourcePos(const opval_t*, sourceLocation_t) override
 	{
 	}
 
@@ -218,12 +207,12 @@ private:
 class mfuse::ScriptProgramManager : public IScriptManager
 {
 public:
-	ScriptProgramManager(ScriptMaster& directorValue, ProgramScript* scriptValue, opval_t* progBuffer, size_t progLength)
-		: director(directorValue)
+	ScriptProgramManager(StringDictionary& dictRef, ProgramScript* scriptValue, opval_t* progBuffer, size_t progLength)
+		: dict(dictRef)
 		, script(scriptValue)
+		, code_pos(progBuffer)
 		, prog_ptr(progBuffer)
 		, prog_end_ptr(progBuffer + progLength)
-		, code_pos(progBuffer)
 	{
 		// clear the program first
 		std::fill(prog_ptr, prog_ptr + progLength, 0);
@@ -245,17 +234,17 @@ public:
 
 	bool AddLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos, bool privateLabel) override
 	{
-		return stateScript->AddLabel(name, code_pos, privateLabel);
+		return stateScript->AddLabel(AddString(name), code_pos, privateLabel);
 	}
 
 	bool AddCaseLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos) override
 	{
-		return stateScript->AddLabel(name, code_pos);
+		return stateScript->AddLabel(AddString(name), code_pos);
 	}
 
 	const_str AddString(const strview& value) override
 	{
-		return director.AddString(value);
+		return dict.Add(value);
 	}
 
 	size_t GetCodePosition() override
@@ -294,7 +283,12 @@ public:
 
 	void GetValueAt(uintptr_t backOffset, void* value, size_t size) override
 	{
-		memcpy(value, code_pos + backOffset, size);
+		if (uintptr_t(code_pos - prog_ptr) >= backOffset) {
+			memcpy(value, code_pos - backOffset, size);
+		}
+		else {
+			memset(value, 0, size);
+		}
 	}
 
 	void WriteOpcodeValue(const void* value, size_t size) override
@@ -310,7 +304,7 @@ public:
 	}
 
 private:
-	ScriptMaster& director;
+	StringDictionary& dict;
 	ProgramScript* script;
 	opval_t* code_pos;
 	opval_t* prog_ptr;
@@ -322,25 +316,17 @@ ScriptParser::ScriptParser()
 {
 }
 
-const prchar_t* ScriptParser::Preprocess(const prchar_t* sourceBuffer)
+/*
+const prchar_t* ScriptParser::Preprocess(std::istream& stream)
 {
 	// FIXME: Preprocessor (#defines and #includes)
 	return sourceBuffer;
 }
+*/
 
-struct membuf : std::streambuf
-{
-	membuf(const prchar_t* begin, const prchar_t* end) {
-		this->setg((prchar_t*)begin, (prchar_t*)begin, (prchar_t*)end);
-	}
-};
-
-ParseTree ScriptParser::Parse(const prchar_t* scriptName, const prchar_t* sourceBuffer, uint64_t sourceLength)
+ParseTree ScriptParser::Parse(const prchar_t* scriptName, std::istream& stream, const rawchar_t* sourceBuffer, uint64_t sourceLength)
 {
 	ParseTree parseTree;
-
-	membuf buf(sourceBuffer, sourceBuffer + sourceLength);
-	std::istream stream(&buf);
 
 	std::ostream* verb = info ? info->GetOutput(outputLevel_e::Verbose) : nullptr;
 	Lexer lexer(parseTree, stream, verb);
@@ -359,10 +345,11 @@ ParseTree ScriptParser::Parse(const prchar_t* scriptName, const prchar_t* source
 		// an error occured
 		if (info && info->GetOutput(outputLevel_e::Error))
 		{
-			std::ostream& out = *info->GetOutput(outputLevel_e::Error);
+			std::ostream* out = info->GetOutput(outputLevel_e::Error);
 
-			out << "parse error: \"" << lexer.exception.msg.c_str() << "\"\n";
-			printSourcePos(lexer.exception.loc, scriptName, sourceBuffer, sourceLength, out);
+			if (out) {
+				printSourcePos(lexer.exception.loc, scriptName, sourceBuffer, sourceLength, *out);
+			}
 		}
 
 		throw ParseException::ParseError(lexer.exception.text, lexer.exception.msg, lexer.exception.loc);
@@ -374,18 +361,18 @@ ParseTree ScriptParser::Parse(const prchar_t* scriptName, const prchar_t* source
 	return parseTree;
 }
 
-void ScriptParser::SetOutputInfo(OutputInfo* infoValue)
+void ScriptParser::SetOutputInfo(const OutputInfo* infoValue)
 {
 	info = infoValue;
 }
 
-ScriptEmitter::ScriptEmitter(IScriptManager& managerValue, StateScript& stateScriptValue, OutputInfo* infoValue, size_t maxDepth)
-	: manager(managerValue)
+ScriptEmitter::ScriptEmitter(IScriptManager& managerValue, StateScript& stateScriptValue, const OutputInfo* infoValue, size_t maxDepth)
+	: stateScript(&stateScriptValue)
+	, manager(managerValue)
 	, eventSystem(EventSystem::Get())
-	, stateScript(&stateScriptValue)
-	, info(infoValue)
 	, depth(maxDepth)
 	, switchDepth(0)
+	, info(infoValue)
 {
 	Reset();
 }
@@ -1436,7 +1423,7 @@ void ScriptEmitter::EmitMethodExpression(uint32_t iParamCount, uintptr_t eventnu
 	WriteOpValue<op_ev_t>(static_cast<op_ev_t>(eventnum));
 }
 
-void ScriptEmitter::EmitNil(sourceLocation_t sourceLoc)
+void ScriptEmitter::EmitNil(sourceLocation_t)
 {
 	if( IsDebugEnabled() )
 	{
@@ -1642,7 +1629,7 @@ void ScriptEmitter::EmitSwitch(sval_t val, sourceLocation_t sourceLoc)
 	++switchDepth;
 
 	ScriptCountManager countManager;
-	ScriptEmitter emitter(countManager, *stateScript, info, 2);
+	ScriptEmitter emitter(countManager, *stateScript, info, 3);
 	emitter.canBreak = true;
 	emitter.switchDepth = 1;
 	emitter.EmitRoot(val);
@@ -1681,7 +1668,7 @@ void ScriptEmitter::EmitValue(ScriptVariable& var, sourceLocation_t sourceLoc)
 	switch(var.GetType())
 	{
 	case variableType_e::Integer:
-		EmitInteger(var.intValue(), sourceLoc);
+		EmitInteger(var.longValue(), sourceLoc);
 		break;
 	case variableType_e::Float:
 		EmitFloat(var.floatValue(), sourceLoc);
@@ -1693,8 +1680,7 @@ void ScriptEmitter::EmitValue(ScriptVariable& var, sourceLocation_t sourceLoc)
 
 void ScriptEmitter::EmitValue(sval_t val)
 {
-	if (!depth) return;
-	else if (depth != -1) --depth;
+	StackDepth stackDepth(depth);
 
 __emit:
 
@@ -1876,8 +1862,6 @@ __emit:
 		CompileError(-1, "unknown type %d", val.node[0].type);
 		throw CompileException::UnknownNodeType((uint8_t)val.node->type);
 	}
-
-	if(depth != -1) ++depth;
 }
 
 void ScriptEmitter::EmitVarToBool(sourceLocation_t sourceLoc)
@@ -2008,8 +1992,8 @@ bool ScriptEmitter::EvalPrevValue(ScriptVariable& var)
 
 void ScriptEmitter::OptimizeInstructions(opval_t* code, opval_t* op1, opval_t* op2)
 {
-	int intValue1 = 0, intValue2 = 0, intValue3 = 0;
-	float floatValue1 = 0.0f, floatValue2 = 0.0f, floatValue3 = 0.0f;
+	int intValue1 = 0, intValue2 = 0;
+	float floatValue1 = 0.0f, floatValue2 = 0.0f;
 	int type1, type2;
 
 	if (!(*op1 >= OP_STORE_INT0 && *op1 <= OP_STORE_FLOAT &&
@@ -2134,7 +2118,7 @@ void ScriptEmitter::ProcessContinueJumpLocations(int iStartContinueJumpLocCount)
 	}
 }
 
-bool ScriptEmitter::GetCompiledScript(ProgramScript* scr)
+bool ScriptEmitter::GetCompiledScript(ProgramScript*)
 {
 	// FIXME: retrieve script from bytecodes (compiled)
 	/*
@@ -2179,8 +2163,25 @@ uint32_t ScriptEmitter::GetMaxExternalVarStackOffset() const
 	return m_iMaxExternalVarStackOffset;
 }
 
+ScriptEmitter::StackDepth::StackDepth(size_t& depthRef)
+	: depth(depthRef)
+{
+	if (!depth)
+	{
+		// maximum depth reached
+		throw CompileErrors::StackOverflow();
+	}
+
+	--depth;
+}
+
+ScriptEmitter::StackDepth::~StackDepth()
+{
+	++depth;
+}
+
 ScriptCompiler::ScriptCompiler()
-	: director(ScriptContext::Get().GetDirector())
+	: dict(ScriptContext::Get().GetDirector().GetDictionary())
 {
 }
 
@@ -2202,7 +2203,7 @@ size_t ScriptCompiler::Compile(ProgramScript* script, sval_t rootNode, opval_t*&
 
 void ScriptCompiler::EmitProgram(ProgramScript* script, sval_t rootNode, opval_t*& progBuffer, size_t progLength)
 {
-	ScriptProgramManager manager(director, script, progBuffer, progLength);
+	ScriptProgramManager manager(dict, script, progBuffer, progLength);
 	// invoke the ScriptEmitter and use the program manager interface to write opcodes
 	// and to create state scripts
 	ScriptEmitter emitter(manager, script->GetStateScript(), info);
@@ -2249,7 +2250,7 @@ size_t ScriptCompiler::Preallocate(ProgramScript* script, sval_t rootNode, opval
 	if (sizeInfo.numStrings)
 	{
 		// preallocate enough strings to avoid fragmenting memory due to frequent reallocation of the table
-		director.AllocateMoreString(sizeInfo.numStrings);
+		dict.AllocateMoreString(sizeInfo.numStrings);
 	}
 
 	if (sizeInfo.numCatches)
@@ -2273,7 +2274,7 @@ size_t ScriptCompiler::Preallocate(ProgramScript* script, sval_t rootNode, opval
 	return sizeInfo.progLength;
 }
 
-void ScriptCompiler::Optimize(opval_t* sourceBuffer)
+void ScriptCompiler::Optimize(opval_t*)
 {
 #if 0
 	size_t length = code_pos - prog_ptr;
@@ -2319,7 +2320,7 @@ uint32_t ScriptCompiler::GetMaxExternalVarStackOffset() const
 	return m_iMaxExternalVarStackOffset;
 }
 
-void ScriptCompiler::SetOutputInfo(OutputInfo* infoValue)
+void ScriptCompiler::SetOutputInfo(const OutputInfo* infoValue)
 {
 	info = infoValue;
 }
@@ -2340,3 +2341,8 @@ sizeInfo_t::sizeInfo_t()
 	, numSwitches(0)
 	, progLength(0)
 {}
+
+const char* CompileErrors::StackOverflow::what() const noexcept
+{
+	return "stack overflow";
+}

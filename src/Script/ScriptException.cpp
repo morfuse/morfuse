@@ -8,25 +8,34 @@ ScriptException::ScriptException(const xstr& text)
 {
 }
 
-ScriptException::ScriptException(const rawchar_t* format, ...)
+const char* ScriptException::what() const noexcept
 {
-	va_list va;
-	rawchar_t data[4100];
-
-	va_start(va, format);
-	vsprintf(data, format, va);
-	va_end(va);
-
-	string = data;
+	return string.c_str();
 }
 
 ScriptAbortException::ScriptAbortException(const xstr& text)
-	: ScriptException(text)
+	: string(text)
 {
 }
 
-ScriptAbortException::ScriptAbortException(const rawchar_t* text)
-	: ScriptException(text)
+const char* ScriptAbortException::what() const noexcept
 {
+	return "Unknown exception";
+}
 
+void Messageable::fill(const xstr& msg) const
+{
+	// fill the message for the first time
+	Messageable* This = const_cast<Messageable*>(this);
+	This->msg = msg;
+}
+
+bool Messageable::filled() const noexcept
+{
+	return !msg.isEmpty();
+}
+
+const char* Messageable::what() const noexcept
+{
+	return msg.c_str();
 }

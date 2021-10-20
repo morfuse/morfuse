@@ -1,15 +1,15 @@
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Script/Listener.h>
 #include <morfuse/Script/Level.h>
 #include <morfuse/Script/ScriptClass.h>
 #include <morfuse/Script/ScriptThread.h>
 #include <morfuse/Script/ScriptVariable.h>
 #include <morfuse/Script/ScriptException.h>
-#include <morfuse/Script/ConstStr.h>
 #include <morfuse/Script/Archiver.h>
 #include <morfuse/Script/EventSystem.h>
 #include <morfuse/Script/EventQueue.h>
 #include <morfuse/Script/Context.h>
-#include <morfuse/Script/ScriptMaster.h>
+#include <morfuse/Script/PredefinedString.h>
 
 namespace mfuse
 {
@@ -286,11 +286,17 @@ EventDef EV_Listener_WaitTillAnyTimeout
 static bool DisableListenerNotify = false;
 };
 
+namespace mfuse::ConstStrings
+{
+	const mfuse::PredefinedString Delete("delete");
+	const mfuse::PredefinedString Remove("remove");
+}
+
 using namespace mfuse;
 
 void ArchiveListenerPtr(Archiver& arc, SafePtr<Listener>& obj)
 {
-	//arc.ArchiveSafePointer(obj);
+	arc.ArchiveSafePointer(obj);
 }
 
 template<>
@@ -324,8 +330,8 @@ Listener::~Listener()
 {
 	CancelPendingEvents();
 
-	Unregister(STRING_DELETE);
-	Unregister(STRING_REMOVE);
+	Unregister((const_str)ConstStrings::Delete);
+	Unregister((const_str)ConstStrings::Remove);
 
 	UnregisterAll();
 	CancelWaitingAll();
@@ -427,7 +433,7 @@ bool Listener::EventPending(const EventDef &ev)
 	return EventContext::Get().GetEventQueue().IsEventPending(this, ev);
 }
 
-void Listener::PostEventInternal(Event *ev, uinttime_t delay, int flags)
+void Listener::PostEventInternal(Event *ev, inttime_t delay, int flags)
 {
 	if (!ev->Num() || !classinfo()->GetResponse(ev->Num()))
 	{
@@ -446,17 +452,17 @@ void Listener::PostEventInternal(Event *ev, uinttime_t delay, int flags)
 	return EventContext::Get().GetEventQueue().PostEvent(this, ev, delay, flags);
 }
 
-void Listener::PostEvent(Event *ev, uinttime_t delay, int flags)
+void Listener::PostEvent(Event *ev, inttime_t delay, int flags)
 {
 	PostEventInternal(ev, delay, flags);
 }
 
-bool Listener::PostponeAllEvents(uinttime_t time)
+bool Listener::PostponeAllEvents(inttime_t time)
 {
 	return EventContext::Get().GetEventQueue().PostponeAllEvents(this, time);
 }
 
-bool Listener::PostponeEvent(Event &ev, uinttime_t time)
+bool Listener::PostponeEvent(Event &ev, inttime_t time)
 {
 	return EventContext::Get().GetEventQueue().PostponeEvent(this, ev, time);
 }
@@ -523,58 +529,30 @@ bool Listener::ProcessEvent(Event* ev)
 
 bool Listener::ProcessEvent(Event& ev)
 {
-	const ClassDef* const c = classinfo();
-	const ResponseDefClass* responses = NULL;
-	Response response = NULL;
-
-	if (!ev.Num())
-	{
-		/*
-#ifdef _DEBUG
-		EVENT_DPrintf("^~^~^ Failed execution of event '%s' for class '%s'\n"), ev.name.c_str(), c->classname;
-#else
-		EVENT_DPrintf("^~^~^ Failed execution of event for class '%s'\n"), c->classname;
-#endif
-		*/
-
-		return false;
-	}
-
-	responses = c->GetResponse(ev.Num());
-
-	if (responses == NULL)
-	{
-		return true;
-	}
-
-	response = responses->response;
-
 	try
 	{
-		if (response)
-		{
-			(this->*response)(&ev);
-		}
+		ProcessScriptEvent(ev);
 	}
-	catch (ScriptException& exc)
+	catch (std::exception& exc)
 	{
-		//ev.ErrorInternal(this, exc.string);
-		//glbs.DPrintf("%s\n"), exc.string.c_str();
-		std::ostream* dbg = GlobalOutput::Get().GetOutput(outputLevel_e::Debug);
-		if (dbg) *dbg << exc.string.c_str() << std::endl;
+		std::ostream* const dbg = GlobalOutput::Get().GetOutput(outputLevel_e::Debug);
+		if (dbg) {
+			*dbg << "^~^~^ " << exc.what() << std::endl;
+		}
+
+		return false;
 	}
 
 	return true;
 }
 
-bool Listener::ProcessScriptEvent(Event* ev)
+void Listener::ProcessScriptEvent(Event* ev)
 {
-	const bool result = ProcessScriptEvent(*ev);
+	ProcessScriptEvent(*ev);
 	delete ev;
-	return result;
 }
 
-bool Listener::ProcessScriptEvent(Event& ev)
+void Listener::ProcessScriptEvent(Event& ev)
 {
 	const ClassDef* const c = classinfo();
 	const ResponseDefClass *responses = NULL;
@@ -582,22 +560,14 @@ bool Listener::ProcessScriptEvent(Event& ev)
 
 	if (!ev.Num())
 	{
-		/*
-#ifdef _DEBUG
-		EVENT_Printf("^~^~^ Failed execution of event '%s' for class '%s'\n"), ev.name.c_str(), c->classname;
-#else
-		EVENT_Printf("^~^~^ Failed execution of event for class '%s'\n"), c->classname;
-#endif
-		*/
-
-		return false;
+		throw ListenerErrors::EventNotFound(*this);
 	}
 
 	responses = c->GetResponse(ev.Num());
 
 	if (responses == NULL)
 	{
-		return true;
+		throw ListenerErrors::EventListenerFailed(*this, ev.Num());
 	}
 
 	response = responses->response;
@@ -606,8 +576,6 @@ bool Listener::ProcessScriptEvent(Event& ev)
 	{
 		(this->*response)(&ev);
 	}
-
-	return true;
 }
 
 void Listener::ProcessContainerEvent(const con::Container<Event *>& conev)
@@ -651,11 +619,6 @@ ScriptVariableList *Listener::Vars()
 	}
 
 	return vars;
-}
-
-bool Listener::BroadcastEvent(const rawchar_t* name, Event &event)
-{
-	return BroadcastEvent(ScriptContext::Get().GetDirector().AddString(name), event);
 }
 
 bool Listener::BroadcastEvent(const_str name, Event &event)
@@ -712,11 +675,6 @@ bool Listener::BroadcastEvent(Event &event, ConList *listeners)
 	return found;
 }
 
-void Listener::CancelWaiting(const rawchar_t* name)
-{
-	CancelWaiting(ScriptContext::Get().GetDirector().AddString(name));
-}
-
 void Listener::CancelWaiting(const_str name)
 {
 	if (!m_WaitForList)
@@ -771,7 +729,7 @@ void Listener::CancelWaitingAll()
 	}
 
 	con::set_enum<const_str, ConList> en = *m_WaitForList;
-	con::Entry<const_str, ConList> *e;
+	const con::Entry<const_str, ConList> *e;
 	ConList stoppedListeners;
 
 	for (e = en.NextElement(); e; e = en.NextElement())
@@ -798,7 +756,7 @@ void Listener::CancelWaitingAll()
 	}
 }
 
-void Listener::CancelWaitingSources(const_str name, ConList &listeners, ConList &stoppedListeners)
+void Listener::CancelWaitingSources(const_str name, const ConList &listeners, ConList &stoppedListeners)
 {
 	for (uintptr_t i = listeners.NumObjects(); i > 0; i--)
 	{
@@ -811,11 +769,6 @@ void Listener::CancelWaitingSources(const_str name, ConList &listeners, ConList 
 	}
 }
 
-void Listener::Notify(const rawchar_t *name)
-{
-	Unregister(name);
-}
-
 void Listener::StoppedNotify()
 {
 }
@@ -824,13 +777,8 @@ void Listener::StartedWaitFor()
 {
 }
 
-void Listener::StoppedWaitFor(const_str name, bool bDeleting)
+void Listener::StoppedWaitFor(const_str, bool)
 {
-}
-
-void Listener::EndOn(const rawchar_t* name, Listener *listener)
-{
-	EndOn(ScriptContext::Get().GetDirector().AddString(name), listener);
 }
 
 void Listener::EndOn(const_str name, Listener *listener)
@@ -843,11 +791,6 @@ void Listener::EndOn(const_str name, Listener *listener)
 	ConList& list = m_EndList->addKeyValue(name);
 
 	list.AddUniqueObject(listener);
-}
-
-void Listener::Register(const rawchar_t* name, Listener *listener)
-{
-	Register(ScriptContext::Get().GetDirector().AddString(name), listener);
 }
 
 void Listener::Register(const_str name, Listener *listener)
@@ -881,12 +824,6 @@ void Listener::RegisterTarget(const_str name, Listener *listener)
 	list.AddObject(listener);
 }
 
-void Listener::Unregister(const rawchar_t* name)
-{
-	ScriptMaster& scriptManager = ScriptContext::Get().GetDirector();
-	Unregister(scriptManager.AddString(name));
-}
-
 void Listener::Unregister(const_str name)
 {
 	if (m_EndList)
@@ -912,7 +849,7 @@ void Listener::Unregister(const_str name)
 
 				if (listener)
 				{
-					if (listener == this && (name == STRING_REMOVE || name == STRING_DELETE || bDeleteSelf))
+					if (listener == this && (name == ConstStrings::Remove || name == ConstStrings::Delete || bDeleteSelf))
 					{
 						continue;
 					}
@@ -976,12 +913,6 @@ void Listener::Unregister(const_str name)
 	}
 }
 
-void Listener::Unregister(const rawchar_t* name, Listener *listener)
-{
-	ScriptMaster& scriptManager = ScriptContext::Get().GetDirector();
-	Unregister(scriptManager.AddString(name));
-}
-
 void Listener::Unregister(const_str name, Listener *listener)
 {
 	if (UnregisterSource(name, listener))
@@ -1015,13 +946,13 @@ void Listener::UnregisterAll()
 	}
 
 	con::set_enum<const_str, ConList> en = *m_NotifyList;
-	con::Entry<const_str, ConList> *e;
+	const con::Entry<const_str, ConList> *e;
 	ConList stoppedListeners;
 	con::Container<const_str> stoppedNames;
 
 	en = *m_NotifyList;
 
-	for (e = en.NextElement(); e != NULL; e = en.NextElement())
+	for (e = en.NextElement(); e; e = en.NextElement())
 	{
 		UnregisterTargets(e->Key(), e->Value(), stoppedListeners, stoppedNames);
 	}
@@ -1122,7 +1053,7 @@ bool Listener::UnregisterTarget(const_str name, Listener *listener)
 	return found;
 }
 
-void Listener::UnregisterTargets(const_str name, ConList &listeners, ConList &stoppedListeners, con::Container<const_str> &stoppedNames)
+void Listener::UnregisterTargets(const_str name, const ConList &listeners, ConList &stoppedListeners, con::Container<const_str> &stoppedNames)
 {
 	for (uintptr_t i = listeners.NumObjects(); i > 0; i--)
 	{
@@ -1142,10 +1073,6 @@ void Listener::AbortRegistration(const_str name, Listener *l)
 	l->UnregisterTarget(name, this);
 }
 
-size_t Listener::RegisterSize(const rawchar_t* name) const
-{
-	return RegisterSize(ScriptContext::Get().GetDirector().AddString(name));
-}
 
 size_t Listener::RegisterSize(const_str name) const
 {
@@ -1168,11 +1095,6 @@ size_t Listener::RegisterSize(const_str name) const
 	}
 }
 
-size_t Listener::WaitingSize(const rawchar_t* name) const
-{
-	return WaitingSize(ScriptContext::Get().GetDirector().AddString(name));
-}
-
 size_t Listener::WaitingSize(const_str name) const
 {
 	ConList *listeners;
@@ -1192,11 +1114,6 @@ size_t Listener::WaitingSize(const_str name) const
 	{
 		return 0;
 	}
-}
-
-bool Listener::WaitTillDisabled(const rawchar_t* s)
-{
-	return WaitTillDisabled(ScriptContext::Get().GetDirector().AddString(s));
 }
 
 bool Listener::WaitTillDisabled(const_str s)
@@ -1223,9 +1140,8 @@ int Listener::GetFlags(Event *event) const
 
 void Listener::EventDelete(Event *ev)
 {
-	if (ev->NumArgs())
-	{
-		ScriptError("Arguments not allowed.");
+	if (ev->NumArgs()) {
+		throw ScriptException("Arguments not allowed");
 	}
 
 	delete this;
@@ -1248,9 +1164,8 @@ void Listener::GetClassname(Event *ev)
 
 void Listener::CommandDelay(Event *ev)
 {
-	if (ev->NumArgs() < 2)
-	{
-		ScriptError("Not enough arguments.");
+	if (ev->NumArgs() < 2) {
+		throw ScriptException("Not enough arguments.");
 	}
 
 	EventSystem& eventSystem = EventSystem::Get();
@@ -1295,9 +1210,8 @@ void Listener::EventEndOn(Event *ev)
 {
 	const_str name = ev->GetConstString(1);
 
-	if (ScriptContext::Get().GetDirector().CurrentThread() == this)
-	{
-		ScriptError("cannot end for the current thread!");
+	if (ScriptContext::Get().GetDirector().CurrentThread() == this) {
+		throw ScriptException("cannot end the current thread!");
 	}
 
 	EndOn(name, ScriptContext::Get().GetDirector().CurrentThread());
@@ -1310,9 +1224,7 @@ void Listener::EventGetOwner(Event *ev)
 
 void Listener::EventNotify(Event *ev)
 {
-	xstr name = ev->GetString(1);
-
-	Notify(name);
+	Unregister(ev->GetConstString(1));
 }
 
 void Listener::EventThrow(Event *ev)
@@ -1329,16 +1241,16 @@ void Listener::WaitTill(Event *ev)
 {
 	const_str name;
 
-	if (ScriptContext::Get().GetDirector().CurrentThread() == this)
-	{
-		ScriptError("cannot waittill on the current thread!");
+	if (ScriptContext::Get().GetDirector().CurrentThread() == this) {
+		throw ScriptException("cannot waittill on the current thread!");
 	}
 
 	name = ev->GetConstString(1);
 
 	if (WaitTillDisabled(name))
 	{
-		ScriptError("invalid waittill %s for '%s'"), ScriptContext::Get().GetDirector().GetString(name).c_str(), Class::GetClassname();
+		const ScriptMaster& director = ScriptContext::Get().GetDirector();
+		throw ScriptException("invalid waittill " + director.GetDictionary().Get(name) + " for " + Class::GetClassname());
 	}
 
 	Register(name, ScriptContext::Get().GetDirector().CurrentThread());
@@ -1349,9 +1261,8 @@ void Listener::WaitTillTimeout(Event *ev)
 	const_str name;
 	float timeout_time;
 
-	if (ScriptContext::Get().GetDirector().CurrentThread() == this)
-	{
-		ScriptError("cannot waittill on the current thread!");
+	if (ScriptContext::Get().GetDirector().CurrentThread() == this) {
+		throw ScriptException("cannot waittill on the current thread!");
 	}
 
 	timeout_time = ev->GetFloat(1);
@@ -1359,7 +1270,8 @@ void Listener::WaitTillTimeout(Event *ev)
 
 	if (WaitTillDisabled(name))
 	{
-		ScriptError("invalid waittill %s for '%s'"), ScriptContext::Get().GetDirector().GetString(name).c_str(), Class::GetClassname();
+		const ScriptMaster& director = ScriptContext::Get().GetDirector();
+		throw ScriptException("invalid waittill " + director.GetDictionary().Get(name) + " for " + Class::GetClassname());
 	}
 
 	Register(name, ScriptContext::Get().GetDirector().CurrentThread());
@@ -1372,9 +1284,8 @@ void Listener::WaitTillAny(Event *ev)
 {
 	const_str name;
 
-	if (ScriptContext::Get().GetDirector().CurrentThread() == this)
-	{
-		ScriptError("cannot waittill any on the current thread!");
+	if (ScriptContext::Get().GetDirector().CurrentThread() == this) {
+		throw ScriptException("cannot waittill any on the current thread!");
 	}
 
 	for (size_t i = 1; i <= ev->NumArgs(); i++)
@@ -1383,7 +1294,8 @@ void Listener::WaitTillAny(Event *ev)
 
 		if (WaitTillDisabled(name))
 		{
-			ScriptError("invalid waittill %s for '%s'"), ScriptContext::Get().GetDirector().GetString(name).c_str(), Class::GetClassname();
+			const ScriptMaster& director = ScriptContext::Get().GetDirector();
+			throw ScriptException("invalid waittill " + director.GetDictionary().Get(name) + " for " + Class::GetClassname());
 		}
 
 		Register(name, ScriptContext::Get().GetDirector().CurrentThread());
@@ -1395,9 +1307,8 @@ void Listener::WaitTillAnyTimeout(Event *ev)
 	const_str name;
 	float timeout_time;
 
-	if (ScriptContext::Get().GetDirector().CurrentThread() == this)
-	{
-		ScriptError("cannot waittill any on the current thread!");
+	if (ScriptContext::Get().GetDirector().CurrentThread() == this) {
+		throw ScriptException("cannot waittill any on the current thread!");
 	}
 
 	timeout_time = ev->GetFloat(1);
@@ -1408,7 +1319,8 @@ void Listener::WaitTillAnyTimeout(Event *ev)
 
 		if (WaitTillDisabled(name))
 		{
-			ScriptError("invalid waittill %s for '%s'"), ScriptContext::Get().GetDirector().GetString(name).c_str(), Class::GetClassname();
+			const ScriptMaster& director = ScriptContext::Get().GetDirector();
+			throw ScriptException("invalid waittill " + director.GetDictionary().Get(name) + " for " + Class::GetClassname());
 		}
 
 		Register(name, ScriptContext::Get().GetDirector().CurrentThread());
@@ -1420,113 +1332,79 @@ void Listener::WaitTillAnyTimeout(Event *ev)
 
 void Listener::ExecuteScriptInternal(Event *ev, ScriptVariable& returnValue)
 {
-	SafePtr< ScriptThread > thread = CreateScriptInternal(ev->GetValue(1));
-	ScriptThread *currentThread;
-
-	thread->ScriptExecute(&ev->GetValue(2), ev->NumArgs() - 1, returnValue);
-
-	currentThread = ScriptContext::Get().GetDirector().CurrentThread();
+	ScriptThread* const thread = CreateScriptInternal(ev->GetValue(1));
+	thread->ScriptExecute(ev->GetListView(2), returnValue);
 }
 
 void Listener::ExecuteThreadInternal(Event *ev, ScriptVariable& returnValue)
 {
-	SafePtr< ScriptThread > thread = CreateThreadInternal(ev->GetValue(1));
-	ScriptThread *currentThread;
-
-	thread->ScriptExecute(&ev->GetValue(2), ev->NumArgs() - 1, returnValue);
-
-	currentThread = ScriptContext::Get().GetDirector().CurrentThread();
+	ScriptThread* const thread = CreateThreadInternal(ev->GetValue(1));
+	thread->ScriptExecute(ev->GetListView(2), returnValue);
 }
 
 void Listener::WaitExecuteScriptInternal(Event *ev, ScriptVariable& returnValue)
 {
-	ScriptThread *thread = CreateScriptInternal(ev->GetValue(1));
+	ScriptThread* const thread = CreateScriptInternal(ev->GetValue(1));
 
 	thread->GetScriptClass()->Register(const_str(0), ScriptContext::Get().GetDirector().CurrentThread());
 
-	thread->ScriptExecute(&ev->GetValue(2), ev->NumArgs() - 1, returnValue);
+	thread->ScriptExecute(ev->GetListView(2), returnValue);
 }
 
 void Listener::WaitExecuteThreadInternal(Event *ev, ScriptVariable& returnValue)
 {
-	ScriptThread *thread = CreateThreadInternal(ev->GetValue(1));
+	ScriptThread* const thread = CreateThreadInternal(ev->GetValue(1));
 
-	thread->GetScriptClass()->Register(const_str(0), ScriptContext::Get().GetDirector().CurrentThread());
+	thread->Register(const_str(0), ScriptContext::Get().GetDirector().CurrentThread());
 
-	thread->ScriptExecute(&ev->GetValue(2), ev->NumArgs() - 1, returnValue);
+	thread->ScriptExecute(ev->GetListView(2), returnValue);
 }
 
 ScriptThread *Listener::CreateScriptInternal(const ScriptVariable& label)
 {
-	ScriptThread *thread = NULL;
+	ScriptMaster& director = ScriptContext::Get().GetDirector();
 
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
-		if (label.GetType() == variableType_e::ConstString)
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(ScriptContext::Get().GetDirector().GetGameScript(label.stringValue()), this, "");
-		else
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(ScriptContext::Get().GetDirector().GetGameScript(label.constStringValue()), this, "");
+		const ProgramScript* const scr = director.GetProgramScript(label.constStringValue());
+		return director.CreateScriptThread(scr, this, StringResolvable());
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
-		const ProgramScript* scr;
-		ScriptVariable *script = label[1];
-		ScriptVariable *labelname = label[2];
+		const ScriptVariable& script = label[1];
+		const ScriptVariable& labelname = label[2];
 
-		if (script->GetType() == variableType_e::ConstString)
-			scr = ScriptContext::Get().GetDirector().GetGameScript(script->constStringValue());
-		else
-			scr = ScriptContext::Get().GetDirector().GetGameScript(script->stringValue());
-
-		if (labelname->GetType() == variableType_e::ConstString)
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(scr, this, labelname->constStringValue());
-		else
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(scr, this, labelname->stringValue());
+		const ProgramScript* const scr = director.GetProgramScript(script.constStringValue());
+		return director.CreateScriptThread(scr, this, labelname.constStringValue());
 	}
 	else
 	{
-		ScriptError("Listener::CreateScriptInternal: bad label type '%s'"), label.GetTypeName();
+		throw ListenerErrors::BadLabelType(label.GetTypeName());
 	}
-
-	return thread;
 }
 
 ScriptThread *Listener::CreateThreadInternal(const ScriptVariable& label)
 {
-	const ProgramScript *scr;
-	ScriptThread *thread = NULL;
+	ScriptMaster& director = ScriptContext::Get().GetDirector();
 
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
-		ScriptClass *scriptClass = ScriptContext::Get().GetDirector().CurrentScriptClass();
-		scr = scriptClass->GetScript();
-
-		if (label.GetType() == variableType_e::ConstString)
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(scr, this, label.constStringValue());
-		else
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(scr, this, label.stringValue());
+		const ScriptClass* const scriptClass = director.CurrentScriptClass();
+		const ProgramScript* const scr = scriptClass->GetScript();
+		return director.CreateScriptThread(scr, this, label.constStringValue());
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
-		ScriptVariable *script = label[1];
-		ScriptVariable *labelname = label[2];
+		const ScriptVariable& script = label[1];
+		const ScriptVariable& labelname = label[2];
 
-		if (script->GetType() == variableType_e::ConstString)
-			scr = ScriptContext::Get().GetDirector().GetGameScript(script->constStringValue());
-		else
-			scr = ScriptContext::Get().GetDirector().GetGameScript(script->stringValue());
-
-		if (labelname->GetType() == variableType_e::ConstString)
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(scr, this, labelname->constStringValue());
-		else
-			thread = ScriptContext::Get().GetDirector().CreateScriptThread(scr, this, labelname->stringValue());
+		const ProgramScript* const scr = director.GetProgramScript(script.constStringValue());
+		return director.CreateScriptThread(scr, this, labelname.constStringValue());
 	}
 	else
 	{
-		ScriptError("ScriptClass::CreateThreadInternal: bad argument format");
+		throw ListenerErrors::BadLabelType(label.GetTypeName());
 	}
-
-	return thread;
 }
 
 void Listener::CreateReturnThread(Event *ev)
@@ -1601,42 +1479,70 @@ void Listener::WaitExecuteScript(Event *ev)
 	WaitExecuteScriptInternal(ev, returnValue);
 }
 
-void Listener::ExecuteThread(const rawchar_t* scriptName, const rawchar_t* labelName, Event *params)
+ListenerErrors::BadLabelType::BadLabelType(const rawchar_t* typeNameValue)
+	: typeName(typeNameValue)
 {
-	ScriptThread *thread = ScriptContext::Get().GetDirector().CreateThread(scriptName, labelName, this);
-
-	try
-	{
-		if (!thread)
-		{
-			return;
-		}
-
-		thread->Execute(params);
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("Listener::ExecuteThread: %s\n"), exc.string.c_str();
-	}
 }
 
-void Listener::ExecuteThread(const rawchar_t* scriptName, const rawchar_t* labelName, Event& params)
+const mfuse::rawchar_t* ListenerErrors::BadLabelType::GetTypeName() const
 {
-	ScriptThread *thread = ScriptContext::Get().GetDirector().CreateThread(scriptName, labelName, this);
+	return typeName;
+}
 
-	try
-	{
-		if (!thread)
-		{
-			return;
-		}
+const char* ListenerErrors::BadLabelType::what() const noexcept
+{
+	if (!filled()) {
+		fill("Listener::CreateScriptInternal: bad label type '" + xstr(GetTypeName()) + "'");
+	}
 
-		thread->Execute(params);
+	return Messageable::what();
+}
+
+ListenerErrors::EventError::EventError(const Listener& lPtr)
+	: l(lPtr)
+{
+}
+
+const Listener& ListenerErrors::EventError::GetListener() const
+{
+	return l;
+}
+
+ListenerErrors::EventNotFound::EventNotFound(const Listener& lPtr)
+	: EventError(lPtr)
+{
+}
+
+const char* ListenerErrors::EventNotFound::what() const noexcept
+{
+	if (!filled()) {
+		fill("Failed execution of event for class '" + xstr(GetListener().classinfo()->GetClassName()) + "'");
 	}
-	catch (ScriptException&)
+
+	return Messageable::what();
+}
+
+ListenerErrors::EventListenerFailed::EventListenerFailed(const Listener& lPtr, eventNum_t eventNumVal)
+	: EventError(lPtr)
+	, eventNum(eventNumVal)
+{
+}
+
+eventNum_t ListenerErrors::EventListenerFailed::GetEventNum() const
+{
+	return eventNum;
+}
+
+const char* ListenerErrors::EventListenerFailed::what() const noexcept
+{
+	if (!filled())
 	{
-		//glbs.DPrintf("Listener::ExecuteThread: %s\n"), exc.string.c_str();
+		const EventSystem& evt = EventSystem::Get();
+		const xstr eventName = evt.GetEventName(eventNum);
+		fill("Failed execution of event '" + eventName + "' for class '" + xstr(GetListener().classinfo()->GetClassName()) + "'");
 	}
+
+	return Messageable::what();
 }
 
 MFUS_CLASS_DECLARATION(Class, Listener, NULL)

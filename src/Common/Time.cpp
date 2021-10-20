@@ -15,7 +15,7 @@ uinttime_t TimeManager::Frame()
 
 	steady_clock::duration deltaClock = clockTime - lastClockTime;
 	deltaTime = duration_cast<milliseconds>(deltaClock).count();
-	currentTime += deltaTime;
+	scaledTime += deltaTime;
 
 	lastClockTime = clockTime;
 	
@@ -30,7 +30,7 @@ uinttime_t TimeManager::Frame(float timeScale)
 
 	steady_clock::duration deltaClock = clockTime - lastClockTime;
 	deltaTime = duration_cast<milliseconds>(deltaClock).count();
-	currentTime += deltaTime;
+	scaledTime += uinttime_t(deltaTime * timeScale);
 
 	lastClockTime = clockTime;
 
@@ -42,14 +42,22 @@ uinttime_t TimeManager::GetDelta() const
 	return deltaTime;
 }
 
+uinttime_t TimeManager::GetScaledTime() const
+{
+	return scaledTime;
+}
+
 uinttime_t TimeManager::GetTime() const
 {
-	return currentTime;
+	using namespace std::chrono;
+
+	time_point<steady_clock> clockTime = steady_clock::now();
+	return duration_cast<milliseconds>(clockTime - startTime).count();
 }
 
 void TimeManager::Reset()
 {
 	startTime = std::chrono::steady_clock::now();
 	lastClockTime = startTime;
-	currentTime = 0;
+	scaledTime = 0;
 }

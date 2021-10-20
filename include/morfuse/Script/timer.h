@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Script/Class.h"
-#include "../Container/Container.h"
 #include "../Common/Time.h"
+#include "../Container/Container.h"
 
 namespace mfuse
 {
@@ -34,7 +34,8 @@ namespace mfuse
 		Class* GetNextElement(uint64_t& foundTime);
 
 		void SetDirty();
-		bool IsDirty();
+		bool IsDirty() const;
+		bool HasAnyElement() const;
 		void SetTime(uint64_t time);
 
 		static void ArchiveElement(Archiver& arc, Element *e);

@@ -1,9 +1,16 @@
 #include <morfuse/Script/Context.h>
+#include <morfuse/Script/StateScript.h>
+#include <morfuse/Script/ProgramScript.h>
+#include <morfuse/Script/SourceException.h>
+#include <morfuse/Common/membuf.h>
+
+#include "helpers/test.h"
 
 #include <fstream>
 #include <iostream>
 
 using namespace mfuse;
+
 
 static const char scriptContent_level1[] =
 "\n\n\n"
@@ -82,15 +89,33 @@ static const char scriptContent_level7[] =
 "}\n"
 "end\n";
 
+static const char scriptContent_level8[] =
+"main:\n"
+"local.arr[0] = 1\n"
+"local.arr[1] = 2\n";
+
+static const char scriptContent_level9[] =
+"main:\n"
+"exec test.scr"
+"thread test.scr::main";
+
+static const char scriptContent_level10[] =
+"main:\n"
+"local.i = waitthread other 1\n"
+"local.j = -1\n"
+"if (local.i == local.j) end -1\n"
+"end 0\n"
+"other local.var:\n"
+"end -local.var\n";
+
 void level1(ScriptMaster& director)
 {
 	// Compile the script and return the game script object
-	const ProgramScript* const script = director.GetScript("level1", scriptContent_level1, sizeof(scriptContent_level1));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level1", scriptContent_level1);
 
 	// Execute the thread from the beginning of the script
 	Event parms;
-	director.ExecuteThread(script, nullptr, parms);
+	director.ExecuteThread(script, parms);
 
 	uint32_t intValue = parms.GetInteger(1);
 	assert(intValue == (((1000 + 200) >> 1) + 1) * 2 / 3 * 4 + 5);
@@ -98,11 +123,10 @@ void level1(ScriptMaster& director)
 
 void level2(ScriptMaster& director)
 {
-	const ProgramScript* const script = director.GetScript("level2", scriptContent_level2, sizeof(scriptContent_level2));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level2", scriptContent_level2);
 
 	Event parms;
-	director.ExecuteThread(script, nullptr, parms);
+	director.ExecuteThread(script, parms);
 
 	const str retVal = parms.GetString(1);
 	assert(!retVal.icmp("slash/dot.ccctest"));
@@ -110,11 +134,10 @@ void level2(ScriptMaster& director)
 
 void level3(ScriptMaster& director)
 {
-	const ProgramScript* const script = director.GetScript("level3", scriptContent_level3, sizeof(scriptContent_level3));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level3", scriptContent_level3);
 
 	Event parms;
-	director.ExecuteThread(script, nullptr, parms);
+	director.ExecuteThread(script, parms);
 
 	const uint32_t intValue = parms.GetInteger(1);
 	assert(intValue == 571);
@@ -122,11 +145,10 @@ void level3(ScriptMaster& director)
 
 void level4(ScriptMaster& director)
 {
-	const ProgramScript* const script = director.GetScript("level4", scriptContent_level4, sizeof(scriptContent_level4));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level4", scriptContent_level4);
 
 	Event parms;
-	director.ExecuteThread(script, nullptr, parms);
+	director.ExecuteThread(script, parms);
 
 	ScriptVariable& var = parms.GetValue(1);
 	ScriptVariable* row1 = var.constArrayValue()[1].constArrayValue();
@@ -137,11 +159,10 @@ void level4(ScriptMaster& director)
 
 void level5(ScriptMaster& director)
 {
-	const ProgramScript* const script = director.GetScript("level5", scriptContent_level5, sizeof(scriptContent_level5));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level5", scriptContent_level5);
 
 	Event parms;
-	director.ExecuteThread(script, nullptr, parms);
+	director.ExecuteThread(script, parms);
 
 	const uint32_t intValue = parms.GetInteger(1);
 	assert(intValue == (((1 | 2 | 4 | 8 & 16) + 10) ^ 3));
@@ -149,14 +170,13 @@ void level5(ScriptMaster& director)
 
 void level6(ScriptMaster& director)
 {
-	const ProgramScript* const script = director.GetScript("level6", scriptContent_level6, sizeof(scriptContent_level6));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level6", scriptContent_level6);
 
 	Event parms;
 	parms.AddInteger(100);
 	parms.AddInteger(30);
 	parms.AddInteger(300);
-	director.ExecuteThread(script, nullptr, parms);
+	director.ExecuteThread(script, parms);
 
 	const uint32_t intValue = parms.GetInteger(parms.NumArgs());
 	assert(intValue == ((100 / 30) * 300));
@@ -164,10 +184,34 @@ void level6(ScriptMaster& director)
 
 void level7(ScriptMaster& director)
 {
-	const ProgramScript* const script = director.GetScript("level7", scriptContent_level7, sizeof(scriptContent_level7));
-	assert(script);
+	const ProgramScript* const script = compile(director, "level7", scriptContent_level7);
 
 	director.ExecuteThread(script);
+}
+
+void level8(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level8", scriptContent_level8);
+
+	director.ExecuteThread(script);
+	director.ExecuteThread(script);
+}
+
+void level9(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level9", scriptContent_level9);
+
+	director.ExecuteThread(script);
+}
+
+void level10(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level10", scriptContent_level10);
+
+	Event parms;
+	director.ExecuteThread(script, parms);
+
+	assert(parms.GetInteger(1) == -1);
 }
 
 void m3l1a(ScriptMaster& director)
@@ -187,53 +231,36 @@ void m3l1a(ScriptMaster& director)
 		return;
 	}
 
-	char* scriptFileData = new char[fsize + 1];
-	stream.read(scriptFileData, fsize);
-	scriptFileData[fsize] = 0;
-	stream.close();
-
-	const ProgramScript* const script = director.GetScript("m3l1a", scriptFileData, fsize);
-
-	delete[] scriptFileData;
+	const ProgramScript* const script = director.GetProgramScript("m3l1a", stream);
 
 	//assert(script);
 	director.ExecuteThread(script);
 }
 
+const handler_t list[] =
+{
+	{ "level1", &level1 },
+	{ "level2", &level2 },
+	{ "level3", &level3 },
+	{ "level4", &level4 },
+	{ "level5", &level5 },
+	{ "level6", &level6 },
+	{ "level7", &level7 },
+	{ "level8", &level8 },
+	{ "level9", &level9 },
+	{ "level10", &level10 },
+	{ "m3l1a", &m3l1a },
+};
+
 int main(int argc, char* argv[])
 {
-	GlobalOutput::Get().SetOutputStream(outputLevel_e::Debug, &std::cout);
-	GlobalOutput::Get().SetOutputStream(outputLevel_e::Warn, &std::cout);
-	GlobalOutput::Get().SetOutputStream(outputLevel_e::Error, &std::cout);
-	GlobalOutput::Get().SetOutputStream(outputLevel_e::Output, &std::cout);
-
-	// Initialize the event system
-	EventSystem::Get();
-
 	ScriptContext context;
-
-	context.GetOutputInfo().SetOutputStream(outputLevel_e::Debug, &std::cout);
-	context.GetOutputInfo().SetOutputStream(outputLevel_e::Warn, &std::cout);
-	context.GetOutputInfo().SetOutputStream(outputLevel_e::Error, &std::cout);
-	context.GetOutputInfo().SetOutputStream(outputLevel_e::Output, &std::cout);
-
-	ScriptSettings& settings = context.GetSettings();
-	settings.SetDeveloperEnabled(false);
-
-	// Get the script master
-	ScriptMaster& director = context.GetDirector();
-
-	level1(director);
-	level2(director);
-	level3(director);
-	level4(director);
-	level5(director);
-	level6(director);
-	level7(director);
-	m3l1a(director);
+	testAll(context, list);
 
 	// Execute all pending events
 	context.Execute();
+
+	assert(context.IsIdle());
 
 	return 0;
 }

@@ -6,6 +6,8 @@
 #include "../Common/MEM/DefaultAlloc.h"
 #include "../Common/MEM/PreAllocator.h"
 #include "../Common/rawchar.h"
+#include "StringResolvable.h"
+#include "ScriptException.h"
 #include "ScriptOpcodes.h"
 
 namespace mfuse
@@ -32,10 +34,8 @@ namespace mfuse
 
 		void Archive(Archiver& arc) override;
 
-		bool AddLabel(const rawchar_t* label, const opval_t* pos, bool private_section = false);
 		bool AddLabel(const_str label, const opval_t* pos, bool private_section = false);
-		const opval_t* FindLabel(const rawchar_t* label) const;
-		const opval_t* FindLabel(const_str label) const;
+		const script_label_t* FindLabel(const_str label) const;
 		void Reserve(size_t count);
 
 		ProgramScript* GetParent() const;
@@ -47,5 +47,25 @@ namespace mfuse
 
 		/** The parent game script. */
 		ProgramScript* m_Parent;
+	};
+
+	namespace StateScriptErrors
+	{
+		class Base : public ScriptExceptionBase {};
+
+		class mfuse_PUBLIC LabelNotFound : public Base, public Messageable
+		{
+		public:
+			mfuse_LOCAL LabelNotFound(const StringResolvable& label, const StringResolvable& fileName);
+			mfuse_LOCAL virtual ~LabelNotFound();
+
+			mfuse_EXPORTS const StringResolvable& GetLabel() const noexcept;
+			mfuse_EXPORTS const StringResolvable& GetFileName() const noexcept;
+			mfuse_LOCAL const char* what() const noexcept override;
+
+		private:
+			StringResolvable fileName;
+			StringResolvable label;
+		};
 	};
 }

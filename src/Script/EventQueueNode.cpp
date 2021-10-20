@@ -12,9 +12,9 @@ EventQueueNode::EventQueueNode()
 }
 
 EventQueueNode::EventQueueNode(Listener* initialListener)
-	: prev(nullptr)
+	: m_sourceobject(initialListener)
+	, prev(nullptr)
 	, next(nullptr)
-	, m_sourceobject(initialListener)
 {
 
 }
@@ -24,7 +24,7 @@ EventQueueNode::~EventQueueNode()
 
 }
 
-void* EventQueueNode::operator new(size_t size)
+void* EventQueueNode::operator new(size_t)
 {
 	return EventContext::Get().GetAllocator().GetBlock<EventQueueNode>().Alloc();
 }

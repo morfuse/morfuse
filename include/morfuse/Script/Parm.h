@@ -19,12 +19,5 @@ namespace mfuse
 	private:
 		ListenerPtr other;
 		ListenerPtr owner;
-
-		// Failure variables
-		bool movedone;
-		bool movefail;
-		bool motionfail;
-		bool upperfail;
-		bool sayfail;
 	};
 }

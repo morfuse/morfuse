@@ -39,9 +39,11 @@ namespace mfuse
 		mfuse_EXPORTS EventContext();
 		mfuse_EXPORTS ~EventContext();
 
-		void ProcessEvents(float timeScale = 1.f);
-		const TimeManager& GetTimeManager() const;
-		EventQueue& GetEventQueue();
+		mfuse_EXPORTS void ProcessEvents(float timeScale = 1.f);
+		mfuse_EXPORTS const TimeManager& GetTimeManager() const;
+		mfuse_EXPORTS EventQueue& GetEventQueue();
+		mfuse_EXPORTS const EventQueue& GetEventQueue() const;
+
 		DefaultEventAllocator& GetAllocator();
 
 	protected:

@@ -1,14 +1,17 @@
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Script/ScriptThread.h>
 #include <morfuse/Script/ScriptClass.h>
 #include <morfuse/Script/ScriptVM.h>
 #include <morfuse/Script/ScriptException.h>
 #include <morfuse/Script/Level.h>
 #include <morfuse/Script/SimpleEntity.h>
-#include <morfuse/Script/ConstStr.h>
 #include <morfuse/Script/EventQueue.h>
 #include <morfuse/Script/EventSystem.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptMaster.h>
+#include <morfuse/Script/PredefinedString.h>
+#include <morfuse/Script/Archiver.h>
+#include <morfuse/Script/SpawnArgs.h>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -445,6 +448,7 @@ EventDef EV_ScriptThread_IsDefined
 	evType_e::Return
 );
 
+/*
 EventDef EV_ScriptThread_FileOpen
 (
 	"fopen",
@@ -584,6 +588,7 @@ EventDef EV_ScriptThread_FileFlush
 	"Flushes given stream. Writes all unsaved data from stream buffer to stream",
 	evType_e::Return
 );
+*/
 
 EventDef EV_ScriptThread_FlagClear
 (
@@ -1079,13 +1084,14 @@ using namespace mfuse;
 
 ScriptThread::ScriptThread()
 {
-	m_ScriptVM = NULL;
+	m_ScriptVM = nullptr;
+	m_ThreadState = threadState_e::Running;
 }
 
 ScriptThread::ScriptThread(ScriptClass *scriptClass, const opval_t *pCodePos)
 {
 	m_ScriptVM = new ScriptVM(scriptClass, pCodePos, this);
-	m_ScriptVM->m_ThreadState = threadState_e::Running;
+	m_ThreadState = threadState_e::Running;
 }
 
 ScriptThread::~ScriptThread()
@@ -1097,31 +1103,29 @@ ScriptThread::~ScriptThread()
 		return;
 	}
 
-	m_ScriptVM = NULL;
-	if (vm->ThreadState() == threadState_e::Waiting)
+	m_ScriptVM = nullptr;
+	if (m_ThreadState == threadState_e::Timing)
 	{
-		vm->m_ThreadState = threadState_e::Running;
+		m_ThreadState = threadState_e::Running;
 		ScriptContext::Get().GetDirector().RemoveTiming(this);
 	}
-	else if (vm->ThreadState() == threadState_e::Suspended)
+	else if (m_ThreadState == threadState_e::Waiting)
 	{
-		vm->m_ThreadState = threadState_e::Running;
+		m_ThreadState = threadState_e::Running;
 		CancelWaitingAll();
 	}
 
 	vm->NotifyDelete();
 }
 
-void* ScriptThread::operator new(size_t size)
+void* ScriptThread::operator new(size_t)
 {
 	return ScriptContext::Get().GetAllocator().GetBlock<ScriptThread>().Alloc();
-	//return allocateMemory(size);
 }
 
 void ScriptThread::operator delete(void* ptr)
 {
 	ScriptContext::Get().GetAllocator().GetBlock<ScriptThread>().Free(ptr);
-	//return freeMemory(ptr);
 }
 
 void ScriptThread::CreateReturnThread(Event *ev)
@@ -1146,7 +1150,13 @@ void ScriptThread::ExecuteScript(Event* ev)
 
 void ScriptThread::EventCreateListener(Event* ev)
 {
-	ev->AddListener(new Listener());
+	Listener* const l = new Listener();
+
+	ScriptContext& context = ScriptContext::Get();
+	// make sure to free the listener afterwards
+	context.GetTrackedInstances().Add(l);
+
+	ev->AddListener(l);
 }
 
 void ScriptThread::CharToInt(Event* ev)
@@ -1156,6 +1166,7 @@ void ScriptThread::CharToInt(Event* ev)
 	ev->AddInteger(c[0u]);
 }
 
+/*
 void ScriptThread::FileOpen(Event* ev)
 {
 	xstr filename;
@@ -1211,30 +1222,6 @@ void ScriptThread::FileClose(Event* ev)
 		ScriptError("Wrong arguments count for fclose!\n");
 
 	id = ev->GetInteger(1);
-
-	/*if( (int)scriptFiles[0].f != id && (int)scriptFiles[1].f != id )
-	{
-	gi.Printf("Wrong file handle for fclose!\n");
-	return;
-	}
-
-	if( (int)scriptFiles[0].f == id )
-	{
-	scriptFiles[0].inUse = 0;
-	fclose( scriptFiles[0].f );
-	return;
-	}
-	else if( (int)scriptFiles[1].f == id )
-	{
-	scriptFiles[1].inUse = 0;
-	fclose( scriptFiles[1].f );
-	return;
-	}
-	else
-	{
-	gi.Printf("Unknown error while closing file - fclose!\n");
-	return;
-	}*/
 
 	f = (FILE *)id;
 
@@ -1896,89 +1883,46 @@ void ScriptThread::FileRemoveDirectory(Event* ev)
 	ev->AddInteger(ret);
 	return;
 }
+*/
 
 void ScriptThread::GetArrayKeys(Event* ev)
 {
-	Entity *ent = NULL;
-	ScriptVariable array;
-	ScriptVariable *value;
-	size_t arraysize;
+	const ScriptVariable& array = ev->GetValue(1);
 
-	/* Retrieve the array */
-	array = ev->GetValue(1);
+	const size_t arraySize = array.arraysize();
 
-	/* Cast the array */
-	array.CastConstArrayValue();
-	arraysize = array.arraysize();
+	ScriptVariable constArray;
+	// create a const array for holding all keys
+	constArray.createConstArrayValue(arraySize);
 
-	if (arraysize < 1) {
-		return;
-	}
-
-	ScriptVariable *ref = new ScriptVariable, *newArray = new ScriptVariable;
-
-	ref->setRefValue(newArray);
-
-	for (uintptr_t i = 1; i <= arraysize; i++)
+	size_t i = 1;
+	for (ScriptVariableIterator it(array); it; ++it, ++i)
 	{
-		value = array[i];
-
-		/* Get the array's name */
-		//xstr name = value->getName();
-
-		//glbs.Printf("name = %s\n", value->GetTypeName());
-
-		ScriptVariable *newIndex = new ScriptVariable, *newValue = new ScriptVariable;
-
-		newIndex->setIntValue((int)i);
-		newValue->setStringValue("NIL");
-
-		//name.removeRef();
-
-		ref->setArrayAt(*newIndex, *newValue);
+		// add all keys to the array
+		constArray[i] = it.GetKey();
 	}
 
-	ev->AddValue(*newArray);
+	ev->AddValue(std::move(constArray));
 }
 
 void ScriptThread::GetArrayValues(Event* ev)
 {
-	Entity *ent = NULL;
-	ScriptVariable array;
-	ScriptVariable *value;
-	size_t arraysize;
+	const ScriptVariable& array = ev->GetValue(1);
 
-	/* Retrieve the array */
-	array = ev->GetValue(1);
+	const size_t arraySize = array.arraysize();
 
-	if (array.GetType() == variableType_e::None) {
-		return;
-	}
+	ScriptVariable constArray;
+	// create a const array for holding all values
+	constArray.createConstArrayValue(arraySize);
 
-	/* Cast the array */
-	array.CastConstArrayValue();
-	arraysize = array.arraysize();
-
-	if (arraysize < 1) {
-		return;
-	}
-
-	ScriptVariable *ref = new ScriptVariable, *newArray = new ScriptVariable;
-
-	ref->setRefValue(newArray);
-
-	for (uintptr_t i = 1; i <= arraysize; i++)
+	size_t i = 1;
+	for (ScriptVariableIterator it(array); it; ++it, ++i)
 	{
-		value = array[i];
-
-		ScriptVariable *newIndex = new ScriptVariable;
-
-		newIndex->setIntValue((int)(i - 1));
-
-		ref->setArrayAt(*newIndex, *value);
+		// add all keys to the array
+		constArray[i] = it.GetValue();
 	}
 
-	ev->AddValue(*newArray);
+	ev->AddValue(std::move(constArray));
 }
 
 void ScriptThread::GetDate(Event* ev)
@@ -2022,7 +1966,7 @@ void ScriptThread::GetTimeZone(Event* ev)
 	ev->AddInteger(timediff);
 }
 
-void ScriptThread::PregMatch(Event* ev)
+void ScriptThread::PregMatch(Event*)
 {
 	/*
 	slre_cap sl_cap[32];
@@ -2105,9 +2049,8 @@ void ScriptThread::FlagClear(Event* ev)
 
 	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
 
-	if (flag == NULL)
-	{
-		ScriptError("Invalid flag '%s'\n", name.c_str());
+	if (flag == NULL) {
+		throw ScriptException("Invalid flag " + name);
 	}
 
 	delete flag;
@@ -2142,10 +2085,8 @@ void ScriptThread::FlagSet(Event* ev)
 
 	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
 
-	if (flag == NULL)
-	
-	{
-		ScriptError("Invalid flag '%s'.\n", name.c_str());
+	if (flag == NULL) {
+		throw ScriptException("Invalid flag '" + name + "'");
 	}
 
 	flag->Set();
@@ -2160,9 +2101,8 @@ void ScriptThread::FlagWait(Event* ev)
 
 	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
 
-	if (flag == NULL)
-	{
-		ScriptError("Invalid flag '%s'.\n", name.c_str());
+	if (flag == NULL) {
+		throw ScriptException("Invalid flag '" + name + "'");
 	}
 
 	flag->Wait(this);
@@ -2172,9 +2112,8 @@ void ScriptThread::Lock(Event* ev)
 {
 	ScriptMutex *pMutex = (ScriptMutex *)ev->GetListener(1);
 
-	if (!pMutex)
-	{
-		ScriptError("Invalid mutex.");
+	if (!pMutex) {
+		throw ScriptException("Invalid mutex.");
 	}
 
 	pMutex->Lock();
@@ -2184,9 +2123,8 @@ void ScriptThread::UnLock(Event* ev)
 {
 	ScriptMutex *pMutex = (ScriptMutex *)ev->GetListener(1);
 
-	if (!pMutex)
-	{
-		ScriptError("Invalid mutex.");
+	if (!pMutex) {
+		throw ScriptException("Invalid mutex.");
 	}
 
 	pMutex->Unlock();
@@ -2708,7 +2646,7 @@ int checkMD5String(const char *string, char *md5Hash)
 }
 */
 
-void ScriptThread::Md5File(Event* ev)
+void ScriptThread::Md5File(Event*)
 {
 	/*
 	char hash[64];
@@ -2735,7 +2673,7 @@ void ScriptThread::Md5File(Event* ev)
 	*/
 }
 
-void ScriptThread::Md5String(Event* ev)
+void ScriptThread::Md5String(Event*)
 {
 	/*
 	char hash[64];
@@ -2781,12 +2719,12 @@ void ScriptThread::TypeOfVariable(Event* ev)
 	ev->AddString(type);
 }
 
-void ScriptThread::CancelWaiting(Event* ev)
+void ScriptThread::CancelWaiting(Event*)
 {
 	CancelWaitingAll();
 }
 
-void ScriptThread::Archive(Archiver &arc)
+void ScriptThread::Archive(Archiver&)
 {
 }
 
@@ -2794,7 +2732,7 @@ void ScriptThread::ArchiveInternal(Archiver& arc)
 {
 	Listener::Archive(arc);
 
-	//arc.ArchiveObjectPosition(this);
+	arc.ArchiveObjectPosition(this);
 	m_ScriptVM->Archive(arc);
 }
 
@@ -2806,14 +2744,10 @@ void ScriptThread::Abs(Event* ev)
 void ScriptThread::SetTimer(Event* ev)
 {
 	int interval = -1;
-	void* scr_var = NULL;
-	int i = 0;
 	Event *event;
 
-	if (ev->NumArgs() != 2)
-	{
-		ScriptError("Wrong arguments count for settimer!\n");
-		return;
+	if (ev->NumArgs() != 2) {
+		throw ScriptException("Wrong arguments count for settimer!");
 	}
 
 	interval = ev->GetInteger(1);
@@ -2859,7 +2793,7 @@ void ScriptThread::Assert(Event* ev)
 	assert(ev->GetFloat(1));
 }
 
-void ScriptThread::Cache(Event* ev)
+void ScriptThread::Cache(Event*)
 {
 }
 
@@ -2891,7 +2825,7 @@ void ScriptThread::EventDelayThrow(Event* ev)
 
 	if (m_ScriptVM->EventThrow(ev))
 	{
-		if (m_ScriptVM->State() == vmState_e::Execution)
+		if (m_ScriptVM->State() == vmState_e::Idling)
 		{
 			Wait(0);
 		}
@@ -2937,7 +2871,7 @@ void ScriptThread::EventEnd(Event* ev)
 	}
 }
 
-void ScriptThread::EventTimeout(Event* ev)
+void ScriptThread::EventTimeout(Event*)
 {
 	//Director.maxTime = ev->GetFloat(1) * 1000.0f + 0.5f;
 }
@@ -2956,7 +2890,7 @@ void ScriptThread::EventGoto(Event* ev)
 {
 	m_ScriptVM->EventGoto(ev);
 
-	if (m_ScriptVM->State() == vmState_e::Execution)
+	if (m_ScriptVM->State() == vmState_e::Idling)
 	{
 		ScriptExecuteInternal();
 	}
@@ -2967,7 +2901,7 @@ void ScriptThread::EventGoto(Event* ev)
 	}
 }
 
-void ScriptThread::EventRegisterCommand(Event* ev)
+void ScriptThread::EventRegisterCommand(Event*)
 {
 }
 
@@ -2979,7 +2913,7 @@ void ScriptThread::EventThrow(Event* ev)
 
 	if (m_ScriptVM->EventThrow(ev))
 	{
-		if (m_ScriptVM->State() == vmState_e::Execution)
+		if (m_ScriptVM->State() == vmState_e::Idling)
 		{
 			ScriptExecuteInternal();
 		}
@@ -2997,7 +2931,7 @@ void ScriptThread::EventThrow(Event* ev)
 
 		Stop();
 
-		if (!BroadcastEvent("", *ev))
+		if (!BroadcastEvent(ConstStrings::Empty, *ev))
 		{
 			m_ScriptVM->GetScriptClass()->EventThrow(ev);
 		}
@@ -3014,7 +2948,7 @@ void ScriptThread::EventWait(Event* ev)
 	Wait(uint64_t(ev->GetFloat(1) * 1000.f));
 }
 
-void ScriptThread::EventWaitFrame(Event* ev)
+void ScriptThread::EventWaitFrame(Event*)
 {
 	// FIXME: Proper wait?
 	Wait(ScriptContext::Get().GetTimeManager().GetTime());
@@ -3069,7 +3003,7 @@ void ScriptThread::MPrintln(Event* ev)
 	//m_Self->MPrintf("\n");
 }
 
-void ScriptThread::MPrint(Event* ev)
+void ScriptThread::MPrint(Event*)
 {
 	SimpleEntity *m_Self = (SimpleEntity *)m_ScriptVM->GetScriptClass()->GetSelf();
 
@@ -3098,18 +3032,66 @@ void ScriptThread::RandomInt(Event* ev)
 
 void ScriptThread::Spawn(Event* ev)
 {
-	Listener *listener = SpawnInternal(ev);
-
-	/*
-	if (listener && checkInheritance(&Object::ClassInfo, listener->classinfo()))
-	{
-		ScriptError("You must specify an explicit classname for misc object tik models");
-	}
-	*/
+	SpawnInternal(ev);
 }
 
 Listener *ScriptThread::SpawnInternal(Event* ev)
 {
+	if (ev->NumArgs() <= 0)
+	{
+		throw ScriptException("Usage: spawn classname [keyname] [value]...");
+	}
+
+	const str className = ev->GetString(1);
+	SpawnArgs args;
+
+	if (ClassDef::GetClassForID(className.c_str()) || ClassDef::GetClass(className.c_str())) {
+		args.setArg("classname", className);
+	}
+
+	const size_t numArgs = ev->NumArgs();
+	for (uintptr_t i = 2; i < numArgs; i++)
+	{
+		args.setArg(ev->GetString(i), ev->GetString(i + 1));
+	}
+
+	if (!args.getClassDef()) {
+		throw ScriptErrors::InvalidClassName(className);
+	}
+
+	const rawchar_t* spawntarget = args.getArg("spawntarget");
+
+	ScriptContext& context = ScriptContext::Get();
+	if (spawntarget)
+	{
+		const const_str targetString = context.GetDirector().GetDictionary().Get(spawntarget);
+		if (targetString)
+		{
+			const TargetList& tl = ScriptContext::Get().GetTargetList();
+			const Listener* existingListener = tl.GetTarget(targetString);
+			if (!existingListener)
+			{
+				throw TargetListErrors::NoTargetException(targetString);
+			}
+
+			// FIXME: refactor, make it more flexible
+			const SimpleEntity* ent = dynamic_cast<const SimpleEntity*>(existingListener);
+			if (ent)
+			{
+				const Vector& org = ent->getOrigin();
+				const Vector& ang = ent->getAngles();
+				args.setArg("origin", xstr(org[0]) + " " + xstr(org[1]) + " " + xstr(org[2]));
+				args.setArg("angle", xstr(ang[1]));
+			}
+		}
+	}
+
+	Listener* const l = args.Spawn();
+
+	context.GetTrackedInstances().Add(l);
+
+	return l;
+
 	/*
 	SpawnArgs args;
 	xstr classname;
@@ -3202,7 +3184,7 @@ void ScriptThread::EventVectorAdd(Event* ev)
 	ev->AddVector(ev->GetVector(1) + ev->GetVector(2));
 }
 
-void ScriptThread::EventVectorCloser(Event* ev)
+void ScriptThread::EventVectorCloser(Event*)
 {
 
 }
@@ -3291,33 +3273,15 @@ void ScriptThread::GetTime(Event* ev)
 	ev->AddString(buff);
 }
 
-void ScriptThread::Execute(Event& ev)
-{
-	Execute(&ev);
-}
-
-void ScriptThread::Execute(Event* ev)
+void ScriptThread::Execute()
 {
 	assert(m_ScriptVM);
 
 	try
 	{
-		if (ev == NULL)
-		{
-			ScriptExecuteInternal();
-		}
-		else
-		{
-			ScriptVariable returnValue;
-
-			returnValue.newPointer();
-
-			ScriptExecute(ev->GetData(), ev->NumArgs(), returnValue);
-
-			if (!returnValue.IsNone()) ev->AddValue(returnValue);
-		}
+		ScriptExecuteInternal();
 	}
-	catch (ScriptAbortException&)
+	catch (ScriptAbortExceptionBase&)
 	{
 		throw;
 	}
@@ -3326,25 +3290,45 @@ void ScriptThread::Execute(Event* ev)
 	}
 }
 
-void ScriptThread::DelayExecute(Event& ev)
-{
-	DelayExecute(&ev);
-}
-
-void ScriptThread::DelayExecute(Event* ev)
+void ScriptThread::Execute(Event& ev)
 {
 	assert(m_ScriptVM);
 
-	if (ev)
+	try
 	{
 		ScriptVariable returnValue;
 
-		m_ScriptVM->SetFastData(&ev->GetValueChecked(1), ev->NumArgs());
-
 		returnValue.newPointer();
-		m_ScriptVM->m_ReturnValue = returnValue;
-		ev->AddValue(returnValue);
+
+		ScriptExecute(ev.GetListView(), returnValue);
+
+		if (!returnValue.IsNone()) ev.AddValue(returnValue);
 	}
+	catch (ScriptAbortExceptionBase&)
+	{
+		throw;
+	}
+	catch (ScriptException&)
+	{
+	}
+}
+
+void ScriptThread::DelayExecute()
+{
+	ScriptContext::Get().GetDirector().AddTiming(this, 0);
+}
+
+void ScriptThread::DelayExecute(Event& ev)
+{
+	assert(m_ScriptVM);
+
+	ScriptVariable returnValue;
+
+	m_ScriptVM->SetFastData(ev.GetListView());
+
+	returnValue.newPointer();
+	m_ScriptVM->m_ReturnValue = returnValue;
+	ev.AddValue(returnValue);
 
 	ScriptContext::Get().GetDirector().AddTiming(this, 0);
 }
@@ -3361,31 +3345,61 @@ mfuse::ScriptVM* ScriptThread::GetScriptVM() const
 
 threadState_e ScriptThread::GetThreadState(void)
 {
-	return m_ScriptVM->ThreadState();
+	return m_ThreadState;
 }
 
-void ScriptThread::ScriptExecute(const ScriptVariable *data, size_t dataSize, ScriptVariable& returnValue)
+void ScriptThread::SetThreadState(threadState_e newThreadState)
+{
+	m_ThreadState = newThreadState;
+}
+
+void ScriptThread::StartTiming(uinttime_t time)
+{
+	Stop();
+
+	m_ThreadState = threadState_e::Timing;
+
+	ScriptContext::Get().GetDirector().AddTiming(this, time);
+}
+
+void ScriptThread::StartTiming()
+{
+	Stop();
+
+	m_ThreadState = threadState_e::Timing;
+
+	ScriptContext& context = ScriptContext::Get();
+	context.GetDirector().AddTiming(this, 0);
+}
+
+void ScriptThread::StartWaiting()
+{
+	m_ThreadState = threadState_e::Waiting;
+}
+
+void ScriptThread::ScriptExecute(const VarListView& data, ScriptVariable& returnValue)
 {
 	m_ScriptVM->m_ReturnValue = returnValue;
 
-	ScriptExecuteInternal(data, dataSize);
+	ScriptExecuteInternal(data);
 }
 
-void ScriptThread::ScriptExecuteInternal(const ScriptVariable *data, size_t dataSize)
+void ScriptThread::ScriptExecuteInternal(const VarListView& data)
 {
 	ScriptMaster& Director = ScriptContext::Get().GetDirector();
-	SafePtr< ScriptThread > previousThread = Director.m_PreviousThread;
-	SafePtr< ScriptThread > currentThread = Director.m_CurrentThread;
+	const SafePtr<ScriptThread> previousThread = Director.PreviousThread();
+	const SafePtr<ScriptThread> currentThread = Director.CurrentThread();
 
-	Director.m_PreviousThread = previousThread;
+	// assign us as the current thread
+	Director.m_PreviousThread = currentThread;
 	Director.m_CurrentThread = this;
 
 	Stop();
-	m_ScriptVM->Execute(data, dataSize);
+	m_ScriptVM->Execute(data);
 
 	// restore the previous values
-	Director.m_PreviousThread = previousThread;
 	Director.m_CurrentThread = currentThread;
+	Director.m_PreviousThread = previousThread;
 
 	Director.ExecuteRunning();
 }
@@ -3401,8 +3415,7 @@ void ScriptThread::StoppedNotify(void)
 void ScriptThread::StartedWaitFor(void)
 {
 	Stop();
-
-	m_ScriptVM->m_ThreadState = threadState_e::Suspended;
+	StartWaiting();
 	m_ScriptVM->Suspend();
 }
 
@@ -3422,11 +3435,11 @@ void ScriptThread::StoppedWaitFor(const_str name, bool bDeleting)
 
 	CancelEventsOfType(EV_ScriptThread_CancelWaiting);
 
-	if (m_ScriptVM->m_ThreadState == threadState_e::Suspended)
+	if (m_ThreadState == threadState_e::Waiting)
 	{
 		if (name)
 		{
-			if (m_ScriptVM->state == vmState_e::Execution)
+			if (m_ScriptVM->state == vmState_e::Idling)
 			{
 				Execute();
 			}
@@ -3437,11 +3450,7 @@ void ScriptThread::StoppedWaitFor(const_str name, bool bDeleting)
 		}
 		else
 		{
-			m_ScriptVM->m_ThreadState = threadState_e::Running;
-			CancelWaitingAll();
-			m_ScriptVM->m_ThreadState = threadState_e::Waiting;
-
-			ScriptContext::Get().GetDirector().AddTiming(this, 0);
+			StartTiming();
 		}
 	}
 }
@@ -3454,26 +3463,28 @@ void ScriptThread::Pause()
 
 void ScriptThread::Stop(void)
 {
-	if (m_ScriptVM->ThreadState() == threadState_e::Waiting)
+	if (m_ThreadState == threadState_e::Timing)
 	{
-		m_ScriptVM->m_ThreadState = threadState_e::Running;
+		m_ThreadState = threadState_e::Running;
 		ScriptContext::Get().GetDirector().RemoveTiming(this);
 	}
-	else if (m_ScriptVM->ThreadState() == threadState_e::Suspended)
+	else if (m_ThreadState == threadState_e::Waiting)
 	{
-		m_ScriptVM->m_ThreadState = threadState_e::Running;
+		m_ThreadState = threadState_e::Running;
 		CancelWaitingAll();
 	}
 }
 
 void ScriptThread::Wait(uinttime_t time)
 {
-	Stop();
-
-	m_ScriptVM->m_ThreadState = threadState_e::Waiting;
-
-	ScriptContext::Get().GetDirector().AddTiming(this, time);
+	StartTiming(time);
 	m_ScriptVM->Suspend();
+}
+
+void ScriptThread::Resume()
+{
+	SetThreadState(threadState_e::Running);
+	m_ScriptVM->Execute();
 }
 
 MFUS_CLASS_DECLARATION(Listener, ScriptThread, NULL)
@@ -3558,6 +3569,7 @@ MFUS_CLASS_DECLARATION(Listener, ScriptThread, NULL)
 	{ &EV_ScriptThread_UnLock,					&ScriptThread::UnLock },
 
 	{ &EV_ScriptThread_CharToInt,				&ScriptThread::CharToInt },
+	/*
 	{ &EV_ScriptThread_FileClose,				&ScriptThread::FileClose },
 	{ &EV_ScriptThread_FileCopy,				&ScriptThread::FileCopy },
 	{ &EV_ScriptThread_FileEof,					&ScriptThread::FileEof },
@@ -3581,6 +3593,7 @@ MFUS_CLASS_DECLARATION(Listener, ScriptThread, NULL)
 	{ &EV_ScriptThread_FileSeek,				&ScriptThread::FileSeek },
 	{ &EV_ScriptThread_FileTell,				&ScriptThread::FileTell },
 	{ &EV_ScriptThread_FileWrite,				&ScriptThread::FileWrite },
+	*/
 	{ &EV_ScriptThread_GetArrayKeys,			&ScriptThread::GetArrayKeys },
 	{ &EV_ScriptThread_GetArrayValues,			&ScriptThread::GetArrayValues },
 	{ &EV_ScriptThread_GetDate,					&ScriptThread::GetDate },
@@ -3777,4 +3790,21 @@ void Flag::Wait(ScriptThread *Thread)
 	m_WaitList.AddObject(Thread->GetScriptVM());
 }
 
+ScriptErrors::InvalidClassName::InvalidClassName(const xstr& classNameRef)
+	: className(classNameRef)
+{
+}
 
+const xstr& ScriptErrors::InvalidClassName::getClassName() const
+{
+	return className;
+}
+
+const char* ScriptErrors::InvalidClassName::what() const noexcept
+{
+	if (!filled()) {
+		fill("'" + className + "' is not a valid entity name");
+	}
+
+	return Messageable::what();
+}

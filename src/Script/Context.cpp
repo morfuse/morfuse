@@ -34,6 +34,11 @@ ScriptMaster& ScriptContext::GetDirector()
 	return director;
 }
 
+const ScriptMaster& ScriptContext::GetDirector() const
+{
+	return director;
+}
+
 void ScriptContext::Execute(float timeScale)
 {
 	uint64_t deltaTime;
@@ -53,6 +58,19 @@ void ScriptContext::Execute(float timeScale)
 	director.ExecuteRunning();
 }
 
+bool ScriptContext::IsIdle() const
+{
+	if (GetEventQueue().HasPendingEvents()) {
+		return false;
+	}
+
+	if (director.GetNumRunningScripts() > 0) {
+		return false;
+	}
+
+	return true;
+}
+
 DefaultScriptAllocator& ScriptContext::GetAllocator()
 {
 	return scriptAllocator;
@@ -63,9 +81,34 @@ OutputInfo& ScriptContext::GetOutputInfo()
 	return outputInfo;
 }
 
+const OutputInfo& ScriptContext::GetOutputInfo() const
+{
+	return outputInfo;
+}
+
 ScriptSettings& ScriptContext::GetSettings()
 {
 	return settings;
+}
+
+const ScriptSettings& ScriptContext::GetSettings() const
+{
+	return settings;
+}
+
+ScriptInterfaces& ScriptContext::GetScriptInterfaces()
+{
+	return interfaces;
+}
+
+const ScriptInterfaces& ScriptContext::GetScriptInterfaces() const
+{
+	return interfaces;
+}
+
+TrackedInstances& ScriptContext::GetTrackedInstances()
+{
+	return trackedInstances;
 }
 
 ScriptSettings::ScriptSettings()
@@ -81,4 +124,9 @@ void ScriptSettings::SetDeveloperEnabled(bool value)
 bool ScriptSettings::IsDeveloperEnabled() const
 {
 	return bDeveloper;
+}
+
+ScriptInterfaces::ScriptInterfaces()
+	: fileManagement(nullptr)
+{
 }

@@ -7,6 +7,7 @@
 #include "../Common/str.h"
 #include "../Common/Vector.h"
 #include "../Common/SafePtr.h"
+#include "ScriptException.h"
 
 namespace mfuse
 {
@@ -131,7 +132,7 @@ namespace mfuse
 	};
 	using ConList = con::ContainerClass<SafePtr<Listener>>;
 	using ConListPtr = SafePtr<ConList>;
-	
+
 	union mfuse_EXPORTS scriptData_u
 	{
 		rawchar_t charValue;
@@ -158,27 +159,30 @@ namespace mfuse
 	class mfuse_EXPORTS ScriptVariable
 	{
 	friend class ScriptPointer;
+	friend class ScriptVariableIterator;
+
 	public:
 		ScriptVariable();
-		ScriptVariable(const_str keyValue);
 		ScriptVariable(const_str keyValue, const ScriptVariable& variable);
 		ScriptVariable(const ScriptVariable& variable);
 		ScriptVariable(ScriptVariable&& variable);
 
-		ScriptVariable(int32_t initialValue);
-		ScriptVariable(int64_t initialValue);
-		ScriptVariable(float initialValue);
-		ScriptVariable(char initialValue);
-		ScriptVariable(Listener* initialValue);
-		ScriptVariable(const rawchar_t* initialValue);
-		ScriptVariable(const xstr& initialValue);
-		ScriptVariable(const con::Container<SafePtr<Listener>>* initialValue);
-		ScriptVariable(const Vector& initialValue);
+		explicit ScriptVariable(const_str stringValue);
+		explicit ScriptVariable(const_str stringValue, std::nullptr_t);
+		explicit ScriptVariable(int32_t initialValue);
+		explicit ScriptVariable(int64_t initialValue);
+		explicit ScriptVariable(float initialValue);
+		explicit ScriptVariable(char initialValue);
+		explicit ScriptVariable(Listener* initialValue);
+		explicit ScriptVariable(const rawchar_t* initialValue);
+		explicit ScriptVariable(const xstr& initialValue);
+		explicit ScriptVariable(const con::Container<SafePtr<Listener>>* initialValue);
+		explicit ScriptVariable(const Vector& initialValue);
 
 		~ScriptVariable();
 
 		void Archive(Archiver& arc);
-		static void				Archive(Archiver& arc, ScriptVariable** obj);
+		static void				Archive(Archiver& arc, ScriptVariable*& obj);
 		void ArchiveInternal(Archiver& arc);
 
 		void CastBoolean();
@@ -216,12 +220,10 @@ namespace mfuse
 		bool booleanNumericValue();
 		bool booleanValue() const;
 
-		const xstr& getName();
-
-		const_str GetKey();
+		const_str GetKey() const;
 		void SetKey(const_str key);
 
-		void evalArrayAt(ScriptVariable& var);
+		void evalArrayAt(const ScriptVariable& var);
 
 		void setArrayAt(const ScriptVariable& index, const ScriptVariable& value);
 		void setArrayAtRef(const ScriptVariable& index, const ScriptVariable& value);
@@ -231,7 +233,8 @@ namespace mfuse
 		void setCharValue(rawchar_t newvalue);
 
 		ScriptVariable* constArrayValue();
-		void setConstArrayValue(ScriptVariable* pVar, unsigned int size);
+		ScriptVariable* createConstArrayValue(size_t size);
+		void setConstArrayValue(ScriptVariable* pVar, size_t size);
 
 		const_str constStringValue() const;
 		void setConstStringValue(const_str s);
@@ -275,8 +278,9 @@ namespace mfuse
 		void setDataInternal(const ScriptVariable& other);
 		ScriptVariable& operator=(const ScriptVariable& variable);
 		ScriptVariable& operator=(ScriptVariable&& variable);
-		ScriptVariable& operator[](ScriptVariable& index);
-		ScriptVariable* operator[](uintptr_t index) const;
+		const ScriptVariable& operator[](const ScriptVariable& index) const;
+		ScriptVariable& operator[](const ScriptVariable& index);
+		ScriptVariable& operator[](uintptr_t index) const;
 		ScriptVariable* operator*();
 		void operator+=(const ScriptVariable& value);
 		void operator-=(const ScriptVariable& value);
@@ -305,6 +309,42 @@ namespace mfuse
 		variableType_e type;
 	};
 
+	class ScriptVariableIterator
+	{
+	public:
+		ScriptVariableIterator(const ScriptVariable& var);
+
+		operator bool() const;
+		ScriptVariableIterator operator++(int);
+		ScriptVariableIterator& operator++();
+
+		ScriptVariable GetKey() const;
+		ScriptVariable GetValue() const;
+		uintptr_t Count() const;
+
+	private:
+		union u {
+			con::map_enum<ScriptVariable, ScriptVariable> en;
+			uintptr_t index;
+
+			u(const con::map_enum<ScriptVariable, ScriptVariable>& enRef)
+				: en(enRef)
+			{}
+
+			u(uintptr_t indexVal)
+				: index(indexVal)
+			{}
+		};
+		const ScriptVariable& owningVar;
+		u data;
+		uintptr_t count;
+		bool done;
+
+	private:
+		bool isValid() const;
+		u initData(const ScriptVariable& var);
+	};
+
 	class ScriptVariableList : public Class
 	{
 	public:
@@ -318,7 +358,9 @@ namespace mfuse
 		ScriptVariable* GetOrCreateVariable(const xstr& name);
 		ScriptVariable* GetOrCreateVariable(const_str name);
 
+		const ScriptVariable* GetVariable(const xstr& name) const;
 		ScriptVariable* GetVariable(const xstr& name);
+		const ScriptVariable* GetVariable(const_str name) const;
 		ScriptVariable* GetVariable(const_str name);
 
 		ScriptVariable* SetVariable(const rawchar_t *name, int value);
@@ -334,4 +376,95 @@ namespace mfuse
 	private:
 		con::set<const_str, ScriptVariable> list;
 	};
+
+	namespace ScriptVariableErrors
+	{
+		class Base : public ScriptExceptionBase {};
+
+		class CastError : public Base, public Messageable
+		{
+		public:
+			CastError(const rawchar_t* sourceVal, const rawchar_t* targetVal);
+
+			mfuse_EXPORTS const rawchar_t* getSource() const noexcept;
+			mfuse_EXPORTS const rawchar_t* getTarget() const noexcept;
+			mfuse_EXPORTS const char* what() const noexcept override;
+
+		private:
+			const rawchar_t* source;
+			const rawchar_t* target;
+		};
+
+		class IncompatibleOperator : public Base, public Messageable
+		{
+		public:
+			IncompatibleOperator(const rawchar_t* opVal, const rawchar_t* leftTypeVal, const rawchar_t* rightTypeVal);
+
+			mfuse_EXPORTS const rawchar_t* getOperator() const noexcept;
+			mfuse_EXPORTS const rawchar_t* getLeftType() const noexcept;
+			mfuse_EXPORTS const rawchar_t* getRightType() const noexcept;
+			mfuse_EXPORTS const char* what() const noexcept override;
+
+		private:
+			const rawchar_t* op;
+			const rawchar_t* leftType;
+			const rawchar_t* rightType;
+		};
+
+		class InvalidAppliedType : public Base, public Messageable
+		{
+		public:
+			InvalidAppliedType(const rawchar_t* opValue, const rawchar_t* typeValue);
+
+			mfuse_EXPORTS const rawchar_t* getOperator() const noexcept;
+			mfuse_EXPORTS const rawchar_t* getTypeName() const noexcept;
+			mfuse_EXPORTS const char* what() const noexcept override;
+
+		private:
+			const rawchar_t* op;
+			const rawchar_t* typeName;
+		};
+
+		class DivideByZero : public Base
+		{
+		public:
+			mfuse_EXPORTS const char* what() const noexcept override;
+		};
+
+		class IndexOutOfRange : public Base, public Messageable
+		{
+		public:
+			IndexOutOfRange(uintptr_t indexValue);
+
+			mfuse_EXPORTS uintptr_t getIndex() const noexcept;
+			mfuse_EXPORTS const char* what() const noexcept override;
+
+		private:
+			uintptr_t index;
+		};
+
+		class TypeIndexOutOfRange : public IndexOutOfRange
+		{
+		public:
+			TypeIndexOutOfRange(const rawchar_t* typeValue, uintptr_t indexValue);
+
+			mfuse_EXPORTS const rawchar_t* getType() const noexcept;
+			mfuse_EXPORTS const char* what() const noexcept override;
+
+		private:
+			const rawchar_t* typeName;
+		};
+
+		class BadHashCodeValue : public Base, public Messageable
+		{
+		public:
+			BadHashCodeValue(xstr&& hashCode);
+
+			const xstr& getHashCode();
+			const char* what() const noexcept override;
+
+		private:
+			xstr hashCode;
+		};
+	}
 };

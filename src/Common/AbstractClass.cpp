@@ -38,11 +38,11 @@ void AbstractClass::operator delete[](void* ptr)
 	return IMemoryManager::get().free(ptr);
 }
 
-void* AbstractClass::operator new(size_t size, void* placement)
+void* AbstractClass::operator new(size_t, void* placement)
 {
 	return placement;
 }
 
-void AbstractClass::operator delete(void* ptr, void* placement)
+void AbstractClass::operator delete(void*, void*)
 {
 }

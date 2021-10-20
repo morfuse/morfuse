@@ -36,13 +36,10 @@ namespace MEM
 	public:
 		block_s();
 
-		bool usedDataAvailable() const {
-			return has_used_data;
-		}
-
-		bool freeDataAvailable() const {
-			return has_free_data;
-		}
+#if !_DEBUG_MEMBLOCK
+		bool usedDataAvailable() const;
+		bool freeDataAvailable() const;
+#endif
 
 	public:
 		template<size_t bits>
@@ -63,7 +60,7 @@ namespace MEM
 		};
 
 	public:
-#ifndef _DEBUG_MEMBLOCK
+#if !_DEBUG_MEMBLOCK
 		info_t data[blocksize];
 		offset_t prev_data[blocksize];
 		offset_t next_data[blocksize];
@@ -87,6 +84,7 @@ namespace MEM
 
 	template<typename aclass, size_t blocksize>
 	block_s<aclass, blocksize>::block_s()
+#if !_DEBUG_MEMBLOCK
 	{
 		info_t* header;
 		offset_t curr;
@@ -113,6 +111,25 @@ namespace MEM
 		has_free_data = true;
 		has_used_data = false;
 	}
+#else
+		: prev_block(nullptr)
+		, next_block(nullptr)
+	{
+
+	}
+#endif
+
+#if !_DEBUG_MEMBLOCK
+	template<typename aclass, size_t blocksize>
+	bool block_s<aclass, blocksize>::usedDataAvailable() const {
+		return has_used_data;
+	}
+
+	template<typename aclass, size_t blocksize>
+	bool block_s<aclass, blocksize>::freeDataAvailable() const {
+		return has_free_data;
+	}
+#endif
 
 	template<typename aclass, size_t blocksize = DefaultBlock>
 	class BlockAlloc
@@ -135,7 +152,7 @@ namespace MEM
 		using block_offset_t = typename block_t::offset_t;
 		using List = LinkedList<block_t*, &block_t::next_block, &block_t::prev_block>;
 
-#ifndef _DEBUG_MEMBLOCK
+#if !_DEBUG_MEMBLOCK
 		// Free block list [not usable], avoid calling free()
 		block_t* m_FreeBlock;
 
@@ -148,7 +165,7 @@ namespace MEM
 		List m_StartUsedBlock;
 		List m_StartFullBlock;
 #else
-		block_t* m_Block;
+		List m_Block;
 #endif
 		size_t m_BlockCount;
 
@@ -178,7 +195,7 @@ namespace MEM
 		BlockAlloc<aclass, blocksize>* m_Owner;
 		block_t* m_CurrentBlock;
 
-#ifndef _DEBUG_MEMBLOCK
+#if !_DEBUG_MEMBLOCK
 		offset_t m_CurrentData;
 		blockType_e m_CurrentBlockType;
 #endif
@@ -186,16 +203,19 @@ namespace MEM
 
 	template<typename a, size_t b>
 	BlockAlloc<a, b>::BlockAlloc()
+#if !_DEBUG_MEMBLOCK
+		: m_StartUsedBlock()
+		, m_StartFullBlock()
 	{
-#ifndef _DEBUG_MEMBLOCK
 		m_FreeBlock = nullptr;
-		//m_StartUsedBlock = nullptr;
-		//m_StartFullBlock = nullptr;
 		m_BlockCount = 0;
-#else
-		m_Block = nullptr;
-#endif
 	}
+#else
+		: m_Block()
+	{
+		m_BlockCount = 0;
+	}
+#endif
 
 	template<typename a, size_t b>
 	BlockAlloc<a, b>::~BlockAlloc()
@@ -206,10 +226,10 @@ namespace MEM
 	template<typename a, size_t b>
 	void* BlockAlloc<a, b>::Alloc()
 	{
-#ifdef _DEBUG_MEMBLOCK
-		block_t* block = (block_t *)malloc(sizeof(block_s <a, b>));
+#if _DEBUG_MEMBLOCK
+		block_t* block = new(MEM::Alloc(sizeof(block_t))) block_t();
 
-		LL::SafeAddFirst(m_Block, block, next_block, prev_block);
+		m_Block.AddFirst(block);
 
 		m_BlockCount++;
 		return (void*)block->data;
@@ -301,19 +321,13 @@ namespace MEM
 	template<typename a, size_t b>
 	void BlockAlloc<a, b>::Free(void* ptr) noexcept
 	{
-#ifdef _DEBUG_MEMBLOCK
+#if _DEBUG_MEMBLOCK
 		block_s<a, b>* block = (block_s<a, b> *)ptr;
 
-		assert(m_Block);
-		LL::SafeRemove(block, next_block, prev_block);
-
-		if (m_Block == block)
-		{
-			m_Block = block->next_block;
-		}
+		m_Block.Remove(block);
 
 		m_BlockCount--;
-		free(block);
+		MEM::Free(block);
 #else
 		// get the header of the pointer
 		typename block_t::info_t* header = reinterpret_cast<typename block_t::info_t*>(static_cast<unsigned char*>(ptr) - block_t::headersize);
@@ -388,18 +402,18 @@ namespace MEM
 	template<typename a, size_t b>
 	void BlockAlloc<a, b>::FreeAll() noexcept
 	{
-#ifdef _DEBUG_MEMBLOCK
+#if _DEBUG_MEMBLOCK
 		block_t* block;
-		block_t* next = m_Block;
-		for (block = m_Block; next != nullptr; block = next)
+		block_t* next = m_Block.Root();
+		for (block = next; block; block = next)
 		{
 			next = block->next_block;
 			m_BlockCount--;
 			a* ptr = (a*)block->data;
 			ptr->~a();
-			free(block);
+			MEM::Free(block);
 		}
-		m_Block = nullptr;
+		m_Block.Reset();
 #else
 		//block_s<a, b>* block;
 
@@ -442,8 +456,8 @@ namespace MEM
 	size_t BlockAlloc<a, b>::Count(const List& list)
 	{
 		int count = 0;
-#ifdef _DEBUG_MEMBLOCK
-		for (; block != nullptr; block = block->next_block)
+#if _DEBUG_MEMBLOCK
+		for (typename List::iterator block = list.CreateConstIterator(); block; block = block.Next())
 		{
 			count++;
 		}
@@ -474,7 +488,7 @@ namespace MEM
 	template<typename a, size_t b>
 	size_t BlockAlloc<a, b>::Count()
 	{
-#ifdef _DEBUG_MEMBLOCK
+#if _DEBUG_MEMBLOCK
 		return Count(m_Block);
 #else
 		return Count(m_StartFullBlock) + Count(m_StartUsedBlock);
@@ -499,7 +513,7 @@ namespace MEM
 	{
 		m_Owner = &owner;
 		m_CurrentBlock = nullptr;
-#ifndef _DEBUG_MEMBLOCK
+#if !_DEBUG_MEMBLOCK
 		m_CurrentBlockType = BlockAlloc_enum::used;
 #endif
 	}
@@ -507,10 +521,10 @@ namespace MEM
 	template<typename a, size_t b>
 	a* BlockAlloc_enum<a, b>::NextElement()
 	{
-#ifdef _DEBUG_MEMBLOCK
+#if _DEBUG_MEMBLOCK
 		if (!m_CurrentBlock)
 		{
-			m_CurrentBlock = m_Owner->m_Block;
+			m_CurrentBlock = m_Owner->m_Block.Root();
 		}
 		else
 		{
@@ -631,7 +645,7 @@ namespace MEM
 	BlockAlloc<T, BlockSize> BlockAlloc_set<T, BlockSize>::allocator;
 
 	template<typename T, size_t BlockSize>
-	void* BlockAlloc_set<T, BlockSize>::Alloc(size_t count)
+	void* BlockAlloc_set<T, BlockSize>::Alloc(size_t)
 	{
 		return allocator.Alloc();
 	}
@@ -671,7 +685,7 @@ namespace MEM
 	BlockAllocSafe<T, BlockSize> BlockAllocSafe_set<T, BlockSize>::allocator;
 
 	template<typename T, size_t BlockSize>
-	void* BlockAllocSafe_set<T, BlockSize>::Alloc(size_t count)
+	void* BlockAllocSafe_set<T, BlockSize>::Alloc(size_t)
 	{
 		return allocator.Alloc();
 	}
@@ -697,7 +711,7 @@ namespace MEM
 }
 
 template<typename a, size_t b>
-void* operator new(size_t count, mfuse::MEM::BlockAlloc<a, b>& allocator)
+void* operator new(size_t, mfuse::MEM::BlockAlloc<a, b>& allocator)
 {
 	return allocator.Alloc();
 }

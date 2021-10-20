@@ -20,7 +20,7 @@ namespace mfuse
 	public:
 		mfuse_EXPORTS void DumpAllClasses(std::ostream& class_stream, AbstractFormater& formater, const rawchar_t* title);
 		void DumpClass(ClassDef* classDef, std::ostream& class_stream, AbstractFormater& formater, const con::Container<EventDef*>& sortedEvents);
-		void ClassEvents(const rawchar_t* classname, bool print_to_disk);
+		void ClassEvents(const ClassDef* classDef, std::ostream& class_stream, AbstractFormater& formater, const con::Container<EventDef*>& sortedEvents);
 		void PrintDocumentation(EventDef& def, std::ostream& event_stream, AbstractFormater& formater);
 		void PrintEventDocumentation(EventDef& def, std::ostream& event_stream, AbstractFormater& formater);
 		void PrintEventArgumentRange(std::ostream& event_file, const EventArgDef& argDef, AbstractFormater& formater);

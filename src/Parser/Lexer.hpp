@@ -25,14 +25,15 @@ namespace mfuse
 		Lexer(ParseTree& parsetree, std::istream& arg_yyin, std::ostream* arg_yyout = nullptr);
 		~Lexer();
 
-		virtual int yylex(Parser::semantic_type* const lval, Parser::location_type* const loc);
+		int yylex() override;
+		int yylex(Parser::semantic_type* const lval, Parser::location_type* const loc);
 		void yylexerror(const char* msg);
 		int get_prev_lex();
 		uint32_t get_braces_count() const;
 
 		void TextEscapeValue( ParseTree& parsetree, char* str, size_t len);
 		void TextValue(ParseTree& parsetree, char* str, size_t len);
-		bool UseField(ParseTree& parsetree);
+		bool UseField();
 
 		void yyllocset(Parser::location_type* loc, uint32_t off);
 		void yyreducepos(uint32_t off);

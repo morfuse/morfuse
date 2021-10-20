@@ -23,19 +23,8 @@ namespace mfuse
 
 	class Vector;
 
-#define DEG2RAD( a ) ( ( (a) * M_PI_FLOAT ) / 180.0f )
-#define RAD2DEG( a ) ( ( (a) * 180.0f ) / M_PI_FLOAT )
-
-	static float DegreesToRadians(float angle)
-	{
-		return (angle *M_PI_FLOAT) / 180.0f;
-	}
-
-	static float RadiansToDegrees(float rad)
-	{
-		return (rad * 180.0f) / M_PI_FLOAT;
-	}
-
+	mfuse_EXPORTS float DegreesToRadians(float angle);
+	mfuse_EXPORTS float RadiansToDegrees(float rad);
 	mfuse_EXPORTS vec_t DotProduct(const vec3_t vec1, const vec3_t vec2);
 	mfuse_EXPORTS vec_t DotProduct2D(const vec2_t vec1, const vec2_t vec2);
 	mfuse_EXPORTS vec_t DotProduct4(const vec4_t vec1, const vec4_t vec2);
@@ -91,8 +80,8 @@ namespace mfuse
 	mfuse_EXPORTS void VectorClear(vec3_t vec);
 	mfuse_EXPORTS void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross);
 
-	mfuse_EXPORTS int DirToByte(const vec3_t dir);
-	mfuse_EXPORTS void ByteToDir(int b, vec3_t dir);
+	mfuse_EXPORTS unsigned int DirToByte(const vec3_t dir);
+	mfuse_EXPORTS void ByteToDir(unsigned int b, vec3_t dir);
 	mfuse_EXPORTS Vector GetMovedir(float angle);
 	mfuse_EXPORTS float Random(float value);
 	mfuse_EXPORTS uint8_t AngleToByte(float v);

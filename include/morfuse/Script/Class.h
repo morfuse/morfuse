@@ -4,7 +4,7 @@
 #include "../Common/str.h"
 #include "../Container/arrayset.h"
 #include "../Common/AbstractClass.h"
-#include "ConstStr.h"
+#include "../Common/ConstStr.h"
 
 #include <vector>
 
@@ -23,7 +23,7 @@ namespace mfuse
 		mfuse::ClassDef::GetClass<parentclass>(),				\
 		#classname, classid,									\
 		(mfuse::ResponseDefClass *)classname::Responses,		\
-		(void* (*)())&classname::_newInstance					\
+		(NewInstanceHandler)&classname::_newInstance			\
 	);															\
 	classname *classname::_newInstance()						\
 	{															\
@@ -37,25 +37,13 @@ namespace mfuse
 	{															\
 		return &(classname::ClassInfo);							\
 	}															\
-	void classname::AddWaitTill(const mfuse::xstr& s)			\
-	{															\
-		classname::ClassInfo.AddWaitTill(s);					\
-	}															\
 	void classname::AddWaitTill(mfuse::const_str s)				\
 	{															\
 		classname::ClassInfo.AddWaitTill(s);					\
 	}															\
-	void classname::RemoveWaitTill(const mfuse::xstr& s)		\
-	{															\
-		classname::ClassInfo.RemoveWaitTill(s);					\
-	}															\
 	void classname::RemoveWaitTill(mfuse::const_str s)			\
 	{															\
 		classname::ClassInfo.RemoveWaitTill(s);					\
-	}															\
-	bool classname::WaitTillDefined(const mfuse::xstr& s)		\
-	{															\
-		return classname::ClassInfo.WaitTillDefined(s);			\
 	}															\
 	bool classname::WaitTillDefined(mfuse::const_str s)			\
 	{															\
@@ -68,11 +56,8 @@ namespace mfuse
 	static mfuse::ClassDef ClassInfo;						\
 	static classname* _newInstance();						\
 	public:													\
-	static void AddWaitTill(const mfuse::xstr& s);			\
 	static void AddWaitTill(mfuse::const_str s);			\
-	static void RemoveWaitTill(const mfuse::xstr& s);		\
 	static void RemoveWaitTill(mfuse::const_str s);			\
-	static bool WaitTillDefined(const mfuse::xstr& s);		\
 	static bool WaitTillDefined(mfuse::const_str s);		\
 	static mfuse::ResponseDef<classname> Responses[];		\
 	private:
@@ -104,13 +89,14 @@ namespace mfuse
 
 	using ResponseDefClass = ResponseDef<Class>;
 	using ResponseLookup = const ResponseDefClass**;
+	using NewInstanceHandler = Class* (*)();
 
 	class ClassDef
 	{
 	public:
 		/* Create-a-class function */
 		mfuse_EXPORTS ClassDef(ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseDefClass* responses,
-			void* (*newInstance)());
+			NewInstanceHandler newInstance);
 
 		mfuse_EXPORTS ~ClassDef();
 
@@ -122,11 +108,9 @@ namespace mfuse
 		void BuildResponseList(MEM::PreAllocator& allocator);
 		void ClearResponseList(MEM::PreAllocator& allocator);
 
-		mfuse_EXPORTS void AddWaitTill(const xstr& s);
+		mfuse_EXPORTS Class* createInstance() const;
 		mfuse_EXPORTS void AddWaitTill(const_str s);
-		mfuse_EXPORTS void RemoveWaitTill(const xstr& s);
 		mfuse_EXPORTS void RemoveWaitTill(const_str s);
-		mfuse_EXPORTS bool WaitTillDefined(const xstr& s) const;
 		mfuse_EXPORTS bool WaitTillDefined(const_str s) const;
 
 		mfuse_EXPORTS const rawchar_t* GetClassName() const;
@@ -150,6 +134,10 @@ namespace mfuse
 		template<std::nullptr_t>
 		static std::nullptr_t GetClass();
 
+		mfuse_EXPORTS bool inheritsFrom(const rawchar_t* name) const;
+		mfuse_EXPORTS bool inheritsFrom(const ClassDef* other) const;
+		mfuse_EXPORTS bool isInheritedBy(const rawchar_t* name) const;
+		mfuse_EXPORTS bool isInheritedBy(const ClassDef* other) const;
 		mfuse_EXPORTS static bool checkInheritance(const ClassDef* superclass, const ClassDef* subclass);
 		mfuse_EXPORTS static bool checkInheritance(ClassDef* superclass, const rawchar_t* subclass);
 		mfuse_EXPORTS static bool checkInheritance(const rawchar_t* superclass, const rawchar_t* subclass);
@@ -161,7 +149,7 @@ namespace mfuse
 	private:
 		const rawchar_t* classname;
 		const rawchar_t* classID;
-		void* (*newInstance)();
+		NewInstanceHandler newInstance;
 		const ResponseDefClass* responses;
 		ResponseLookup responseLookup;
 		ClassDef* super;
@@ -175,7 +163,7 @@ namespace mfuse
 		static List::iterator GetList();
 
 	private:
-		static LinkedList<ClassDef*, &ClassDef::next, &ClassDef::prev> classlist;
+		static List classlist;
 		//static ClassDef* classlist;
 		static size_t numclasses;
 
@@ -232,15 +220,5 @@ namespace mfuse
 		mfuse_EXPORTS bool inheritsFrom(const rawchar_t* name) const;
 		mfuse_EXPORTS bool isInheritedBy(const rawchar_t* name) const;
 		mfuse_EXPORTS bool isInheritedBy(ClassDef* c) const;
-
-		mfuse_EXPORTS void warning(const rawchar_t *function, const rawchar_t *format, ...);
-		mfuse_EXPORTS void error(const rawchar_t *function, const rawchar_t *format, ...);
 	};
-
-	void CLASS_Print(FILE* class_file, const rawchar_t* fmt, ...);
-	void ClassEvents(const rawchar_t* classname, bool print_to_disk);
-	void DumpClass(FILE* class_file, const rawchar_t* className);
-	void DumpAllClasses(void);
-	void listAllClasses(void);
-	void listInheritanceOrder(const rawchar_t* classname);
 };

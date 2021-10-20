@@ -3,14 +3,14 @@
 
 using namespace mfuse;
 
-SafePtrBase::SafePtrBase()
+SafePtrBase::SafePtrBase() noexcept
 	: prev(nullptr)
 	, next(nullptr)
 	, ptr(nullptr)
 {
 }
 
-SafePtrBase::SafePtrBase(AbstractClass* initial)
+SafePtrBase::SafePtrBase(AbstractClass* initial) noexcept
 {
 	ptr = initial;
 	if (ptr) AddReference(ptr);
@@ -21,7 +21,7 @@ SafePtrBase::~SafePtrBase()
 	Clear();
 }
 
-void SafePtrBase::AddReference(AbstractClass* classPtr)
+void SafePtrBase::AddReference(AbstractClass* classPtr) noexcept
 {
 	if (!classPtr->SafePtrList)
 	{
@@ -37,7 +37,7 @@ void SafePtrBase::AddReference(AbstractClass* classPtr)
 	}
 }
 
-void SafePtrBase::RemoveReference(AbstractClass* classPtr)
+void SafePtrBase::RemoveReference(AbstractClass* classPtr) noexcept
 {
 	if (classPtr->SafePtrList == this)
 	{
@@ -63,7 +63,7 @@ void SafePtrBase::RemoveReference(AbstractClass* classPtr)
 	}
 }
 
-void SafePtrBase::Clear()
+void SafePtrBase::Clear() noexcept
 {
 	if (ptr)
 	{
@@ -72,12 +72,12 @@ void SafePtrBase::Clear()
 	}
 }
 
-AbstractClass* SafePtrBase::Pointer() const
+AbstractClass* SafePtrBase::Pointer() const noexcept
 {
 	return ptr;
 }
 
-void SafePtrBase::InitSafePtr(AbstractClass* newptr)
+void SafePtrBase::InitSafePtr(AbstractClass* newptr) noexcept
 {
 	if (ptr != newptr)
 	{
@@ -94,4 +94,14 @@ void SafePtrBase::InitSafePtr(AbstractClass* newptr)
 
 		AddReference(ptr);
 	}
+}
+
+bool SafePtrBase::IsLastReference() const noexcept
+{
+	return next == this && prev == this;
+}
+
+bool SafePtrBase::Valid() const noexcept
+{
+	return Pointer() != nullptr;
 }

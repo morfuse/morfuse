@@ -22,11 +22,11 @@ static constexpr unsigned int BBOX_YBITS = 8;
 static constexpr unsigned int BBOX_ZBOTTOMBITS = 5;
 static constexpr unsigned int BBOX_ZTOPBITS = 9;
 
-static constexpr unsigned int BBOX_MAX_X = (1 << BBOX_XBITS);
-static constexpr unsigned int BBOX_MAX_Y = (1 << BBOX_YBITS);
-static constexpr unsigned int BBOX_MAX_BOTTOM_Z = 1 << (BBOX_ZBOTTOMBITS - 1);
-static constexpr unsigned int BBOX_REALMAX_BOTTOM_Z = (1 << BBOX_ZBOTTOMBITS);
-static constexpr unsigned int BBOX_MAX_TOP_Z = (1 << BBOX_ZTOPBITS);
+static constexpr int BBOX_MAX_X = (1 << BBOX_XBITS);
+static constexpr int BBOX_MAX_Y = (1 << BBOX_YBITS);
+static constexpr int BBOX_MAX_BOTTOM_Z = 1 << (BBOX_ZBOTTOMBITS - 1);
+static constexpr int BBOX_REALMAX_BOTTOM_Z = (1 << BBOX_ZBOTTOMBITS);
+static constexpr int BBOX_MAX_TOP_Z = (1 << BBOX_ZTOPBITS);
 
 namespace mfuse
 {
@@ -118,6 +118,16 @@ namespace mfuse
 };
 
 using namespace mfuse;
+
+float mfuse::DegreesToRadians(float angle)
+{
+	return (angle * M_PI_FLOAT) / 180.0f;
+}
+
+float mfuse::RadiansToDegrees(float rad)
+{
+	return (rad * 180.0f) / M_PI_FLOAT;
+}
 
 double mfuse::vrsqrt(double number)
 {
@@ -457,9 +467,9 @@ void mfuse::QuatToAngles(const quat_t q, vec3_t angles)
 	q2[2] = q[2] * q[2];
 	q2[3] = q[3] * q[3];
 
-	angles[0] = RAD2DEG(asinf(-2 * (q[2] * q[0] - q[3] * q[1])));
-	angles[1] = RAD2DEG(atan2f(2 * (q[2] * q[3] + q[0] * q[1]), (q2[2] - q2[3] - q2[0] + q2[1])));
-	angles[2] = RAD2DEG(atan2f(2 * (q[3] * q[0] + q[2] * q[1]), (-q2[2] - q2[3] + q2[0] + q2[1])));
+	angles[0] = RadiansToDegrees(asinf(-2 * (q[2] * q[0] - q[3] * q[1])));
+	angles[1] = RadiansToDegrees(atan2f(2 * (q[2] * q[3] + q[0] * q[1]), (q2[2] - q2[3] - q2[0] + q2[1])));
+	angles[2] = RadiansToDegrees(atan2f(2 * (q[3] * q[0] + q[2] * q[1]), (-q2[2] - q2[3] + q2[0] + q2[1])));
 }
 
 void mfuse::QuatNormalize(quat_t quat)
@@ -614,8 +624,8 @@ void mfuse::AxisCopy(const vec3_t in[3], vec3_t out[3])
 	VecCopy(in[1], out[1]);
 	VecCopy(in[2], out[2]);
 }
+
 static constexpr float NORMAL_EPSILON = 0.0001f;
-static constexpr float DIST_EPSILON = 0.02f;
 
 void mfuse::SnapVector(vec3_t normal) {
 	int		i;
@@ -876,9 +886,9 @@ void mfuse::CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross)
 	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-int mfuse::DirToByte(const vec3_t dir)
+unsigned int mfuse::DirToByte(const vec3_t dir)
 {
-	int i, best;
+	unsigned int best;
 	float d, bestd;
 
 	if (!dir) {
@@ -887,7 +897,7 @@ int mfuse::DirToByte(const vec3_t dir)
 
 	bestd = 0;
 	best = 0;
-	for (i = 0; i < NUMVERTEXNORMALS; i++)
+	for (unsigned int i = 0; i < NUMVERTEXNORMALS; i++)
 	{
 		d = DotProduct(dir, bytedirs[i]);
 		if (d > bestd)
@@ -900,7 +910,7 @@ int mfuse::DirToByte(const vec3_t dir)
 	return best;
 }
 
-void mfuse::ByteToDir(int b, vec3_t dir)
+void mfuse::ByteToDir(unsigned int b, vec3_t dir)
 {
 	if (b < 0 || b >= NUMVERTEXNORMALS)
 	{
@@ -968,9 +978,7 @@ int mfuse::BoundingBoxToInteger(vec3_t mins, vec3_t maxs)
 
 	zd = int(mins[2]) + BBOX_MAX_BOTTOM_Z;
 	if (zd < 0)
-	{
 		zd = 0;
-	}
 	if (zd >= BBOX_REALMAX_BOTTOM_Z)
 	{
 		zd = BBOX_REALMAX_BOTTOM_Z - 1;

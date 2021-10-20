@@ -30,6 +30,7 @@ namespace mfuse
 		constexpr Vector(const float x, const float y, const float z);
 		Vector(const float xyz[3]);
 		explicit Vector(const char *text);
+		Vector(const Vector& a);
 
 		operator float* ();
 		operator float const* () const;
@@ -156,6 +157,13 @@ namespace mfuse
 			else
 				sscanf(text, "%f %f %f", &x, &y, &z);
 		}
+	}
+
+	inline Vector::Vector(const Vector& a)
+		: x(a.x)
+		, y(a.y)
+		, z(a.z)
+	{
 	}
 
 	inline Vector::operator float * (void)

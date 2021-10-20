@@ -17,6 +17,11 @@ namespace con
 	{
 	public:
 		/**
+		 * Construct an empty array view.
+		 */
+		ContainerView();
+
+		/**
 		 * Construct with an array of objects and the number of elements.
 		 *
 		 * @param objlistValue The object list.
@@ -51,6 +56,13 @@ namespace con
 		T* objlist;
 		size_t arraysize;
 	};
+
+	template<typename T>
+	ContainerView<T>::ContainerView()
+		: objlist(nullptr)
+		, arraysize(0)
+	{
+	}
 
 	template<typename T>
 	ContainerView<T>::ContainerView(T* objlistValue, size_t arraysizeValue)

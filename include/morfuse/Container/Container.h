@@ -61,7 +61,7 @@ namespace mfuse
 		const Type			*Data() const noexcept;
 		void				ClearObjectList();
 		void				FreeObjectList();
-		uintptr_t			IndexOfObject(const Type& obj) noexcept;
+		uintptr_t			IndexOfObject(const Type& obj) const noexcept;
 		void				InsertObjectAt(size_t index, const Type& obj);
 		uintptr_t			MaxObjects() const noexcept;
 		uintptr_t			NumObjects() const noexcept;
@@ -282,7 +282,7 @@ namespace mfuse
 	}
 
 	template<class Type, class Allocator>
-	uintptr_t Container<Type, Allocator>::IndexOfObject(const Type& obj) noexcept
+	uintptr_t Container<Type, Allocator>::IndexOfObject(const Type& obj) const noexcept
 	{
 		if (!objlist) {
 			return 0;

@@ -3,6 +3,8 @@
 #include "../Common/str.h"
 #include "sourcePos.h"
 
+#include "ScriptException.h"
+
 #include <exception>
 
 namespace mfuse
@@ -30,160 +32,158 @@ namespace mfuse
 
 	namespace CompileException
 	{
-		class Base : public std::exception {};
+		class mfuse_PUBLIC Base : public std::exception {};
 
-		class BaseSource : public Base
+		class mfuse_PUBLIC BaseSource : public Base
 		{
 		public:
-			BaseSource(sourceLocation_t sourceLocValue);
+			mfuse_LOCAL BaseSource(sourceLocation_t sourceLocValue);
 
-			const sourceLocation_t& getSourceLoc() const;
+			mfuse_EXPORTS const sourceLocation_t& getSourceLoc() const;
 
 		private:
 			sourceLocation_t sourceLoc;
 		};
 
-		class UnknownNodeType : public Base
+		class mfuse_PUBLIC UnknownNodeType : public Base
 		{
 		public:
-			UnknownNodeType(uint8_t typeValue);
+			mfuse_LOCAL UnknownNodeType(uint8_t typeValue);
 
-			uint8_t getType() const;
-
-			const char* what() const noexcept override;
+			mfuse_EXPORTS uint8_t getType() const;
+			mfuse_EXPORTS const char* what() const noexcept override;
 
 		private:
 			uint8_t type;
 		};
 
-		class BreakJumpLocOverflow : public BaseSource
+		class mfuse_PUBLIC BreakJumpLocOverflow : public BaseSource
 		{
 		public:
 			using BaseSource::BaseSource;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class ContinueJumpLocOverflow : public BaseSource
+		class mfuse_PUBLIC ContinueJumpLocOverflow : public BaseSource
 		{
 		public:
 			using BaseSource::BaseSource;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class IllegalBreak : public BaseSource
+		class mfuse_PUBLIC IllegalBreak : public BaseSource
 		{
 		public:
 			using BaseSource::BaseSource;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class IllegalContinue : public BaseSource
+		class mfuse_PUBLIC IllegalContinue : public BaseSource
 		{
 		public:
 			using BaseSource::BaseSource;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
 
-		class UnknownCommand : public BaseSource
+		class mfuse_PUBLIC UnknownCommand : public BaseSource, public Messageable
 		{
 		public:
-			UnknownCommand(const char* cmdNameValue, sourceLocation_t sourceLocValue);
+			mfuse_LOCAL UnknownCommand(const char* cmdNameValue, sourceLocation_t sourceLocValue);
 
-			const char* getCommandName() const;
+			mfuse_EXPORTS const char* getCommandName() const;
+			mfuse_EXPORTS const char* what() const noexcept override;
 
-			const char* what() const noexcept override;
+		protected:
+			const xstr& getPrivateCommandName() const;
 
 		private:
 			xstr cmdName;
 		};
 
-		class UnknownCommandRet : public UnknownCommand
+		class mfuse_PUBLIC UnknownCommandRet : public UnknownCommand
 		{
 		public:
 			using UnknownCommand::UnknownCommand;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
 
-		class BadValue : public BaseSource
+		class mfuse_PUBLIC BadValue : public BaseSource
 		{
 		public:
-			BadValue(uint8_t typeValue, sourceLocation_t sourceLocValue);
+			mfuse_LOCAL BadValue(uint8_t typeValue, sourceLocation_t sourceLocValue);
 
-			uint8_t getType() const;
-
-			const char* what() const noexcept override;
+			mfuse_EXPORTS uint8_t getType() const;
+			mfuse_EXPORTS const char* what() const noexcept override;
 
 		private:
 			uint8_t type;
 		};
 
-		class BadLeftValueExpectFieldArray : public BadValue
+		class mfuse_PUBLIC BadLeftValueExpectFieldArray : public BadValue
 		{
 		public:
 			using BadValue::BadValue;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class BadCaseValueExpectIntString : public BadValue
+		class mfuse_PUBLIC BadCaseValueExpectIntString : public BadValue
 		{
 		public:
 			using BadValue::BadValue;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class BadParameterLValueExpectField : public BadValue
+		class mfuse_PUBLIC BadParameterLValueExpectField : public BadValue
 		{
 		public:
 			using BadValue::BadValue;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
 
-		class FieldBase : public BaseSource
+		class mfuse_PUBLIC FieldBase : public BaseSource
 		{
 		public:
-			FieldBase(const char* fieldNameValue, sourceLocation_t sourceLocValue);
+			mfuse_LOCAL FieldBase(const char* fieldNameValue, sourceLocation_t sourceLocValue);
 
-			const char* getFieldName() const;
-
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* getFieldName() const;
+			mfuse_EXPORTS const char* what() const noexcept override;
 
 		private:
 			xstr fieldName;
 		};
 
-		class WriteOnly : public FieldBase
+		class mfuse_PUBLIC WriteOnly : public FieldBase
 		{
 		public:
 			using FieldBase::FieldBase;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class ReadOnly : public FieldBase
+		class mfuse_PUBLIC ReadOnly : public FieldBase
 		{
 		public:
 			using FieldBase::FieldBase;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
-		class NotAllowed : public FieldBase
+		class mfuse_PUBLIC NotAllowed : public FieldBase
 		{
 		public:
 			using FieldBase::FieldBase;
 
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* what() const noexcept override;
 		};
 
-		class DuplicateLabel : public BaseSource
+		class mfuse_PUBLIC DuplicateLabel : public BaseSource
 		{
 		public:
-			DuplicateLabel(const char* labelNameValue, sourceLocation_t sourceLocValue);
+			mfuse_LOCAL DuplicateLabel(const char* labelNameValue, sourceLocation_t sourceLocValue);
 
-			const char* getLabelName() const;
-
-			const char* what() const noexcept override;
+			mfuse_EXPORTS const char* getLabelName() const;
+			mfuse_EXPORTS const char* what() const noexcept override;
 
 		private:
 			xstr labelName;

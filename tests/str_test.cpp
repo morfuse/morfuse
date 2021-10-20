@@ -4,7 +4,11 @@
 
 using namespace mfuse;
 
-#define string_assert(s, expected_len, expected_data) assert((s).length() == (expected_len) && !str::cmp((s), (expected_data)))
+void string_assert(const str& s, size_t expected_len, const char* expected_data)
+{
+	assert(s.length() == expected_len);
+	assert(!str::icmp(s, expected_data));
+}
 
 /*
 =================
@@ -31,10 +35,11 @@ void TestStringClass(void)
 	str c("test");
 	// d.len == 4, d.data == "test\0"
 	str d(c);
-	//str	e(reinterpret_cast<const char*>(nullptr));
+	str e;
 	size_t i;
 
-	// e.len == 0, e.data == "\0"					ASSERT!
+	// e.len == 0, e.data == "\0"
+	string_assert(e, 0, "");
 
 	// i == 0
 	i = a.length();
@@ -256,6 +261,13 @@ void TestStringClass(void)
 	a.append('b');
 	a.append('c');
 	string_assert(a, 3, "abc");
+
+	e = str(1);
+	string_assert(e, 1, "1");
+	e = str(10);
+	string_assert(e, 2, "10");
+	e = str(1.5f);
+	string_assert(e, 5, "1.500");
 }
 
 int main(int argc, const char* argv[])

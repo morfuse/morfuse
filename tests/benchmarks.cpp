@@ -1,4 +1,5 @@
 #include <morfuse/Script/Context.h>
+#include <morfuse/Common/membuf.h>
 
 #include <fstream>
 #include <iostream>
@@ -10,12 +11,8 @@ static const char script1[] =
 "main:\n"
 "local.j = 1\n"
 "local.k = 3\n"
-"for(local.i = 0; local.i < 10000000; local.i++) {\n"
+"for(local.i = 0; local.i < 100000; local.i++) {\n"
 "local.j = local.j * local.k\n"
-//"local.l = abs(local.j)\n"
-//"local.st = \"test\"\n"
-//"local.st2 = \"test\"\n"
-//"local.st3 = \"test\"\n"
 "local.k += 2\n"
 "}\n"
 "end\n";
@@ -24,8 +21,6 @@ static const char script2[] =
 "main local.j local.k:\n"
 "local.j = local.j * local.k\n"
 "local.k += 2\n"
-"local.arr[0] = local.j\n"
-"local.arr[1] = local.k\n"
 "end\n";
 
 int main(int argc, char* argv[])
@@ -43,17 +38,27 @@ int main(int argc, char* argv[])
 
 	// Get the script master
 	ScriptMaster& director = context.GetDirector();
-	const ProgramScript* const compiledScript1 = director.GetScript("bench1", script1, sizeof(script1));
-	const ProgramScript* const compiledScript2 = director.GetScript("bench2", script2, sizeof(script2));
+	memstream stream[] =
+	{
+		{ script1, sizeof(script1) },
+		{ script2, sizeof(script2) }
+	};
+
+	director.GetThreadExecutionProtection().SetLoopProtection(false);
+
+	const ProgramScript* const compiledScript1 = director.GetProgramScript("bench1", stream[0]);
+	const ProgramScript* const compiledScript2 = director.GetProgramScript("bench2", stream[1]);
 
 	using namespace std::chrono;
 	time_point<high_resolution_clock> start, end;
 	duration<double> diff1, diff2;
 
 	start = high_resolution_clock::now();
-	volatile size_t j = 1;
-	volatile size_t k = 3;
-	for(size_t i = 0; i < 10000000; ++i) {
+	// avoid optimizing away those variables
+	// the loop must be done at run-time
+	volatile uint32_t j = 1;
+	volatile uint32_t k = 3;
+	for(uint32_t i = 0; i < 100000; ++i) {
 		j = j * k;
 		k += 2;
 	}
@@ -63,7 +68,7 @@ int main(int argc, char* argv[])
 	std::cout << "C code: " << duration<double>(diff1).count() * 1000.0 << " ms" << std::endl;
 
 	start = high_resolution_clock::now();
-	director.ExecuteThread(compiledScript1, nullptr);
+	director.ExecuteThread(compiledScript1);
 	end = high_resolution_clock::now();
 
 	diff2 = end - start;
@@ -85,9 +90,9 @@ int main(int argc, char* argv[])
 	parms.AddInteger(j);
 	parms.AddInteger(k);
 
-	for (size_t i = 0; i < 10000000; ++i)
+	for (uint32_t i = 0; i < 100000; ++i)
 	{
-		director.ExecuteThread(compiledScript2, nullptr, parms);
+		director.ExecuteThread(compiledScript2, parms);
 
 		/*
 		ScriptVariable& arr = parms.GetValue(parms.NumArgs());

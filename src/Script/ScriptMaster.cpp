@@ -1,7 +1,7 @@
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Script/EventSystem.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptMaster.h>
-#include <morfuse/Script/ConstStr.h>
 #include <morfuse/Script/Parm.h>
 #include <morfuse/Script/Listener.h>
 #include <morfuse/Script/Level.h>
@@ -10,19 +10,12 @@
 #include <morfuse/Script/ScriptException.h>
 #include <morfuse/Script/ScriptVM.h>
 #include <morfuse/Script/ProgramScript.h>
+#include <morfuse/Script/PredefinedString.h>
 
 using namespace mfuse;
 
-const rawchar_t* ScriptMaster::ConstStrings[] =
-{
-	"",
-	"remove",
-	"delete"
-};
-
 ScriptMaster::ScriptMaster()
-	: stackCount(0)
-	, ContainerHead(nullptr)
+	: ContainerHead(nullptr)
 {
 	InitConstStrings();
 }
@@ -34,46 +27,18 @@ ScriptMaster::~ScriptMaster()
 
 void ScriptMaster::InitConstStrings()
 {
-	const size_t numStrings = sizeof(ConstStrings) / sizeof(ConstStrings[0]);
+	dict.AllocateMoreString(PredefinedString::GetNumStrings());
 
-	StringDict.resize(numStrings);
-	for (uintptr_t i = 0; i < numStrings; i++)
+	for (PredefinedString::List::iterator it = PredefinedString::GetList(); it; it = it.Next())
 	{
-		AddString(ConstStrings[i]);
-	}
-}
-
-const_str ScriptMaster::AddString(xstrview s)
-{
-	if(s.isDynamic()) {
-		return (const_str)StringDict.addKeyIndex(s.getDynamicString());
-	}
-	else {
-		return StringDict.addKeyIndex(xstr(s.c_str(), s.len()));
-	}
-}
-
-const_str ScriptMaster::GetString(const rawchar_t *s)
-{
-	const_str cs = (const_str)StringDict.findKeyIndex(s);
-	return cs ? cs : STRING_EMPTY;
-}
-
-const xstr& ScriptMaster::GetString(const_str s)
-{
-	return StringDict[s];
-}
-
-void ScriptMaster::AllocateMoreString(size_t count)
-{
-	if (StringDict.size() + count > StringDict.allocated()) {
-		StringDict.resize(StringDict.size() + count);
+		const const_str value = dict.Add(it->GetString());
+		assert(value == it->GetIndex());
 	}
 }
 
 void ScriptMaster::AddTiming(ScriptThread* Thread, uint64_t Time)
 {
-	const uinttime_t t = ScriptContext::Get().GetTimeManager().GetTime();
+	const uinttime_t t = ScriptContext::Get().GetTimeManager().GetScaledTime();
 	timerList.AddElement(Thread, t + Time);
 }
 
@@ -82,199 +47,81 @@ void ScriptMaster::RemoveTiming(ScriptThread* Thread)
 	timerList.RemoveElement(Thread);
 }
 
-uintptr_t ScriptMaster::GetStackCount() const
-{
-	return stackCount;
-}
-
-void ScriptMaster::AddStack()
-{
-	stackCount++;
-}
-
-void ScriptMaster::RemoveStack()
-{
-	stackCount--;
-	assert(stackCount >= 0);
-}
-
-bool ScriptMaster::HasLoopDrop() const
-{
-	return false;
-}
-
-bool ScriptMaster::HasLoopProtection() const
-{
-	return true;
-}
-
 ScriptClass* ScriptMaster::GetHeadContainer() const
 {
 	return ContainerHead;
 }
 
-ScriptThread* ScriptMaster::CreateScriptThread(const ProgramScript *scr, Listener *self, const_str label)
+ScriptThread* ScriptMaster::CreateScriptThread(const ProgramScript *scr, Listener *self, const StringResolvable& label)
 {
-	ScriptClass* scriptClass = new ScriptClass(scr, self);
-
-	return CreateScriptThread(scriptClass, label);
-}
-
-ScriptThread* ScriptMaster::CreateScriptThread(const ProgramScript *scr, Listener *self, const rawchar_t* label)
-{
-	return CreateScriptThread(scr, self, AddString(label));
-}
-
-ScriptThread* ScriptMaster::CreateScriptThread(ScriptClass* scriptClass, const_str label)
-{
-	const ProgramScript* const script = scriptClass->GetScript();
-	if (!script) {
-		return nullptr;
-	}
-
-	const opval_t* const m_pCodePos =
-		label != STRING_EMPTY
-		? scriptClass->FindLabel(label)
-		: script->GetProgBuffer();
-
-	if (!m_pCodePos)
+	ScriptClass* scriptClass = nullptr;
+	
+	try
 	{
-		ScriptError("ScriptMaster::CreateScriptThread: label '%s' does not exist in '%s'.", GetString(label).c_str(), scriptClass->Filename().c_str());
-	}
+		scriptClass = new ScriptClass(scr, self);
 
-	return CreateScriptThread(scriptClass, m_pCodePos);
+		return CreateScriptThread(scriptClass, label);
+	}
+	catch (std::exception&)
+	{
+		if (scriptClass) {
+			delete scriptClass;
+		}
+
+		throw;
+	}
 }
 
-ScriptThread* ScriptMaster::CreateScriptThread(ScriptClass* scriptClass, const rawchar_t* label)
+ScriptThread* ScriptMaster::CreateScriptThread(ScriptClass* scriptClass, const StringResolvable& label)
 {
-	if (label && *label)
+	const opval_t* codePos;
+
+	if (!label.IsEmpty())
 	{
-		return CreateScriptThread(scriptClass, AddString(label));
+		const script_label_t* s = scriptClass->FindLabel(label.GetConstString());
+		if (!s) {
+			throw StateScriptErrors::LabelNotFound(label, scriptClass->Filename());
+		}
+		
+		codePos = s->codepos;
 	}
 	else
 	{
-		return CreateScriptThread(scriptClass, STRING_EMPTY);
+		// start at the beginning
+		codePos = scriptClass->GetScript()->GetProgBuffer();
 	}
+
+	assert(codePos);
+	return CreateScriptThread(scriptClass, codePos);
 }
 
-ScriptThread* ScriptMaster::CreateScriptThread(ScriptClass* scriptClass, const opval_t* m_pCodePos)
+ScriptThread* ScriptMaster::CreateScriptThread(ScriptClass* scriptClass, const opval_t* codePos)
 {
-	return new ScriptThread(scriptClass, m_pCodePos);
+	return new ScriptThread(scriptClass, codePos);
 }
 
-ScriptThread* ScriptMaster::CreateThread(const ProgramScript *scr, const rawchar_t* label, Listener *self)
+void ScriptMaster::ExecuteThread(const ProgramScript* scr, const StringResolvable& label)
 {
-	try
-	{
-		return CreateScriptThread(scr, self, label);
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("ScriptMaster::CreateThread: %s\n", exc.string.c_str());
-		return NULL;
-	}
+	ScriptThread* const Thread = CreateScriptThread(scr, nullptr, label);
+	Thread->Execute();
 }
 
-ScriptThread* ScriptMaster::CreateThread(const rawchar_t* scriptName, const rawchar_t* label, Listener* self)
+void ScriptMaster::ExecuteThread(const StringResolvable& scriptName, const StringResolvable& label)
 {
-	const ProgramScript* const scr = GetScript(scriptName);
-	if(scr)
-	{
-		return CreateThread(scr, label, self);
-	}
-
-	return nullptr;
+	const ProgramScript* const script = GetProgramScript(scriptName);
+	return ExecuteThread(script, label);
 }
 
-ScriptThread* ScriptMaster::CreateThread(const ProgramScript* scr, const_str label, Listener* self)
+void ScriptMaster::ExecuteThread(const ProgramScript* scr, Event& parms, const StringResolvable& label)
 {
-	try
-	{
-		return CreateScriptThread(scr, self, label);
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("ScriptMaster::CreateThread: %s\n", exc.string.c_str());
-		return NULL;
-	}
+	ScriptThread* const Thread = CreateScriptThread(scr, nullptr, label);
+	Thread->Execute(parms);
 }
 
-ScriptThread* ScriptMaster::CreateThread(const rawchar_t* scriptName, const_str label, Listener* self)
+void ScriptMaster::ExecuteThread(const StringResolvable& scriptName, Event& parms, const StringResolvable& label)
 {
-	const ProgramScript* const scr = GetScript(scriptName);
-	if (scr)
-	{
-		return CreateThread(scr, label, self);
-	}
-
-	return nullptr;
-}
-
-void ScriptMaster::ExecuteThread(const ProgramScript* scr, const rawchar_t* label)
-{
-	ScriptThread* const Thread = label
-		? CreateThread(scr, label)
-		: CreateThread(scr, STRING_EMPTY);
-
-	try
-	{
-		if (Thread)
-		{
-			Thread->Execute();
-		}
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("ScriptMaster::ExecuteThread: %s\n", exc.string.c_str());
-	}
-}
-
-void ScriptMaster::ExecuteThread(const ProgramScript* scr, const rawchar_t* label, Event& parms)
-{
-	ScriptThread* const Thread = label
-		? CreateThread(scr, label)
-		: CreateThread(scr, STRING_EMPTY);
-
-	try
-	{
-		Thread->Execute(parms);
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("ScriptMaster::ExecuteThread: %s\n", exc.string.c_str());
-	}
-}
-
-void ScriptMaster::ExecuteThread(const rawchar_t* scriptName, const rawchar_t* label)
-{
-	ScriptThread* const Thread = label
-		? CreateThread(scriptName, label)
-		: CreateThread(scriptName, STRING_EMPTY);
-
-	try
-	{
-		Thread->Execute();
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("ScriptMaster::ExecuteThread: %s\n", exc.string.c_str());
-	}
-}
-
-void ScriptMaster::ExecuteThread(const rawchar_t* scriptName, const rawchar_t* label, Event& parms)
-{
-	ScriptThread* const Thread = label
-		? CreateThread(scriptName, label)
-		: CreateThread(scriptName, STRING_EMPTY);
-
-	try
-	{
-		Thread->Execute(parms);
-	}
-	catch (ScriptException&)
-	{
-		//glbs.DPrintf("ScriptMaster::ExecuteThread: %s\n", exc.string.c_str());
-	}
+	const ProgramScript* const script = GetProgramScript(scriptName);
+	return ExecuteThread(script, parms, label);
 }
 
 ScriptClass* ScriptMaster::CurrentScriptClass()
@@ -282,21 +129,21 @@ ScriptClass* ScriptMaster::CurrentScriptClass()
 	return CurrentThread()->GetScriptClass();
 }
 
-ScriptThread* ScriptMaster::CurrentThread()
+ScriptThread* ScriptMaster::CurrentThread() noexcept
 {
 	return m_CurrentThread;
 }
 
-ScriptThread* ScriptMaster::PreviousThread()
+ScriptThread* ScriptMaster::PreviousThread() noexcept
 {
 	return m_PreviousThread;
 }
 
-const ProgramScript* ScriptMaster::GetTempScript(const char* data, uint64_t dataLength)
+const ProgramScript* ScriptMaster::GetTempScript(std::istream& stream)
 {
 	ProgramScript* const scr = new ProgramScript(STRING_EMPTY);
 
-	scr->Load((void *)data, dataLength);
+	scr->Load(stream);
 
 	if (!scr->IsCompileSuccess())
 	{
@@ -306,9 +153,9 @@ const ProgramScript* ScriptMaster::GetTempScript(const char* data, uint64_t data
 	return scr;
 }
 
-const ProgramScript* ScriptMaster::GetGameScriptInternal(const_str scriptName, const char* sourceBuffer, size_t sourceLength)
+const ProgramScript* ScriptMaster::GetProgramScriptInternal(const_str scriptName, std::istream& stream)
 {
-	const ProgramScript* const* const pSrc = m_GameScripts.find(scriptName);
+	const ProgramScript* const* const pSrc = m_ProgramScripts.find(scriptName);
 
 	if (pSrc && *pSrc)
 	{
@@ -317,7 +164,7 @@ const ProgramScript* ScriptMaster::GetGameScriptInternal(const_str scriptName, c
 
 	ProgramScript* const scr = new ProgramScript(scriptName);
 
-	m_GameScripts[scriptName] = scr;
+	m_ProgramScripts[scriptName] = scr;
 
 	/*
 	if (GetCompiledScript(scr))
@@ -327,32 +174,23 @@ const ProgramScript* ScriptMaster::GetGameScriptInternal(const_str scriptName, c
 	}
 	*/
 
-	scr->Load(sourceBuffer, sourceLength);
-
-	if (!scr->IsCompileSuccess())
-	{
-		ScriptError("Script '%s' was not properly loaded", GetString(scriptName).c_str());
-	}
+	scr->Load(stream);
 
 	return scr;
 }
 
-const ProgramScript* ScriptMaster::GetGameScript(const rawchar_t* scriptName, const char* data, uint64_t dataLength, bool recompile)
+const ProgramScript* ScriptMaster::GetProgramScript(const StringResolvable& scriptName, std::istream& stream, bool recompile)
 {
-	const_str s = AddString(scriptName);
-	return GetGameScript(s, data, dataLength, recompile);
-}
+	const const_str constStringValue = scriptName.GetConstString(GetDictionary());
+	ProgramScript* scr = FindScript(constStringValue);
 
-const ProgramScript* ScriptMaster::GetGameScript(const_str scriptName, const char* data, uint64_t dataLength, bool recompile)
-{
-	ProgramScript** pScr = m_GameScripts.find(scriptName);
-	ProgramScript* scr = pScr ? *pScr : nullptr;
-
-	if (scr != NULL && !recompile)
+	if (scr && !recompile)
 	{
 		if (!scr->IsCompileSuccess())
 		{
-			ScriptError("Script '%s' was not properly loaded\n", GetString(scriptName).c_str());
+			throw ScriptException(
+				"Script '" + scriptName.GetString(GetDictionary()) + "' was not properly loaded"
+			);
 		}
 
 		return scr;
@@ -361,128 +199,96 @@ const ProgramScript* ScriptMaster::GetGameScript(const_str scriptName, const cha
 	{
 		if (scr && recompile)
 		{
-			con::Container<ScriptClass*> list;
-			ScriptClass* scriptClass;
-			m_GameScripts[scriptName] = NULL;
-
-			for (scriptClass = GetHeadContainer(); scriptClass != nullptr; scriptClass = scriptClass->GetNext())
-			{
-				if (scriptClass->GetScript() == scr)
-				{
-					list.AddObject(scriptClass);
-				}
-			}
-
-			for (uintptr_t i = 1; i <= list.NumObjects(); i++)
-			{
-				delete list.ObjectAt(i);
-			}
-
-			delete scr;
+			// since it's about recompiling, delete the previous script
+			DeleteProgramScript(scr);
 		}
 
-		if (data) {
-			return GetGameScriptInternal(scriptName, data, dataLength);
-		}
-
-		return nullptr;
+		return GetProgramScriptInternal(constStringValue, stream);
 	}
 }
 
-const ProgramScript* ScriptMaster::GetGameScript(const rawchar_t* scriptName, bool recompile)
+mfuse::ProgramScript* ScriptMaster::FindScript(const_str scriptName) const
 {
-// FIXME
-/*
-	AssetManagerPtr assetManager = GetContext()->getAssetManager();
-	if(assetManager)
+	ProgramScript* const* pScr = m_ProgramScripts.find(scriptName);
+	return pScr ? *pScr : nullptr;
+}
+
+void ScriptMaster::DeleteProgramScript(ProgramScript* script)
+{
+	m_ProgramScripts.remove(script->Filename());
+
+	con::Container<ScriptClass*> list;
+	ScriptClass* scriptClass;
+
+	ScriptClass* next;
+	for (scriptClass = GetHeadContainer(); scriptClass != nullptr; scriptClass = next)
 	{
-		FilePtr file = assetManager->GetFileManager()->OpenFile(scriptName);
-		if(file)
+		next = scriptClass->GetNext();
+		if (scriptClass->GetScript() == script) {
+			delete scriptClass;
+		}
+	}
+
+	delete script;
+}
+
+const ProgramScript* ScriptMaster::GetProgramScript(const StringResolvable& scriptName, bool recompile)
+{
+	const ScriptContext& context = ScriptContext::Get();
+	IFileManagement* fileManagement = context.GetScriptInterfaces().fileManagement;
+	if (!fileManagement) {
+		throw ScriptException("Not implementation for file provider");
+	}
+
+	const const_str constScriptName = scriptName.GetConstString(GetDictionary());
+	ProgramScript* const scr = FindScript(constScriptName);
+	if (scr && !recompile)
+	{
+		return scr;
+	}
+	else
+	{
+		if (scr && recompile)
 		{
-			const rawchar_t* data;
-			uint64_t dataLen = file->ReadBuffer((void**)&data);
+			// since it's about recompiling, delete the previous script
+			DeleteProgramScript(scr);
 		}
 	}
-*/
-	ScriptError("Can't find %s", scriptName);
-	return nullptr;
+
+	const rawchar_t* fname = scriptName.GetRawString(GetDictionary());
+	// now open the file
+	IFile* file = fileManagement->OpenFile(fname);
+	if (!file)
+	{
+		throw ScriptException(
+			"Can't find '" + xstr(fname) + "'"
+		);
+	}
+
+	std::istream& stream = file->getStream();
+	// compile as the stream has been obtained
+	const ProgramScript* script = GetProgramScript(scriptName, stream, recompile);
+
+	fileManagement->CloseFile(file);
+
+	return script;
 }
 
-const ProgramScript* ScriptMaster::GetGameScript(const_str scriptName, bool recompile)
+void ScriptMaster::CloseProgramScript()
 {
-	// FIXME
-	ScriptError("Can't find %s", GetString(scriptName).c_str());
-	return nullptr;
-}
+	con::map_enum<const_str, ProgramScript*> en(m_ProgramScripts);
+	ProgramScript* const* pg;
+	con::Container<ProgramScript*> programScripts;
 
-const ProgramScript* ScriptMaster::GetScript(const rawchar_t* scriptName, const char* data, uint64_t dataLength, bool recompile)
-{
-	try
+	// delete all programs
+	for (pg = en.NextValue(); pg; pg = en.NextValue())
 	{
-		return GetGameScript(scriptName, data, dataLength, recompile);
-	}
-	catch (std::exception& e)
-	{
-		ScriptContext::Get().GetOutputInfo().DPrintf("ScriptMaster::GetScript: %s\n", e.what());
+		if (*pg) {
+			delete* pg;
+		}
 	}
 
-	return NULL;
-}
-
-const ProgramScript* ScriptMaster::GetScript(const rawchar_t* scriptName, bool recompile)
-{
-	try
-	{
-		return GetGameScript(scriptName, recompile);
-	}
-	catch (std::exception&)
-	{
-		//glbs.Printf("ScriptMaster::GetScript: %s\n", exc.string.c_str());
-	}
-
-	return NULL;
-}
-
-const ProgramScript* ScriptMaster::GetScript(const_str scriptName, const char* data, uint64_t dataLength, bool recompile)
-{
-	try
-	{
-		return GetGameScript(scriptName, data, dataLength, recompile);
-	}
-	catch (std::exception& e)
-	{
-		ScriptContext::Get().GetOutputInfo().DPrintf("ScriptMaster::GetScript: %s\n", e.what());
-	}
-
-	return NULL;
-}
-
-const ProgramScript* ScriptMaster::GetScript(const_str scriptName, bool recompile)
-{
-	try
-	{
-		return GetGameScript(scriptName, recompile);
-	}
-	catch (std::exception&)
-	{
-		//glbs.Printf("ScriptMaster::GetScript: %s\n", exc.string.c_str());
-	}
-
-	return NULL;
-}
-
-void ScriptMaster::CloseGameScript()
-{
-	con::map_enum<const_str, ProgramScript*> en(m_GameScripts);
-	ProgramScript** g;
-	con::Container<ProgramScript*> gameScripts;
-
-	for (g = en.NextValue(); g; g = en.NextValue())
-	{
-		if (*g) delete *g;
-	}
-
-	m_GameScripts.clear();
+	m_ProgramScripts.clear();
 }
 
 void ScriptMaster::ClearAll()
@@ -490,21 +296,23 @@ void ScriptMaster::ClearAll()
 	// Destroy and free all script class
 	ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().FreeAll();
 
-	stackCount = 0;
+	CloseProgramScript();
+	dict.Reset();
 
-	CloseGameScript();
-	StringDict.clear();
+	// reinitialize const strings
+	InitConstStrings();
 }
 
 void ScriptMaster::Reset()
 {
 	ClearAll();
-	InitConstStrings();
 }
 
 void ScriptMaster::ExecuteRunning()
 {
-	if (stackCount) {
+	if (CurrentThread())
+	{
+		// don't do anything if there is a running thread
 		return;
 	}
 
@@ -513,9 +321,7 @@ void ScriptMaster::ExecuteRunning()
 		uint64_t i = 0;
 		while ((m_CurrentThread = (ScriptThread*)timerList.GetNextElement(i)))
 		{
-			ScriptVM* const scriptVM = m_CurrentThread->GetScriptVM();
-			scriptVM->SetThreadState(threadState_e::Running);
-			scriptVM->Execute();
+			m_CurrentThread->Resume();
 		}
 	}
 }
@@ -531,3 +337,63 @@ void ScriptMaster::SetTime(uinttime_t time)
 	timerList.SetDirty();
 }
 
+ThreadExecutionProtection& ScriptMaster::GetThreadExecutionProtection()
+{
+	return execProtection;
+}
+
+const ThreadExecutionProtection& ScriptMaster::GetThreadExecutionProtection() const
+{
+	return execProtection;
+}
+
+const con::timer& ScriptMaster::GetTimerList() const
+{
+	return timerList;
+}
+
+size_t ScriptMaster::GetNumScripts() const
+{
+	return m_ProgramScripts.size();
+}
+
+size_t ScriptMaster::GetNumRunningScripts() const
+{
+	return ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Count();
+}
+
+StringDictionary& ScriptMaster::GetDictionary()
+{
+	return dict;
+}
+
+const StringDictionary& ScriptMaster::GetDictionary() const
+{
+	return dict;
+}
+
+ThreadExecutionProtection::ThreadExecutionProtection()
+	: maxExecutionTime(5000)
+	, loopProtection(false)
+{
+}
+
+mfuse::uinttime_t ThreadExecutionProtection::GetMaxExecutionTime() const
+{
+	return maxExecutionTime;
+}
+
+void ThreadExecutionProtection::SetMaxExecutionTime(uinttime_t time)
+{
+	maxExecutionTime = time;
+}
+
+bool ThreadExecutionProtection::ShouldDrop() const
+{
+	return loopProtection;
+}
+
+void ThreadExecutionProtection::SetLoopProtection(bool protect)
+{
+	loopProtection = protect;
+}

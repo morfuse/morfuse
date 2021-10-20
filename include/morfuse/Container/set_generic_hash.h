@@ -28,7 +28,7 @@ inline intptr_t Hash<const void*>::operator()(const void* const& key) const
 }
 
 template<>
-inline intptr_t Hash<std::nullptr_t>::operator()(const std::nullptr_t& key) const
+inline intptr_t Hash<std::nullptr_t>::operator()(const std::nullptr_t&) const
 {
 	return 0;
 }

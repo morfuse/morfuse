@@ -41,15 +41,15 @@ namespace mfuse
 		void ArchiveCodePos(Archiver& arc, opval_t **codePos) const;
 
 		void Close();
-		void Load(const void *sourceBuffer, uint64_t sourceLength);
+		void Load(std::istream& stream);
 
-		bool GetCodePos(opval_t *codePos, xstr& filename, uintptr_t& pos);
-		bool SetCodePos(opval_t *&codePos, const rawchar_t* filename, uintptr_t pos);
+		bool GetCodePos(opval_t *codePos, const_str& filename, uintptr_t& pos);
+		bool SetCodePos(opval_t *&codePos, const_str filename, uintptr_t pos);
 
 		bool IsCompileSuccess() const;
 		size_t GetRequiredStackSize() const;
 
-		bool labelExists(const rawchar_t *name);
+		bool labelExists(const_str labelName);
 
 		const opval_t* GetProgBuffer() const;
 		size_t GetProgLength() const;
@@ -71,7 +71,6 @@ namespace mfuse
 
 		// compile variables
 		bool successCompile;
-		bool m_bPrecompiled;
 
 		// stack variables
 		unsigned int requiredStackSize;

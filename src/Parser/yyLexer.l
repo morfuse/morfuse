@@ -15,6 +15,7 @@
 
 %top{
 	#include <cstdint>
+	#include <cstdlib>
 }
 
 %{
@@ -31,7 +32,7 @@
 	#define YY_USER_ACTION \
 	{ \
 		pos += yyleng - yy_more_len; \
-		if (loc->lineno != yylineno) { \
+		if (loc->lineno != (uint32_t)yylineno) { \
 			loc->lineno = yylineno; \
 			loc->lineSourcePos = pos; \
 		} \
@@ -188,8 +189,16 @@ varname		[a-zA-Z0-9_\"]+
 [\r\n]*							{ if (prev_yylex != mfuse::Parser::token::TOKEN_EOL) YYLEX(TOKEN_EOL); }
 [ \t]							{ ; }
 
-[0-9]+										{ sscanf(yytext, "%llu", &yylval->val.longValue); YYLEX(TOKEN_INTEGER); }
-[0-9\.]+|[0-9\.]+("e+"|"e-")+[0-9\.]		{ sscanf(yytext, "%f", &yylval->val.floatValue); YYLEX(TOKEN_FLOAT); }
+[0-9]+									{
+											char* p = nullptr;
+											yylval->val.longValue = std::strtoll(yytext, &p, 10);
+											YYLEX(TOKEN_INTEGER);
+										}
+[0-9\.]+|[0-9\.]+("e+"|"e-")+[0-9\.]	{
+											char* p = nullptr;
+											yylval->val.floatValue = std::strtof(yytext, &p);
+											YYLEX(TOKEN_FLOAT);
+										}
 
 <IDENTIFIER>{identifier}		{
 									BEGIN(INITIAL);
@@ -288,7 +297,7 @@ varname		[a-zA-Z0-9_\"]+
 {identifier}					{ TextEscapeValue(parsetree, yytext, yyleng); YYLEX(TOKEN_IDENTIFIER); }
 
 [a-zA-Z0-9_\./\\-]*				{
-									if( UseField(parsetree) )
+									if( UseField() )
 									{
 										parsetree.pos -= yyleng;
 										REJECT;
@@ -373,7 +382,7 @@ void Lexer::TextValue(ParseTree& parsetree, char* str, size_t len)
 	yylval->val.stringValue = s;
 }
 
-bool Lexer::UseField(ParseTree& parsetree)
+bool Lexer::UseField()
 {
 	return prev_yylex == Parser::token::TOKEN_PERIOD
 		|| prev_yylex == Parser::token::TOKEN_DOLLAR;
@@ -389,7 +398,7 @@ bool Lexer::UseField(ParseTree& parsetree)
 	*/
 }
 
-void Lexer::yylexerror(const char* msg)
+void Lexer::yylexerror(const char*)
 {
 	// FIXME
 }

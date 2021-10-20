@@ -52,18 +52,3 @@ namespace mfuse
 		mfuse_EXPORTS void freeMemory(void* ptr);
 	}
 }
-
-/*
-#if !defined(__mfuse_MEMORY__) && defined(mfuse_DLL) && mfuse_DLL
-#include <new.h>
-
-void* operator new(size_t size);
-void* operator new[](size_t size);
-void* operator new(size_t size, std::align_val_t);
-void* operator new[](size_t size, std::align_val_t);
-void operator delete(void* ptr);
-void operator delete[](void* ptr);
-void operator delete(void* ptr, std::align_val_t);
-void operator delete[](void* ptr, std::align_val_t);
-#endif
-*/

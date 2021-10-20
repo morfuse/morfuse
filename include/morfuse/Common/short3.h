@@ -22,6 +22,7 @@ public :
 
 	short3() = default;
 	short3(int32_t value) { set(value); }
+	explicit short3(int64_t value) { set((int32_t)value); }
 	explicit short3(uint64_t value) { set((uint32_t)value); }
 
 	short3			operator-( void ) const;

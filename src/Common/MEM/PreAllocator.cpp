@@ -45,7 +45,7 @@ void* MEM::PreAllocator::Alloc(size_t size)
 	return newPtr;
 }
 
-void MEM::PreAllocator::Free(void* ptr)
+void MEM::PreAllocator::Free(void*)
 {
 }
 

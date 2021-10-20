@@ -1,8 +1,8 @@
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Script/ScriptVariable.h>
 #include <morfuse/Script/ScriptException.h>
 #include <morfuse/Script/Listener.h>
 #include <morfuse/Script/SimpleEntity.h>
-#include <morfuse/Script/ConstStr.h>
 #include <morfuse/Script/Archiver.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptMaster.h>
@@ -14,7 +14,7 @@ class con::Entry<const_str, ScriptVariable>
 {
 public:
 	Entry(const_str key)
-		: value(key)
+		: value(key, nullptr)
 	{
 	}
 
@@ -23,10 +23,11 @@ public:
 	{
 	}
 
-	const_str Key() { return value.GetKey(); }
-	ScriptVariable& Value() { return value; }
-	Entry* Next() const { return next; }
-	void SetNext(Entry* nextValue) { next = nextValue; }
+	const_str Key() const noexcept { return value.GetKey(); }
+	ScriptVariable& Value() noexcept { return value; }
+	const ScriptVariable& Value() const noexcept { return value; }
+	Entry* Next() const noexcept { return next; }
+	void SetNext(Entry* nextValue) noexcept { next = nextValue; }
 
 private:
 	ScriptVariable value;
@@ -52,11 +53,14 @@ intptr_t Hash<ScriptVariable>::operator()(const ScriptVariable& key) const
 		return (intptr_t)l;
 
 	default:
-		ScriptError("Bad hash code value: %s", key.stringValue().c_str());
+		throw ScriptVariableErrors::BadHashCodeValue(key.stringValue());
 	}
 }
 
+static ScriptVariable noneVar;
+
 ScriptArrayHolder::ScriptArrayHolder()
+	: refCount(0)
 {
 
 }
@@ -66,15 +70,15 @@ ScriptArrayHolder::~ScriptArrayHolder()
 
 }
 
-void ScriptArrayHolder::Archive(Archiver& arc)
+void ScriptArrayHolder::Archive(Archiver&)
 {
 	/*
-	arc.ArchiveUnsigned(&refCount);
+	arc.ArchiveUInt32(refCount);
 	arrayValue.Archive(arc);
 	*/
 }
 
-void ScriptArrayHolder::Archive(Archiver& arc, ScriptArrayHolder *& arrayValue)
+void ScriptArrayHolder::Archive(Archiver&, ScriptArrayHolder *&)
 {
 	/*
 	bool newRef;
@@ -107,7 +111,7 @@ void ScriptArrayHolder::Archive(Archiver& arc, ScriptArrayHolder *& arrayValue)
 	*/
 }
 
-void ScriptConstArrayHolder::Archive(Archiver& arc)
+void ScriptConstArrayHolder::Archive(Archiver&)
 {
 	/*
 	arc.ArchiveUnsigned(&refCount);
@@ -125,7 +129,7 @@ void ScriptConstArrayHolder::Archive(Archiver& arc)
 	*/
 }
 
-void ScriptConstArrayHolder::Archive(Archiver& arc, ScriptConstArrayHolder *& constArrayValue)
+void ScriptConstArrayHolder::Archive(Archiver&, ScriptConstArrayHolder *&)
 {
 	/*
 	bool newRef;
@@ -195,12 +199,12 @@ ScriptConstArrayHolder::~ScriptConstArrayHolder()
 }
 
 
-void ScriptPointer::Archive(Archiver& arc)
+void ScriptPointer::Archive(Archiver&)
 {
 	//list.Archive(arc, ScriptVariable::Archive);
 }
 
-void ScriptPointer::Archive(Archiver& arc, ScriptPointer *& pointerValue)
+void ScriptPointer::Archive(Archiver&, ScriptPointer *&)
 {
 	/*
 	bool newRef;
@@ -294,7 +298,14 @@ ScriptVariable::ScriptVariable()
 {
 }
 
-ScriptVariable::ScriptVariable(const_str keyValue)
+ScriptVariable::ScriptVariable(const_str stringValue)
+	: key(0)
+	, type(variableType_e::ConstString)
+{
+	m_data.constStringValue = stringValue;
+}
+
+ScriptVariable::ScriptVariable(const_str keyValue, std::nullptr_t)
 	: key(keyValue)
 	, type(variableType_e::None)
 {
@@ -314,9 +325,9 @@ ScriptVariable::ScriptVariable(const ScriptVariable& variable)
 }
 
 ScriptVariable::ScriptVariable(ScriptVariable&& variable)
-	: key(0)
+	: m_data(variable.m_data)
+	, key(0)
 	, type(variable.type)
-	, m_data(variable.m_data)
 {
 	variable.type = variableType_e::None;
 }
@@ -389,38 +400,38 @@ ScriptVariable::ScriptVariable(const Vector& initialValue)
 
 ScriptVariable& ScriptVariable::operator=(const ScriptVariable& variable)
 {
-	switch(type + variable.type * variableType_e::Max)
+	switch(uint32_t(type + variable.type * variableType_e::Max))
 	{
-	case variableType_e::None + variableType_e::None * variableType_e::Max:
-	case variableType_e::None + variableType_e::Integer * variableType_e::Max:
-	case variableType_e::None + variableType_e::Float * variableType_e::Max:
-	case variableType_e::None + variableType_e::Char * variableType_e::Max:
-	case variableType_e::None + variableType_e::ConstString * variableType_e::Max:
-	case variableType_e::String + variableType_e::None * variableType_e::Max:
-	case variableType_e::String + variableType_e::Integer * variableType_e::Max:
-	case variableType_e::String + variableType_e::Float * variableType_e::Max:
-	case variableType_e::String + variableType_e::Char * variableType_e::Max:
-	case variableType_e::String + variableType_e::ConstString * variableType_e::Max:
-	case variableType_e::Integer + variableType_e::None * variableType_e::Max:
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max:
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max:
-	case variableType_e::Integer + variableType_e::Char * variableType_e::Max:
-	case variableType_e::Integer + variableType_e::ConstString * variableType_e::Max:
-	case variableType_e::Float + variableType_e::None * variableType_e::Max:
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max:
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max:
-	case variableType_e::Float + variableType_e::Char * variableType_e::Max:
-	case variableType_e::Float + variableType_e::ConstString * variableType_e::Max:
-	case variableType_e::Char + variableType_e::None * variableType_e::Max:
-	case variableType_e::Char + variableType_e::Integer * variableType_e::Max:
-	case variableType_e::Char + variableType_e::Float * variableType_e::Max:
-	case variableType_e::Char + variableType_e::Char * variableType_e::Max:
-	case variableType_e::Char + variableType_e::ConstString * variableType_e::Max:
-	case variableType_e::ConstString + variableType_e::None * variableType_e::Max:
-	case variableType_e::ConstString + variableType_e::Integer * variableType_e::Max:
-	case variableType_e::ConstString + variableType_e::Float * variableType_e::Max:
-	case variableType_e::ConstString + variableType_e::Char * variableType_e::Max:
-	case variableType_e::ConstString + variableType_e::ConstString * variableType_e::Max:
+	case uint32_t(variableType_e::None + variableType_e::None * variableType_e::Max):
+	case uint32_t(variableType_e::None + variableType_e::Integer * variableType_e::Max):
+	case uint32_t(variableType_e::None + variableType_e::Float * variableType_e::Max):
+	case uint32_t(variableType_e::None + variableType_e::Char * variableType_e::Max):
+	case uint32_t(variableType_e::None + variableType_e::ConstString * variableType_e::Max):
+	case uint32_t(variableType_e::String + variableType_e::None * variableType_e::Max):
+	case uint32_t(variableType_e::String + variableType_e::Integer * variableType_e::Max):
+	case uint32_t(variableType_e::String + variableType_e::Float * variableType_e::Max):
+	case uint32_t(variableType_e::String + variableType_e::Char * variableType_e::Max):
+	case uint32_t(variableType_e::String + variableType_e::ConstString * variableType_e::Max):
+	case uint32_t(variableType_e::Integer + variableType_e::None * variableType_e::Max):
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
+	case uint32_t(variableType_e::Integer + variableType_e::Char * variableType_e::Max):
+	case uint32_t(variableType_e::Integer + variableType_e::ConstString * variableType_e::Max):
+	case uint32_t(variableType_e::Float + variableType_e::None * variableType_e::Max):
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
+	case uint32_t(variableType_e::Float + variableType_e::Char * variableType_e::Max):
+	case uint32_t(variableType_e::Float + variableType_e::ConstString * variableType_e::Max):
+	case uint32_t(variableType_e::Char + variableType_e::None * variableType_e::Max):
+	case uint32_t(variableType_e::Char + variableType_e::Integer * variableType_e::Max):
+	case uint32_t(variableType_e::Char + variableType_e::Float * variableType_e::Max):
+	case uint32_t(variableType_e::Char + variableType_e::Char * variableType_e::Max):
+	case uint32_t(variableType_e::Char + variableType_e::ConstString * variableType_e::Max):
+	case uint32_t(variableType_e::ConstString + variableType_e::None * variableType_e::Max):
+	case uint32_t(variableType_e::ConstString + variableType_e::Integer * variableType_e::Max):
+	case uint32_t(variableType_e::ConstString + variableType_e::Float * variableType_e::Max):
+	case uint32_t(variableType_e::ConstString + variableType_e::Char * variableType_e::Max):
+	case uint32_t(variableType_e::ConstString + variableType_e::ConstString * variableType_e::Max):
 		m_data = variable.m_data;
 		type = variable.type;
 		return *this;
@@ -469,12 +480,12 @@ void ScriptVariable::Archive(Archiver& arc)
 	ArchiveInternal(arc);
 }
 
-void ScriptVariable::Archive(Archiver& arc, ScriptVariable **obj)
+void ScriptVariable::Archive(Archiver& arc, ScriptVariable*& obj)
 {
-	//arc.ArchiveObjectPointer((Class **)obj);
+	arc.ArchiveObjectPointer((const void*&)obj);
 }
 
-void ScriptVariable::ArchiveInternal(Archiver& arc)
+void ScriptVariable::ArchiveInternal(Archiver&)
 {
 	/*
 	arc.ArchiveObjectPosition(this);
@@ -586,7 +597,7 @@ void ScriptVariable::CastConstArrayValue()
 	case variableType_e::Pointer:
 		ClearPointerInternal();
 	case variableType_e::None:
-		ScriptError("cannot cast NIL to an array");
+		throw ScriptVariableErrors::CastError("NIL", "listener");
 
 	case variableType_e::ConstArray:
 		return;
@@ -848,34 +859,37 @@ bool ScriptVariable::IsNone() const
 
 void ScriptVariable::PrintValue()
 {
+	const ScriptContext& context = ScriptContext::Get();
+	std::ostream* out = context.GetOutputInfo().GetOutput(outputLevel_e::Debug);
+
 	switch (type)
 	{
 	case variableType_e::None:
-		printf("");
+		*out << std::endl;
 		break;
 
 	case variableType_e::ConstString:
-		printf("%s", ScriptContext::Get().GetDirector().GetString(m_data.constStringValue).c_str());
+		*out << context.GetDirector().GetDictionary().Get(m_data.constStringValue);
 		break;
 
 	case variableType_e::String:
-		printf("%s", m_data.stringValue->c_str());
+		*out << m_data.stringValue->c_str();
 		break;
 
 	case variableType_e::Integer:
-		printf("%lld", m_data.long64Value);
+		*out << m_data.long64Value;
 		break;
 
 	case variableType_e::Float:
-		printf("%f", m_data.floatValue);
+		*out << m_data.floatValue;
 		break;
 
 	case variableType_e::Char:
-		printf("%c", m_data.charValue);
+		*out << m_data.charValue;
 		break;
 
 	case variableType_e::Listener:
-		printf("<Listener>%p", m_data.listenerValue->Pointer());
+		*out << "<Listener>" << m_data.listenerValue->Pointer();
 		break;
 
 	case variableType_e::Ref:
@@ -884,11 +898,11 @@ void ScriptVariable::PrintValue()
 	case variableType_e::Container:
 	case variableType_e::SafeContainer:
 	case variableType_e::Pointer:
-		printf("type: %s", GetTypeName());
+		*out << "type: " << GetTypeName();
 		break;
 
 	case variableType_e::Vector:
-		printf("( %f %f %f )", m_data.vectorValue[0], m_data.vectorValue[1], m_data.vectorValue[2]);
+		*out << "( " << m_data.vectorValue[0] << " " << m_data.vectorValue[1] << " " << m_data.vectorValue[2] << " )";
 		break;
 	default:
 		break;
@@ -1015,7 +1029,7 @@ bool ScriptVariable::booleanNumericValue()
 		return (*m_data.listenerValue) != nullptr;
 
 	default:
-		ScriptError("Cannot cast '%s' to boolean numeric", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "boolean numeric");
 	}
 
 	return true;
@@ -1068,13 +1082,13 @@ rawchar_t ScriptVariable::charValue() const
 
 		if (value.length() != 1)
 		{
-			ScriptError("Cannot cast string not of length 1 to rawchar_t");
+			throw ScriptVariableErrors::CastError("string not of length 1", "listener");
 		}
 
 		return *value;
 
 	default:
-		ScriptError("Cannot cast '%s' to rawchar_t", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "char");
 	}
 
 	return 0;
@@ -1085,16 +1099,7 @@ ScriptVariable *ScriptVariable::constArrayValue()
 	return m_data.constArrayValue->constArrayValue;
 }
 
-#ifndef NO_SCRIPTENGINE
-
-xstr getname_null = "";
-
-const xstr& ScriptVariable::getName()
-{
-	return ScriptContext::Get().GetDirector().GetString(GetKey());
-}
-
-const_str ScriptVariable::GetKey()
+const_str ScriptVariable::GetKey() const
 {
 	return key;
 }
@@ -1104,9 +1109,7 @@ void ScriptVariable::SetKey(const_str key)
 	this->key = key;
 }
 
-#endif
-
-void ScriptVariable::evalArrayAt(ScriptVariable &var)
+void ScriptVariable::evalArrayAt(const ScriptVariable &var)
 {
 	size_t index;
 	xstr string;
@@ -1115,12 +1118,12 @@ void ScriptVariable::evalArrayAt(ScriptVariable &var)
 	switch (type)
 	{
 	case variableType_e::Vector:
-		index = var.intValue();
+		index = (size_t)var.longValue();
 
 		if (index > 2)
 		{
 			Clear();
-			ScriptError("Vector index '%d' out of range", index);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("Vector", index);
 		}
 
 		return setFloatValue(m_data.vectorValue[index]);
@@ -1130,24 +1133,24 @@ void ScriptVariable::evalArrayAt(ScriptVariable &var)
 
 	case variableType_e::ConstString:
 	case variableType_e::String:
-		index = var.intValue();
+		index = (size_t)var.longValue();
 		string = stringValue();
 
 		if (index >= string.length())
 		{
 			Clear();
-			ScriptError("String index %d out of range", index);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("String", index);
 		}
 
 		return setCharValue(string[index]);
 
 	case variableType_e::Listener:
-		index = var.intValue();
+		index = (size_t)var.longValue();
 
 		if (index != 1)
 		{
 			Clear();
-			ScriptError("array index %d out of range", index);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", index);
 		}
 
 		break;
@@ -1167,32 +1170,32 @@ void ScriptVariable::evalArrayAt(ScriptVariable &var)
 		break;
 
 	case variableType_e::ConstArray:
-		index = var.intValue();
+		index = (size_t)var.longValue();
 
 		if (!index || index > m_data.constArrayValue->size)
 		{
-			ScriptError("array index %d out of range", index);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", index);
 		}
 
 		*this = m_data.constArrayValue->constArrayValue[index];
 		break;
 
 	case variableType_e::Container:
-		index = var.intValue();
+		index = (size_t)var.longValue();
 
 		if (!index || index > m_data.constArrayValue->size)
 		{
-			ScriptError("array index %d out of range", index);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", index);
 		}
 
 		setListenerValue(m_data.containerValue->ObjectAt(index));
 		break;
 
 	case variableType_e::SafeContainer:
-		index = var.intValue();
+		index = (size_t)var.longValue();
 
 		if (!*m_data.safeContainerValue || !index || index > m_data.constArrayValue->size) {
-			ScriptError("array index %d out of range", index);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", index);
 		}
 
 		setListenerValue((*m_data.safeContainerValue)->ObjectAt(index));
@@ -1200,8 +1203,7 @@ void ScriptVariable::evalArrayAt(ScriptVariable &var)
 
 	default:
 		Clear();
-		ScriptError("[] applied to invalid type '%s'", GetTypeName());
-		break;
+		throw ScriptVariableErrors::InvalidAppliedType("[]", GetTypeName());
 	}
 }
 
@@ -1227,7 +1229,7 @@ float ScriptVariable::floatValue() const
 		return val;
 
 	default:
-		ScriptError("Cannot cast '%s' to float", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "float");
 	}
 }
 
@@ -1251,7 +1253,7 @@ uint32_t ScriptVariable::intValue() const
 	}
 
 	default:
-		ScriptError("Cannot cast '%s' to int", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "int");
 	}
 }
 
@@ -1275,28 +1277,32 @@ uint64_t ScriptVariable::longValue() const
 	}
 
 	default:
-		ScriptError("Cannot cast '%s' to int64", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "int64");
 	}
 }
 
 Listener *ScriptVariable::listenerValue() const
 {
+	Listener* l = nullptr;
+
 	switch (type)
 	{
 	case variableType_e::ConstString:
-		return ScriptContext::Get().GetTargetList().GetScriptTarget(ScriptContext::Get().GetDirector().GetString(m_data.constStringValue));
+		l = ScriptContext::Get().GetTargetList().GetTarget(m_data.constStringValue);
+		break;
 
 	case variableType_e::String:
-		return ScriptContext::Get().GetTargetList().GetScriptTarget(stringValue());
+		l = ScriptContext::Get().GetTargetList().GetTarget(constStringValue());
+		break;
 
 	case variableType_e::Listener:
 		return (Listener *)m_data.listenerValue->Pointer();
 
 	default:
-		ScriptError("Cannot cast '%s' to listener", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "listener");
 	}
 
-	return nullptr;
+	return l;
 }
 
 Listener* ScriptVariable::listenerAt(uintptr_t index) const
@@ -1314,7 +1320,7 @@ Listener* ScriptVariable::listenerAt(uintptr_t index) const
 		return (*m_data.safeContainerValue)->ObjectAt(index);
 
 	default:
-		ScriptError("Cannot cast '%s' to listener", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "listener");
 	}
 }
 
@@ -1336,7 +1342,7 @@ xstr ScriptVariable::stringValue() const
 		return "NIL";
 
 	case variableType_e::ConstString:
-		return ScriptContext::Get().GetDirector().GetString(m_data.constStringValue);
+		return ScriptContext::Get().GetDirector().GetDictionary().Get(m_data.constStringValue);
 
 	case variableType_e::String:
 		return *m_data.stringValue;
@@ -1395,8 +1401,8 @@ Vector ScriptVariable::vectorValue() const
 	case variableType_e::String:
 		string = stringValue();
 
-		if (strcmp(string, "") == 0) {
-			ScriptError("cannot cast empty string to vector");
+		if (str::cmp(string, "") == 0) {
+			throw ScriptVariableErrors::CastError("empty string", "vector");
 		}
 
 		if (*string == '(')
@@ -1404,7 +1410,7 @@ Vector ScriptVariable::vectorValue() const
 			if (sscanf(string, "(%f %f %f)", &x, &y, &z) != 3)
 			{
 				if (sscanf(string, "(%f, %f, %f)", &x, &y, &z) != 3) {
-					ScriptError("Couldn't convert string to vector - malformed string '%s'", string);
+					throw ScriptException("Couldn't convert string to vector - malformed string '" + xstr(string) + "'");
 				}
 			}
 		}
@@ -1413,7 +1419,7 @@ Vector ScriptVariable::vectorValue() const
 			if (sscanf(string, "%f %f %f", &x, &y, &z) != 3)
 			{
 				if (sscanf(string, "%f, %f, %f", &x, &y, &z) != 3) {
-					ScriptError("Couldn't convert string to vector - malformed string '%s'", string);
+					throw ScriptException("Couldn't convert string to vector - malformed string '" + xstr(string) + "'");
 				}
 			}
 		}
@@ -1422,12 +1428,12 @@ Vector ScriptVariable::vectorValue() const
 	case variableType_e::Listener:
 	{
 		if (!m_data.listenerValue->Pointer()) {
-			ScriptError("Cannot cast nullptr to vector");
+			throw ScriptVariableErrors::CastError("NULL", "vector");
 		}
 
 		if (!ClassDef::checkInheritance(SimpleEntity::staticclass(), m_data.listenerValue->Pointer()->classinfo()))
 		{
-			ScriptError("Cannot cast '%s' to vector", GetTypeName());
+			throw ScriptVariableErrors::CastError(GetTypeName(), "vector");
 		}
 
 		SimpleEntity *ent = (SimpleEntity *)m_data.listenerValue->Pointer();
@@ -1437,7 +1443,7 @@ Vector ScriptVariable::vectorValue() const
 	}
 
 	default:
-		ScriptError("Cannot cast '%s' to vector", GetTypeName());
+		throw ScriptVariableErrors::CastError(GetTypeName(), "vector");
 	}
 }
 
@@ -1458,7 +1464,7 @@ void ScriptVariable::setArrayAtRef(const ScriptVariable& index, const ScriptVari
 		intValue = index.intValue();
 
 		if (intValue > 2) {
-			ScriptError("Vector index '%d' out of range", intValue);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("Vector", intValue);
 		}
 
 		m_data.vectorValue[intValue] = value.floatValue();
@@ -1496,7 +1502,7 @@ void ScriptVariable::setArrayAtRef(const ScriptVariable& index, const ScriptVari
 		string = stringValue();
 
 		if (intValue >= (intptr_t)strlen(string)) {
-			ScriptError("String index '%d' out of range", intValue);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("String", intValue);
 		}
 
 		string[intValue] = value.charValue();
@@ -1510,7 +1516,7 @@ void ScriptVariable::setArrayAtRef(const ScriptVariable& index, const ScriptVari
 
 		if (!uintValue || uintValue > m_data.constArrayValue->size)
 		{
-			ScriptError("array index %d out of range", uintValue);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", uintValue);
 		}
 
 		if (value.type != variableType_e::None)
@@ -1525,8 +1531,7 @@ void ScriptVariable::setArrayAtRef(const ScriptVariable& index, const ScriptVari
 		break;
 
 	default:
-		ScriptError("[] applied to invalid type '%s'\n", GetTypeName());
-		break;
+		throw ScriptVariableErrors::InvalidAppliedType("[]", GetTypeName());
 	}
 }
 
@@ -1566,7 +1571,19 @@ void ScriptVariable::setSafeContainerValue(ConList *newvalue)
 	}
 }
 
-void ScriptVariable::setConstArrayValue(ScriptVariable *pVar, unsigned int size)
+ScriptVariable* ScriptVariable::createConstArrayValue(size_t size)
+{
+	ScriptConstArrayHolder* constArray = new ScriptConstArrayHolder(size);
+
+	ClearInternal();
+	type = variableType_e::ConstArray;
+
+	m_data.constArrayValue = constArray;
+
+	return constArray->constArrayValue + 1;
+}
+
+void ScriptVariable::setConstArrayValue(ScriptVariable *pVar, size_t size)
 {
 	ScriptConstArrayHolder *constArray = new ScriptConstArrayHolder(pVar - 1, size);
 
@@ -1584,7 +1601,7 @@ const_str ScriptVariable::constStringValue() const
 	}
 	else
 	{
-		return ScriptContext::Get().GetDirector().AddString(stringValue());
+		return ScriptContext::Get().GetDirector().GetDictionary().Add(stringValue());
 	}
 }
 
@@ -1667,59 +1684,56 @@ void ScriptVariable::setVectorValue(const Vector &newvector)
 
 void ScriptVariable::operator+=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("+", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '+' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) + ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) + ( int )
 		m_data.long64Value = m_data.long64Value + value.m_data.long64Value;
 		break;
 
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max: // ( int ) + ( float )
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max): // ( int ) + ( float )
 		setFloatValue((float)m_data.long64Value + value.m_data.floatValue);
 		break;
 
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max: // ( float ) + ( float )
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max): // ( float ) + ( float )
 		m_data.floatValue = m_data.floatValue + value.m_data.floatValue;
 		break;
 
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max: // ( float ) + ( int )
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max): // ( float ) + ( int )
 		m_data.floatValue = m_data.floatValue + value.m_data.long64Value;
 		break;
 
-	case variableType_e::String + variableType_e::String * variableType_e::Max:				// ( string )			+		( string )
-	case variableType_e::Integer + variableType_e::String * variableType_e::Max:			// ( int )				+		( string )
-	case variableType_e::Float + variableType_e::String * variableType_e::Max:				// ( float )			+		( string )
-	case variableType_e::Char + variableType_e::String * variableType_e::Max:				// ( rawchar_t )		+		( string )
-	case variableType_e::ConstString + variableType_e::String * variableType_e::Max:		// ( const string )		+		( string )
-	case variableType_e::Listener + variableType_e::String * variableType_e::Max:			// ( listener )			+		( string )
-	case variableType_e::Vector + variableType_e::String * variableType_e::Max:				// ( vector )			+		( string )
-	case variableType_e::String + variableType_e::Integer * variableType_e::Max:			// ( string )			+		( int )
-	case variableType_e::ConstString + variableType_e::Integer * variableType_e::Max:		// ( const string )		+		( int )
-	case variableType_e::String + variableType_e::Float * variableType_e::Max:				// ( string )			+		( float )
-	case variableType_e::ConstString + variableType_e::Float * variableType_e::Max:			// ( const string )		+		( float )
-	case variableType_e::String + variableType_e::Char * variableType_e::Max:				// ( string )			+		( rawchar_t )
-	case variableType_e::ConstString + variableType_e::Char * variableType_e::Max:			// ( const string )		+		( rawchar_t )
-	case variableType_e::String + variableType_e::ConstString * variableType_e::Max:		// ( string )			+		( const string )
-	case variableType_e::Integer + variableType_e::ConstString * variableType_e::Max:		// ( int )				+		( const string )
-	case variableType_e::Float + variableType_e::ConstString * variableType_e::Max:			// ( float )			+		( const string )
-	case variableType_e::Char + variableType_e::ConstString * variableType_e::Max:			// ( rawchar_t )		+		( const string )
-	case variableType_e::ConstString + variableType_e::ConstString * variableType_e::Max:	// ( const string )		+		( const string )
-	case variableType_e::Listener + variableType_e::ConstString * variableType_e::Max:		// ( listener )			+		( const string )
-	case variableType_e::Vector + variableType_e::ConstString * variableType_e::Max:		// ( vector )			+		( const string )
-	case variableType_e::String + variableType_e::Listener * variableType_e::Max:			// ( string )			+		( listener )
-	case variableType_e::ConstString + variableType_e::Listener * variableType_e::Max:		// ( const string )		+		( listener )
-	case variableType_e::String + variableType_e::Vector * variableType_e::Max:				// ( string )			+		( vector )
-	case variableType_e::ConstString + variableType_e::Vector * variableType_e::Max:		// ( const string )		+		( vector )
+	case uint32_t(variableType_e::String + variableType_e::String * variableType_e::Max):				// ( string )			+		( string )
+	case uint32_t(variableType_e::Integer + variableType_e::String * variableType_e::Max):			// ( int )				+		( string )
+	case uint32_t(variableType_e::Float + variableType_e::String * variableType_e::Max):				// ( float )			+		( string )
+	case uint32_t(variableType_e::Char + variableType_e::String * variableType_e::Max):				// ( rawchar_t )		+		( string )
+	case uint32_t(variableType_e::ConstString + variableType_e::String * variableType_e::Max):		// ( const string )		+		( string )
+	case uint32_t(variableType_e::Listener + variableType_e::String * variableType_e::Max):			// ( listener )			+		( string )
+	case uint32_t(variableType_e::Vector + variableType_e::String * variableType_e::Max):				// ( vector )			+		( string )
+	case uint32_t(variableType_e::String + variableType_e::Integer * variableType_e::Max):			// ( string )			+		( int )
+	case uint32_t(variableType_e::ConstString + variableType_e::Integer * variableType_e::Max):		// ( const string )		+		( int )
+	case uint32_t(variableType_e::String + variableType_e::Float * variableType_e::Max):				// ( string )			+		( float )
+	case uint32_t(variableType_e::ConstString + variableType_e::Float * variableType_e::Max):			// ( const string )		+		( float )
+	case uint32_t(variableType_e::String + variableType_e::Char * variableType_e::Max):				// ( string )			+		( rawchar_t )
+	case uint32_t(variableType_e::ConstString + variableType_e::Char * variableType_e::Max):			// ( const string )		+		( rawchar_t )
+	case uint32_t(variableType_e::String + variableType_e::ConstString * variableType_e::Max):		// ( string )			+		( const string )
+	case uint32_t(variableType_e::Integer + variableType_e::ConstString * variableType_e::Max):		// ( int )				+		( const string )
+	case uint32_t(variableType_e::Float + variableType_e::ConstString * variableType_e::Max):			// ( float )			+		( const string )
+	case uint32_t(variableType_e::Char + variableType_e::ConstString * variableType_e::Max):			// ( rawchar_t )		+		( const string )
+	case uint32_t(variableType_e::ConstString + variableType_e::ConstString * variableType_e::Max):	// ( const string )		+		( const string )
+	case uint32_t(variableType_e::Listener + variableType_e::ConstString * variableType_e::Max):		// ( listener )			+		( const string )
+	case uint32_t(variableType_e::Vector + variableType_e::ConstString * variableType_e::Max):		// ( vector )			+		( const string )
+	case uint32_t(variableType_e::String + variableType_e::Listener * variableType_e::Max):			// ( string )			+		( listener )
+	case uint32_t(variableType_e::ConstString + variableType_e::Listener * variableType_e::Max):		// ( const string )		+		( listener )
+	case uint32_t(variableType_e::String + variableType_e::Vector * variableType_e::Max):				// ( string )			+		( vector )
+	case uint32_t(variableType_e::ConstString + variableType_e::Vector * variableType_e::Max):		// ( const string )		+		( vector )
 		setStringValue(stringValue() + value.stringValue());
 		break;
 
-	case variableType_e::Vector + variableType_e::Vector * variableType_e::Max:
+	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max):
 		VecAdd(m_data.vectorValue, value.m_data.vectorValue, m_data.vectorValue);
 		break;
 	}
@@ -1727,32 +1741,29 @@ void ScriptVariable::operator+=(const ScriptVariable& value)
 
 void ScriptVariable::operator-=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("-", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '-' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) - ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) - ( int )
 		m_data.long64Value = m_data.long64Value - value.m_data.long64Value;
 		break;
 
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max: // ( int ) - ( float )
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max): // ( int ) - ( float )
 		setFloatValue((float)m_data.long64Value - value.m_data.floatValue);
 		break;
 
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max: // ( float ) - ( float )
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max): // ( float ) - ( float )
 		m_data.floatValue = m_data.floatValue - value.m_data.floatValue;
 		break;
 
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max: // ( float ) - ( int )
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max): // ( float ) - ( int )
 		m_data.floatValue = m_data.floatValue - value.m_data.long64Value;
 		break;
 
-	case variableType_e::Vector + variableType_e::Vector * variableType_e::Max: // ( vector ) - ( vector )
+	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) - ( vector )
 		VecSubtract(m_data.vectorValue, value.m_data.vectorValue, m_data.vectorValue);
 		break;
 	}
@@ -1760,48 +1771,45 @@ void ScriptVariable::operator-=(const ScriptVariable& value)
 
 void ScriptVariable::operator*=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("*", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '*' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) * ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) * ( int )
 		m_data.long64Value = m_data.long64Value * value.m_data.long64Value;
 		break;
 
-	case variableType_e::Vector + variableType_e::Integer * variableType_e::Max: // ( vector ) * ( int )
+	case uint32_t(variableType_e::Vector + variableType_e::Integer * variableType_e::Max): // ( vector ) * ( int )
 		VectorScale(m_data.vectorValue, (float)value.m_data.long64Value, m_data.vectorValue);
 		break;
 
-	case variableType_e::Vector + variableType_e::Float * variableType_e::Max: // ( vector ) * ( float )
+	case uint32_t(variableType_e::Vector + variableType_e::Float * variableType_e::Max): // ( vector ) * ( float )
 		VectorScale(m_data.vectorValue, value.m_data.floatValue, m_data.vectorValue);
 		break;
 
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max: // ( int ) * ( float )
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max): // ( int ) * ( float )
 		setFloatValue((float)m_data.long64Value * value.m_data.floatValue);
 		break;
 
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max: // ( float ) * ( float )
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max): // ( float ) * ( float )
 		m_data.floatValue = m_data.floatValue * value.m_data.floatValue;
 		break;
 
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max: // ( float ) * ( int )
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max): // ( float ) * ( int )
 		m_data.floatValue = m_data.floatValue * value.m_data.long64Value;
 		break;
 
-	case variableType_e::Integer + variableType_e::Vector * variableType_e::Max: // ( int ) * ( vector )
+	case uint32_t(variableType_e::Integer + variableType_e::Vector * variableType_e::Max): // ( int ) * ( vector )
 		setVectorValue((float)m_data.long64Value * Vector(value.m_data.vectorValue));
 		break;
 
-	case variableType_e::Float + variableType_e::Vector * variableType_e::Max: // ( float ) * ( vector )
+	case uint32_t(variableType_e::Float + variableType_e::Vector * variableType_e::Max): // ( float ) * ( vector )
 		setVectorValue(m_data.floatValue * Vector(value.m_data.vectorValue));
 		break;
 
-	case variableType_e::Vector + variableType_e::Vector * variableType_e::Max: // ( vector ) * ( vector )
+	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) * ( vector )
 		m_data.vectorValue[0] = m_data.vectorValue[0] * value.m_data.vectorValue[0];
 		m_data.vectorValue[1] = m_data.vectorValue[1] * value.m_data.vectorValue[1];
 		m_data.vectorValue[2] = m_data.vectorValue[2] * value.m_data.vectorValue[2];
@@ -1811,34 +1819,31 @@ void ScriptVariable::operator*=(const ScriptVariable& value)
 
 void ScriptVariable::operator/=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("/", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '/' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) / ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) / ( int )
 		if (value.m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.long64Value = m_data.long64Value / value.m_data.long64Value;
 		break;
 
-	case variableType_e::Vector + variableType_e::Integer * variableType_e::Max: // ( vector ) / ( int )
+	case uint32_t(variableType_e::Vector + variableType_e::Integer * variableType_e::Max): // ( vector ) / ( int )
 		if (value.m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		(Vector)m_data.vectorValue = (Vector)m_data.vectorValue / (float)value.m_data.long64Value;
 		break;
 
-	case variableType_e::Vector + variableType_e::Float * variableType_e::Max: // ( vector ) / ( float )
+	case uint32_t(variableType_e::Vector + variableType_e::Float * variableType_e::Max): // ( vector ) / ( float )
 		if (value.m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.vectorValue[0] = m_data.vectorValue[0] / value.m_data.floatValue;
@@ -1846,47 +1851,47 @@ void ScriptVariable::operator/=(const ScriptVariable& value)
 		m_data.vectorValue[2] = m_data.vectorValue[2] / value.m_data.floatValue;
 		break;
 
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max: // ( int ) / ( float )
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max): // ( int ) / ( float )
 		if (value.m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		setFloatValue((float)m_data.long64Value / value.m_data.floatValue);
 		break;
 
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max: // ( float ) / ( float )
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max): // ( float ) / ( float )
 		if (value.m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.floatValue = m_data.floatValue / value.m_data.floatValue;
 		break;
 
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max: // ( float ) / ( int )
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max): // ( float ) / ( int )
 		if (value.m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.floatValue = m_data.floatValue / value.m_data.long64Value;
 		break;
 
-	case variableType_e::Integer + variableType_e::Vector * variableType_e::Max: // ( int ) / ( vector )
+	case uint32_t(variableType_e::Integer + variableType_e::Vector * variableType_e::Max): // ( int ) / ( vector )
 		if (m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		setVectorValue((float)m_data.long64Value / Vector(value.m_data.vectorValue));
 		break;
 
-	case variableType_e::Float + variableType_e::Vector * variableType_e::Max: // ( float ) / ( vector )
+	case uint32_t(variableType_e::Float + variableType_e::Vector * variableType_e::Max): // ( float ) / ( vector )
 		if (m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		setVectorValue(m_data.floatValue / Vector(value.m_data.vectorValue));
 		break;
 
-	case variableType_e::Vector + variableType_e::Vector * variableType_e::Max: // ( vector ) / ( vector )
+	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) / ( vector )
 		m_data.vectorValue = vec_zero;
 
 		if (value.m_data.vectorValue[0] != 0) {
@@ -1908,26 +1913,23 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 {
 	float mult = 0.0f;
 
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("%", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '%' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) % ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) % ( int )
 		if (value.m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.long64Value = m_data.long64Value % value.m_data.long64Value;
 		break;
 
-	case variableType_e::Vector + variableType_e::Integer * variableType_e::Max: // ( vector ) % ( int )
+	case uint32_t(variableType_e::Vector + variableType_e::Integer * variableType_e::Max): // ( vector ) % ( int )
 		if (value.m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.vectorValue[0] = (float)fmodf(m_data.vectorValue[0], (float)value.m_data.long64Value);
@@ -1935,9 +1937,9 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 		m_data.vectorValue[2] = (float)fmodf(m_data.vectorValue[2], (float)value.m_data.long64Value);
 		break;
 
-	case variableType_e::Vector + variableType_e::Float * variableType_e::Max: // ( vector ) % ( float )
+	case uint32_t(variableType_e::Vector + variableType_e::Float * variableType_e::Max): // ( vector ) % ( float )
 		if (value.m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.vectorValue[0] = (float)fmodf(m_data.vectorValue[0], value.m_data.floatValue);
@@ -1945,35 +1947,35 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 		m_data.vectorValue[2] = (float)fmodf(m_data.vectorValue[2], value.m_data.floatValue);
 		break;
 
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max: // ( int ) % ( float )
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max): // ( int ) % ( float )
 		if (value.m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		setFloatValue(fmodf((float)m_data.long64Value, value.m_data.floatValue));
 		break;
 
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max: // ( float ) % ( float )
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max): // ( float ) % ( float )
 		if (value.m_data.floatValue == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.floatValue = fmodf(m_data.floatValue, value.m_data.floatValue);
 		break;
 
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max: // ( float ) % ( int )
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max): // ( float ) % ( int )
 		if (value.m_data.long64Value == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		m_data.floatValue = fmodf(m_data.floatValue, (float)value.m_data.long64Value);
 		break;
 
-	case variableType_e::Integer + variableType_e::Vector * variableType_e::Max: // ( int ) % ( vector )
+	case uint32_t(variableType_e::Integer + variableType_e::Vector * variableType_e::Max): // ( int ) % ( vector )
 		mult = (float)m_data.long64Value;
 
 		if (mult == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		setVectorValue(vec_zero);
@@ -1983,11 +1985,11 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 		m_data.vectorValue[2] = fmodf(value.m_data.vectorValue[2], mult);
 		break;
 
-	case variableType_e::Float + variableType_e::Vector * variableType_e::Max: // ( float ) % ( vector )
+	case uint32_t(variableType_e::Float + variableType_e::Vector * variableType_e::Max): // ( float ) % ( vector )
 		mult = m_data.floatValue;
 
 		if (mult == 0) {
-			ScriptError("Division by zero error\n");
+			throw ScriptVariableErrors::DivideByZero();
 		}
 
 		setVectorValue(vec_zero);
@@ -1997,7 +1999,7 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 		m_data.vectorValue[2] = fmodf(m_data.vectorValue[2], mult);
 		break;
 
-	case variableType_e::Vector + variableType_e::Vector * variableType_e::Max: // ( vector ) % ( vector )
+	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) % ( vector )
 		m_data.vectorValue = vec_zero;
 
 		if (value.m_data.vectorValue[0] != 0) {
@@ -2018,16 +2020,13 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 
 void ScriptVariable::operator&=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("&", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '&' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) &= ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) &= ( int )
 		m_data.long64Value &= value.m_data.long64Value;
 		break;
 	}
@@ -2035,16 +2034,13 @@ void ScriptVariable::operator&=(const ScriptVariable& value)
 
 void ScriptVariable::operator^=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("^", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '^' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) ^= ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) ^= ( int )
 		m_data.long64Value ^= value.m_data.long64Value;
 		break;
 	}
@@ -2052,16 +2048,13 @@ void ScriptVariable::operator^=(const ScriptVariable& value)
 
 void ScriptVariable::operator|=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("|", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '|' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) |= ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) |= ( int )
 		m_data.long64Value |= value.m_data.long64Value;
 		break;
 	}
@@ -2069,16 +2062,13 @@ void ScriptVariable::operator|=(const ScriptVariable& value)
 
 void ScriptVariable::operator<<=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
+		throw ScriptVariableErrors::IncompatibleOperator("<<", GetTypeName(), value.GetTypeName());
 
-		ScriptError("binary '<<' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
-
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: // ( int ) <<= ( int )
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) <<= ( int )
 		m_data.long64Value <<= value.m_data.long64Value;
 		break;
 	}
@@ -2086,17 +2076,14 @@ void ScriptVariable::operator<<=(const ScriptVariable& value)
 
 void ScriptVariable::operator>>=(const ScriptVariable& value)
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	default:
 		Clear();
-
-		ScriptError("binary '>>' applied to incompatible types '%s' and '%s'", GetTypeName(), value.GetTypeName());
-
-		break;
+		throw ScriptVariableErrors::IncompatibleOperator(">>", GetTypeName(), value.GetTypeName());
 
 	// ( int ) >>= ( int )
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max: 
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value >>= value.m_data.long64Value;
 		break;
 	}
@@ -2109,7 +2096,7 @@ bool ScriptVariable::operator!=(const ScriptVariable &value) const
 
 bool ScriptVariable::operator==(const ScriptVariable &value) const
 {
-	switch (type + value.type * variableType_e::Max)
+	switch (uint32_t(type + value.type * variableType_e::Max))
 	{
 	// ( lval )	==	( nil )
 	// ( nil )	==	( rval )
@@ -2117,11 +2104,11 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 		return false;
 
 	// ( nil ) == ( nil )
-	case variableType_e::None + variableType_e::None * variableType_e::Max:
+	case uint32_t(variableType_e::None + variableType_e::None * variableType_e::Max):
 		return true;
 
 	// ( listener ) == ( listener )
-	case variableType_e::Listener + variableType_e::Listener * variableType_e::Max:
+	case uint32_t(variableType_e::Listener + variableType_e::Listener * variableType_e::Max):
 	{
 		AbstractClass *lval = nullptr;
 		AbstractClass *rval = nullptr;
@@ -2140,47 +2127,59 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 	}
 
 	// ( int ) == ( int )
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		return m_data.long64Value == value.m_data.long64Value;
 
+	// ( int ) == ( char )
+	case uint32_t(variableType_e::Integer + variableType_e::Char * variableType_e::Max):
+		return m_data.long64Value == value.m_data.charValue;
+
 	// ( int ) == ( float )
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		return m_data.long64Value == value.m_data.floatValue;
 
 	// ( float ) == ( float )
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		return m_data.floatValue == value.m_data.floatValue;
 
 	// ( float ) == ( int )
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		return m_data.floatValue == value.m_data.long64Value;
 
-	case variableType_e::ConstString + variableType_e::ConstString * variableType_e::Max:	// ( const string )		==		( const string )
+	// ( char ) == ( int )
+	case uint32_t(variableType_e::Char + variableType_e::Integer * variableType_e::Max):
+		return m_data.charValue == value.m_data.long64Value;
+
+	// ( char ) == ( char )
+	case uint32_t(variableType_e::Char + variableType_e::Char * variableType_e::Max):
+		return m_data.charValue == value.m_data.charValue;
+
+	case uint32_t(variableType_e::ConstString + variableType_e::ConstString * variableType_e::Max):	// ( const string )		==		( const string )
 		return m_data.long64Value == value.m_data.long64Value;
 
-	case variableType_e::String + variableType_e::String * variableType_e::Max:				// ( string )			==		( string )
-	case variableType_e::Integer + variableType_e::String * variableType_e::Max:				// ( int )				==		( string )
-	case variableType_e::Float + variableType_e::String * variableType_e::Max:				// ( float )			==		( string )
-	case variableType_e::Char + variableType_e::String * variableType_e::Max:				// ( rawchar_t )				==		( string )
-	case variableType_e::ConstString + variableType_e::String * variableType_e::Max:			// ( const string )		==		( string )
-	case variableType_e::Listener + variableType_e::String * variableType_e::Max:			// ( listener )			==		( string )
-	case variableType_e::Vector + variableType_e::String * variableType_e::Max:				// ( vector )			==		( string )
-	case variableType_e::String + variableType_e::ConstString * variableType_e::Max:			// ( string )			==		( const string )
-	case variableType_e::Integer + variableType_e::ConstString * variableType_e::Max:		// ( int )				==		( const string )
-	case variableType_e::Float + variableType_e::ConstString * variableType_e::Max:			// ( float )			==		( const string )
-	case variableType_e::Char + variableType_e::ConstString * variableType_e::Max:			// ( rawchar_t )				==		( const string )
-	case variableType_e::Listener + variableType_e::ConstString * variableType_e::Max:		// ( listener )			==		( const string )
-	case variableType_e::Vector + variableType_e::ConstString * variableType_e::Max:			// ( vector )			==		( const string )
-	case variableType_e::String + variableType_e::Integer * variableType_e::Max:				// ( string )			==		( int )
-	case variableType_e::ConstString + variableType_e::Integer * variableType_e::Max:		// ( const string )		==		( int )
-	case variableType_e::String + variableType_e::Float * variableType_e::Max:				// ( string )			==		( float )
-	case variableType_e::ConstString + variableType_e::Float * variableType_e::Max:			// ( const string )		==		( float )
-	case variableType_e::String + variableType_e::Char * variableType_e::Max:				// ( string )			==		( rawchar_t )
-	case variableType_e::ConstString + variableType_e::Char * variableType_e::Max:			// ( const string )		==		( rawchar_t )
-	case variableType_e::String + variableType_e::Listener * variableType_e::Max:			// ( string )			==		( listener )
-	case variableType_e::ConstString + variableType_e::Listener * variableType_e::Max:		// ( const string )		==		( listener )
-	case variableType_e::String + variableType_e::Vector * variableType_e::Max:				// ( string )			==		( vector )
-	case variableType_e::ConstString + variableType_e::Vector * variableType_e::Max:			// ( const string )		==		( vector )
+	case uint32_t(variableType_e::String + variableType_e::String * variableType_e::Max):				// ( string )			==		( string )
+	case uint32_t(variableType_e::Integer + variableType_e::String * variableType_e::Max):				// ( int )				==		( string )
+	case uint32_t(variableType_e::Float + variableType_e::String * variableType_e::Max):				// ( float )			==		( string )
+	case uint32_t(variableType_e::Char + variableType_e::String * variableType_e::Max):				// ( rawchar_t )				==		( string )
+	case uint32_t(variableType_e::ConstString + variableType_e::String * variableType_e::Max):			// ( const string )		==		( string )
+	case uint32_t(variableType_e::Listener + variableType_e::String * variableType_e::Max):			// ( listener )			==		( string )
+	case uint32_t(variableType_e::Vector + variableType_e::String * variableType_e::Max):				// ( vector )			==		( string )
+	case uint32_t(variableType_e::String + variableType_e::ConstString * variableType_e::Max):			// ( string )			==		( const string )
+	case uint32_t(variableType_e::Integer + variableType_e::ConstString * variableType_e::Max):		// ( int )				==		( const string )
+	case uint32_t(variableType_e::Float + variableType_e::ConstString * variableType_e::Max):			// ( float )			==		( const string )
+	case uint32_t(variableType_e::Char + variableType_e::ConstString * variableType_e::Max):			// ( rawchar_t )				==		( const string )
+	case uint32_t(variableType_e::Listener + variableType_e::ConstString * variableType_e::Max):		// ( listener )			==		( const string )
+	case uint32_t(variableType_e::Vector + variableType_e::ConstString * variableType_e::Max):			// ( vector )			==		( const string )
+	case uint32_t(variableType_e::String + variableType_e::Integer * variableType_e::Max):				// ( string )			==		( int )
+	case uint32_t(variableType_e::ConstString + variableType_e::Integer * variableType_e::Max):		// ( const string )		==		( int )
+	case uint32_t(variableType_e::String + variableType_e::Float * variableType_e::Max):				// ( string )			==		( float )
+	case uint32_t(variableType_e::ConstString + variableType_e::Float * variableType_e::Max):			// ( const string )		==		( float )
+	case uint32_t(variableType_e::String + variableType_e::Char * variableType_e::Max):				// ( string )			==		( rawchar_t )
+	case uint32_t(variableType_e::ConstString + variableType_e::Char * variableType_e::Max):			// ( const string )		==		( rawchar_t )
+	case uint32_t(variableType_e::String + variableType_e::Listener * variableType_e::Max):			// ( string )			==		( listener )
+	case uint32_t(variableType_e::ConstString + variableType_e::Listener * variableType_e::Max):		// ( const string )		==		( listener )
+	case uint32_t(variableType_e::String + variableType_e::Vector * variableType_e::Max):				// ( string )			==		( vector )
+	case uint32_t(variableType_e::ConstString + variableType_e::Vector * variableType_e::Max):			// ( const string )		==		( vector )
 	{
 		xstr lval = stringValue();
 		xstr rval = value.stringValue();
@@ -2188,12 +2187,39 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 		return (!lval.length() && !rval.length()) || (lval == rval);
 	}
 
-	case variableType_e::Vector + variableType_e::Vector * variableType_e::Max: // ( vector ) == ( vector )
+	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) == ( vector )
 		return VecCompare(m_data.vectorValue, value.m_data.vectorValue) ? true : false;
 	}
 }
 
-ScriptVariable &ScriptVariable::operator[](ScriptVariable& index)
+const mfuse::ScriptVariable& ScriptVariable::operator[](const ScriptVariable& index) const
+{
+	size_t i;
+
+	switch (type)
+	{
+	case variableType_e::None:
+		return noneVar;
+
+	case variableType_e::Array:
+		return m_data.arrayValue->arrayValue[index];
+
+	case variableType_e::ConstArray:
+		i = index.intValue();
+
+		if (i < 1 || i > m_data.constArrayValue->size)
+		{
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", i);
+		}
+
+		return m_data.constArrayValue->constArrayValue[i];
+
+	default:
+		throw ScriptVariableErrors::InvalidAppliedType("[]", GetTypeName());
+	}
+}
+
+ScriptVariable &ScriptVariable::operator[](const ScriptVariable& index)
 {
 	size_t i;
 
@@ -2213,19 +2239,22 @@ ScriptVariable &ScriptVariable::operator[](ScriptVariable& index)
 
 		if (i == 0 || i > m_data.constArrayValue->size)
 		{
-			ScriptError("array index %d out of range", i);
+			throw ScriptVariableErrors::TypeIndexOutOfRange("array", i);
 		}
 
 		return m_data.constArrayValue->constArrayValue[i];
 
 	default:
-		ScriptError("[] applied to invalid type '%s'", GetTypeName());
+		throw ScriptVariableErrors::InvalidAppliedType("[]", GetTypeName());
 	}
 }
 
-ScriptVariable *ScriptVariable::operator[](uintptr_t index) const
+ScriptVariable& ScriptVariable::operator[](uintptr_t index) const
 {
-	return &m_data.constArrayValue->constArrayValue[index];
+	assert(GetType() == variableType_e::ConstArray);
+	assert(m_data.constArrayValue);
+	assert(index > 0 && index <= m_data.constArrayValue->size);
+	return m_data.constArrayValue->constArrayValue[index];
 }
 
 ScriptVariable *ScriptVariable::operator*()
@@ -2246,33 +2275,30 @@ void ScriptVariable::complement()
 
 void ScriptVariable::greaterthan(const ScriptVariable &variable)
 {
-	switch (type + variable.type * variableType_e::Max)
+	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
 		Clear();
-
-		ScriptError("binary '>' applied to incompatible types '%s' and '%s'", GetTypeName(), variable.GetTypeName());
-
-		break;
+		throw ScriptVariableErrors::IncompatibleOperator(">", GetTypeName(), variable.GetTypeName());
 
 	// ( int ) <= ( int )
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value > variable.m_data.long64Value;
 		break;
 
 	// ( int ) <= ( float )
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value > variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( float )
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue > variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( int )
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue > variable.m_data.long64Value;
 		break;
@@ -2281,33 +2307,30 @@ void ScriptVariable::greaterthan(const ScriptVariable &variable)
 
 void ScriptVariable::greaterthanorequal(const ScriptVariable &variable)
 {
-	switch (type + variable.type * variableType_e::Max)
+	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
 		Clear();
-
-		ScriptError("binary '>=' applied to incompatible types '%s' and '%s'", GetTypeName(), variable.GetTypeName());
-
-		break;
+		throw ScriptVariableErrors::IncompatibleOperator(">>", GetTypeName(), variable.GetTypeName());
 
 	// ( int ) <= ( int )
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value >= variable.m_data.long64Value;
 		break;
 
 	// ( int ) <= ( float )
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value >= variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( float )
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue >= variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( int )
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue >= variable.m_data.long64Value;
 		break;
@@ -2316,31 +2339,30 @@ void ScriptVariable::greaterthanorequal(const ScriptVariable &variable)
 
 void ScriptVariable::lessthan(const ScriptVariable &variable)
 {
-	switch (type + variable.type * variableType_e::Max)
+	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
 		Clear();
-		ScriptError("binary '<' applied to incompatible types '%s' and '%s'", GetTypeName(), variable.GetTypeName());
-		break;
+		throw ScriptVariableErrors::IncompatibleOperator("<", GetTypeName(), variable.GetTypeName());
 
 	// ( int ) <= ( int )
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value < variable.m_data.long64Value;
 		break;
 
 	// ( int ) <= ( float )
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value < variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( float )
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue < variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( int )
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue < variable.m_data.long64Value;
 		break;
@@ -2349,33 +2371,30 @@ void ScriptVariable::lessthan(const ScriptVariable &variable)
 
 void ScriptVariable::lessthanorequal(const ScriptVariable &variable)
 {
-	switch (type + variable.type * variableType_e::Max)
+	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
 		Clear();
-
-		ScriptError("binary '<=' applied to incompatible types '%s' and '%s'", GetTypeName(), variable.GetTypeName());
-
-		break;
+		throw ScriptVariableErrors::IncompatibleOperator("<=", GetTypeName(), variable.GetTypeName());
 
 	// ( int ) <= ( int )
-	case variableType_e::Integer + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value <= variable.m_data.long64Value;
 		break;
 
 	// ( int ) <= ( float )
-	case variableType_e::Integer + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value <= variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( float )
-	case variableType_e::Float + variableType_e::Float * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue <= variable.m_data.floatValue;
 		break;
 
 	// ( float ) <= ( int )
-	case variableType_e::Float + variableType_e::Integer * variableType_e::Max:
+	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue <= variable.m_data.long64Value;
 		break;
@@ -2522,7 +2541,7 @@ void ScriptVariableList::ClearList()
 
 ScriptVariable* ScriptVariableList::GetOrCreateVariable(const xstr& name)
 {
-	return GetOrCreateVariable(ScriptContext::Get().GetDirector().AddString(name));
+	return GetOrCreateVariable(ScriptContext::Get().GetDirector().GetDictionary().Add(name));
 }
 
 ScriptVariable* ScriptVariableList::GetOrCreateVariable(const_str name)
@@ -2532,12 +2551,22 @@ ScriptVariable* ScriptVariableList::GetOrCreateVariable(const_str name)
 	return &var;
 }
 
-ScriptVariable *ScriptVariableList::GetVariable(const xstr& name)
+const ScriptVariable *ScriptVariableList::GetVariable(const xstr& name) const
 {
-	return GetVariable(ScriptContext::Get().GetDirector().AddString(name));
+	return GetVariable(ScriptContext::Get().GetDirector().GetDictionary().Add(name));
 }
 
-ScriptVariable *ScriptVariableList::GetVariable(const_str name)
+ScriptVariable* ScriptVariableList::GetVariable(const xstr& name)
+{
+	return GetVariable(ScriptContext::Get().GetDirector().GetDictionary().Add(name));
+}
+
+const ScriptVariable *ScriptVariableList::GetVariable(const_str name) const
+{
+	return list.findKeyValue(name);
+}
+
+ScriptVariable* ScriptVariableList::GetVariable(const_str name)
 {
 	return list.findKeyValue(name);
 }
@@ -2623,8 +2652,319 @@ ScriptVariable* ScriptVariableList::SetVariable(const_str name, ScriptVariable&&
 	return variable;
 }
 
-void ScriptVariableList::Archive(Archiver &arc)
+void ScriptVariableList::Archive(Archiver &)
 {
 	//BaseScriptClass::Archive(arc);
 	//list.Archive(arc);
+}
+
+ScriptVariableErrors::CastError::CastError(const rawchar_t* sourceVal, const rawchar_t* targetVal)
+	: source(sourceVal)
+	, target(targetVal)
+{
+}
+
+const rawchar_t* ScriptVariableErrors::CastError::getSource() const noexcept
+{
+	return source;
+}
+
+const rawchar_t* ScriptVariableErrors::CastError::getTarget() const noexcept
+{
+	return target;
+}
+
+const char* ScriptVariableErrors::CastError::what() const noexcept
+{
+	if (!filled()) {
+		fill("Cannot cast '" + xstr(source) + "' to '" + target + "'");
+	}
+	
+	return Messageable::what();
+}
+
+ScriptVariableErrors::IncompatibleOperator::IncompatibleOperator(const rawchar_t* opVal, const rawchar_t* leftTypeVal, const rawchar_t* rightTypeVal)
+	: op(opVal)
+	, leftType(leftTypeVal)
+	, rightType(rightTypeVal)
+{
+
+}
+
+const rawchar_t* ScriptVariableErrors::IncompatibleOperator::getOperator() const noexcept
+{
+	return op;
+}
+
+const rawchar_t* ScriptVariableErrors::IncompatibleOperator::getLeftType() const noexcept
+{
+	return leftType;
+}
+
+const rawchar_t* ScriptVariableErrors::IncompatibleOperator::getRightType() const noexcept
+{
+	return rightType;
+}
+
+const char* ScriptVariableErrors::IncompatibleOperator::what() const noexcept
+{
+	if (!filled()) {
+		fill("binary '" + xstr(op) + "' applied to incompatible types '" + xstr(leftType) + "' and '" + xstr(rightType) + "'");
+	}
+
+	return Messageable::what();
+}
+
+const char* ScriptVariableErrors::DivideByZero::what() const noexcept
+{
+	return "Division by zero error";
+}
+
+ScriptVariableErrors::InvalidAppliedType::InvalidAppliedType(const rawchar_t* opValue, const rawchar_t* typeValue)
+	: op(opValue)
+	, typeName(typeValue)
+{
+}
+
+const rawchar_t* ScriptVariableErrors::InvalidAppliedType::getOperator() const noexcept
+{
+	return op;
+}
+
+const rawchar_t* ScriptVariableErrors::InvalidAppliedType::getTypeName() const noexcept
+{
+	return typeName;
+}
+
+const char* ScriptVariableErrors::InvalidAppliedType::what() const noexcept
+{
+	if (filled()) {
+		fill(xstr(op) + " applied to invalid type: '" + xstr(typeName) + "'");
+	}
+
+	return Messageable::what();
+}
+
+ScriptVariableErrors::IndexOutOfRange::IndexOutOfRange(uintptr_t indexValue)
+	: index(indexValue)
+{
+}
+
+uintptr_t ScriptVariableErrors::IndexOutOfRange::getIndex() const noexcept
+{
+	return index;
+}
+
+const char* ScriptVariableErrors::IndexOutOfRange::what() const noexcept
+{
+	if (!filled()) {
+		fill("Index '" + xstr(index) + "' out of range");
+	}
+
+	return Messageable::what();
+}
+
+ScriptVariableErrors::TypeIndexOutOfRange::TypeIndexOutOfRange(const rawchar_t* typeValue, uintptr_t indexValue)
+	: IndexOutOfRange(indexValue)
+	, typeName(typeValue)
+{
+}
+
+const rawchar_t* ScriptVariableErrors::TypeIndexOutOfRange::getType() const noexcept
+{
+	return typeName;
+}
+
+const char* ScriptVariableErrors::TypeIndexOutOfRange::what() const noexcept
+{
+	if (!filled()) {
+		fill(xstr(typeName) + " index '" + xstr(getIndex()) + "' out of range");
+	}
+
+	return Messageable::what();
+}
+
+ScriptVariableErrors::BadHashCodeValue::BadHashCodeValue(xstr&& hashCodeRef)
+	: hashCode(hashCodeRef)
+{
+}
+
+const mfuse::xstr& ScriptVariableErrors::BadHashCodeValue::getHashCode()
+{
+	return hashCode;
+}
+
+const char* ScriptVariableErrors::BadHashCodeValue::what() const noexcept
+{
+	if (!filled()) {
+		fill("Bad hash code value: " + hashCode);
+	}
+
+	return Messageable::what();
+}
+
+ScriptVariableIterator::ScriptVariableIterator(const ScriptVariable& var)
+	: owningVar(var)
+	, data(initData(var))
+	, count(0)
+{
+}
+
+ScriptVariableIterator::operator bool() const
+{
+	return isValid();
+}
+
+ScriptVariableIterator ScriptVariableIterator::operator++(int)
+{
+	ScriptVariableIterator old(*this);
+	++*this;
+	return old;
+}
+
+ScriptVariableIterator& ScriptVariableIterator::operator++()
+{
+	const scriptData_u varData = owningVar.GetData();
+
+	switch (owningVar.GetType())
+	{
+	case variableType_e::Container:
+		++count;
+		++data.index;
+		done = data.index > varData.containerValue->NumObjects();
+		break;
+	case variableType_e::SafeContainer:
+		++count;
+		++data.index;
+		done = !varData.safeContainerValue->Pointer() || data.index > varData.safeContainerValue->Pointer()->NumObjects();
+		break;
+	case variableType_e::ConstArray:
+		++count;
+		++data.index;
+		done = data.index > varData.constArrayValue->size;
+		break;
+
+	case variableType_e::Array:
+		++count;
+		done = !data.en.NextKey();
+		break;
+
+	case variableType_e::String:
+		++count;
+		++data.index;
+		done = data.index >= varData.stringValue->length();
+		break;
+	case variableType_e::Vector:
+		++count;
+		++data.index;
+		done = data.index > 2;
+		break;
+
+	default:
+		break;
+	}
+
+	return *this;
+}
+
+ScriptVariableIterator::u ScriptVariableIterator::initData(const ScriptVariable& var)
+{
+	const scriptData_u varData = var.GetData();
+
+	switch (var.GetType())
+	{
+	case variableType_e::Container:
+		done = !varData.containerValue->NumObjects();
+		return u(1);
+	case variableType_e::SafeContainer:
+		done = !varData.safeContainerValue->Pointer() || !varData.safeContainerValue->Pointer()->NumObjects();
+		return u(1);
+	case variableType_e::ConstArray:
+		done = !varData.constArrayValue->size;
+		return u(1);
+
+	case variableType_e::Array:
+	{
+		u newData(varData.arrayValue->arrayValue);
+		done = !newData.en.NextKey();
+		return newData;
+	}
+
+	case variableType_e::String:
+		done = !varData.stringValue->length();
+		return u(0);
+	case variableType_e::Vector:
+		done = false;
+		return u(0);
+
+	default:
+		throw ScriptVariableErrors::CastError(var.GetTypeName(), "array");
+	}
+}
+
+bool ScriptVariableIterator::isValid() const
+{
+	return !done;
+}
+
+ScriptVariable ScriptVariableIterator::GetKey() const
+{
+	if (!isValid()) {
+		return ScriptVariable();
+	}
+
+	switch (owningVar.GetType())
+	{
+	case variableType_e::Container:
+	case variableType_e::SafeContainer:
+	case variableType_e::ConstArray:
+	case variableType_e::String:
+	case variableType_e::Vector:
+		return ScriptVariable(intptr_t(data.index));
+
+	case variableType_e::Array:
+		return *data.en.CurrentKey();
+
+	default:
+		return ScriptVariable();
+	}
+}
+
+ScriptVariable ScriptVariableIterator::GetValue() const
+{
+	if (!isValid()) {
+		return ScriptVariable();
+	}
+
+	const scriptData_u varData = owningVar.GetData();
+
+	switch (owningVar.GetType())
+	{
+	case variableType_e::Container:
+		return ScriptVariable(varData.containerValue->ObjectAt(data.index));
+	case variableType_e::SafeContainer:
+		if (!varData.safeContainerValue->Pointer()) {
+			return ScriptVariable();
+		}
+
+		return ScriptVariable(varData.safeContainerValue->Pointer()->ObjectAt(data.index));
+	case variableType_e::ConstArray:
+		return ScriptVariable(varData.constArrayValue->constArrayValue[data.index]);
+
+	case variableType_e::Array:
+		return *data.en.CurrentValue();
+
+	case variableType_e::String:
+		return ScriptVariable(char((*varData.stringValue)[data.index]));
+	case variableType_e::Vector:
+		return ScriptVariable(float(varData.vectorValue[data.index]));
+
+	default:
+		return ScriptVariable();
+	}
+}
+
+uintptr_t ScriptVariableIterator::Count() const
+{
+	return count;
 }

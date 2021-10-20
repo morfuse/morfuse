@@ -26,7 +26,7 @@ namespace mfuse
 		void ArchiveDouble(double& num);
 		void ArchiveBoolean(bool& boolean);
 		void ArchiveString(str& string);
-		void ArchiveObjectPointer(Class*& ptr);
+		void ArchiveObjectPointer(const void*& ptr);
 		void ArchiveObjectPosition(void* obj);
 		void ArchiveSafePointer(SafePtrBase& ptr);
 		void ArchiveBool(bool& boolean);

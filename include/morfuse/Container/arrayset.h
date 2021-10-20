@@ -19,13 +19,13 @@ namespace con
 		EntryArraySet(const ValueT& inValue);
 		EntryArraySet(const ValueT& inValue, uintptr_t inIndex);
 
-		KeyT& Key() { return value; }
-		const KeyT& Key() const { return value; }
-		ValueT& Value() { return value; }
-		const ValueT& Value() const { return value; }
-		EntryArraySet* Next() const { return next; }
-		uintptr_t Index() const { return index; }
-		void SetNext(EntryArraySet* nextValue) { next = nextValue; }
+		KeyT& Key() noexcept { return value; }
+		const KeyT& Key() const noexcept { return value; }
+		ValueT& Value() noexcept { return value; }
+		const ValueT& Value() const noexcept { return value; }
+		EntryArraySet* Next() const noexcept { return next; }
+		uintptr_t Index() const noexcept { return index; }
+		void SetNext(EntryArraySet* nextValue) noexcept { next = nextValue; }
 
 	private:
 		ValueT value;
@@ -75,8 +75,8 @@ namespace con
 		void clear();
 		void resize(size_t count = 0);
 		void shrink();
-		size_t size();
-		size_t allocated();
+		size_t size() const noexcept;
+		size_t allocated() const noexcept;
 
 		ValueT* findKeyValue(const KeyT& key);
 		const ValueT* findKeyValue(const KeyT& key) const;
@@ -87,11 +87,12 @@ namespace con
 		bool remove(const KeyT& key);
 
 		ValueT& operator[](uintptr_t index);
+		const ValueT& operator[](uintptr_t index) const;
 
-		AllocatorT& getAllocator();
-		const AllocatorT& getAllocator() const;
+		AllocatorT& getAllocator() noexcept;
+		const AllocatorT& getAllocator() const noexcept;
 
-		static size_t countEntryBytes(size_t count);
+		static size_t countEntryBytes(size_t count) noexcept;
 
 	private:
 		EntryArraySet<KeyT, ValueT>* findKeyEntry(const KeyT& key);
@@ -150,7 +151,7 @@ namespace con
 	}
 
 	template<typename Key, typename Value, typename HashT, typename KeyEqT, typename AllocatorT>
-	size_t arrayset<Key, Value, HashT, KeyEqT, AllocatorT>::countEntryBytes(size_t count)
+	size_t arrayset<Key, Value, HashT, KeyEqT, AllocatorT>::countEntryBytes(size_t count) noexcept
 	{
 		if (count > 1) {
 			return (sizeof(EntryArraySet<Key, Value>) + sizeof(EntryArraySet<Key, Value>*)) * count;
@@ -163,13 +164,13 @@ namespace con
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	AllocatorT& arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator()
+	AllocatorT& arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() noexcept
 	{
 		return Entry_allocator;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	const AllocatorT& arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() const
+	const AllocatorT& arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() const noexcept
 	{
 		return Entry_allocator;
 	}
@@ -284,6 +285,12 @@ namespace con
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
+	const ValueT& arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::operator[](uintptr_t index) const
+	{
+		return reverseTable[index]->Value();
+	}
+
+	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
 	void arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::resize(size_t newCount)
 	{
 		const size_t oldTableLength = tableLength;
@@ -358,13 +365,13 @@ namespace con
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	size_t arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::size()
+	size_t arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::size() const noexcept
 	{
 		return count;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	size_t arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::allocated()
+	size_t arrayset<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::allocated() const noexcept
 	{
 		return tableLength;
 	}

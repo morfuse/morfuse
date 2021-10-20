@@ -1,4 +1,4 @@
-#include <morfuse/Script/ConstStr.h>
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Container/set_generic_hash.h>
 
 using namespace mfuse;

@@ -3,12 +3,12 @@
 
 using namespace mfuse;
 
-void* operator new(size_t size)
+void* operator new(std::size_t size)
 {
 	return IMemoryManager::get().allocate(size);
 }
 
-void* operator new[](size_t size)
+void* operator new[](std::size_t size)
 {
 	return IMemoryManager::get().allocate(size);
 }

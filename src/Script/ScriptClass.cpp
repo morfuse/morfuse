@@ -6,6 +6,7 @@
 #include <morfuse/Script/ScriptVM.h>
 #include <morfuse/Script/ScriptMaster.h>
 #include <morfuse/Script/Context.h>
+#include <morfuse/Script/Archiver.h>
 
 using namespace mfuse;
 
@@ -47,41 +48,39 @@ ScriptClass::~ScriptClass()
 
 	KillThreads();
 
-	if (!m_Script->ConstFilename())
+	if (!m_Script->Filename())
 	{
-		// This is a temporary gamescript so delete it
+		// This is a temporary gamescript created for this script class, so delete it
 		delete m_Script;
 	}
 }
 
-void* ScriptClass::operator new(size_t size)
+void* ScriptClass::operator new(size_t)
 {
 	return ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Alloc();
-	//return allocateMemory(size);
 }
 
 void ScriptClass::operator delete(void* ptr)
 {
 	ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Free(ptr);
-	//return freeMemory(ptr);
 }
 
-void ScriptClass::Archive(Archiver& arc)
+void ScriptClass::Archive(Archiver&)
 {
 }
 
-void ScriptClass::ArchiveInternal(Archiver& arc)
+void ScriptClass::ArchiveInternal(Archiver&)
 {
+	/*
 	Listener::Archive(arc);
 
-	/*
 	arc.ArchiveObjectPosition(this);
-	arc.ArchiveSafePointer(&m_Self);
+	arc.ArchiveSafePointer(m_Self);
 	ProgramScript::Archive(arc, m_Script);
 	*/
 }
 
-void ScriptClass::ArchiveScript(Archiver& arc, ScriptClass **obj)
+void ScriptClass::ArchiveScript(Archiver&, ScriptClass **)
 {
 	/*
 	ScriptClass *scr;
@@ -127,81 +126,51 @@ void ScriptClass::ArchiveCodePos(Archiver& arc, opval_t **codePos)
 	m_Script->ArchiveCodePos(arc, codePos);
 }
 
-ScriptThread *ScriptClass::CreateThreadInternal(const ScriptVariable& label)
+ScriptThread* ScriptClass::CreateScriptInternal(const ScriptVariable& label)
 {
-	const ProgramScript *scr;
-	ScriptThread *thread = NULL;
-
-	ScriptMaster& Director = ScriptContext::Get().GetDirector();
+	ScriptMaster& director = ScriptContext::Get().GetDirector();
 
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
-		ScriptClass *scriptClass = Director.CurrentScriptClass();
-		scr = scriptClass->GetScript();
-
-		if (label.GetType() == variableType_e::ConstString)
-			thread = Director.CreateScriptThread(scr, m_Self, label.constStringValue());
-		else
-			thread = Director.CreateScriptThread(scr, m_Self, label.stringValue());
+		const ProgramScript* const scr = director.GetProgramScript(label.constStringValue());
+		return director.CreateScriptThread(scr, m_Self, StringResolvable());
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
-		const ScriptVariable *script = label[1];
-		const ScriptVariable *labelname = label[2];
+		const ScriptVariable& script = label[1];
+		const ScriptVariable& labelname = label[2];
 
-		if (script->GetType() == variableType_e::ConstString)
-			scr = Director.GetGameScript(script->constStringValue());
-		else
-			scr = Director.GetGameScript(script->stringValue());
-
-		if (labelname->GetType() == variableType_e::ConstString)
-			thread = Director.CreateScriptThread(scr, m_Self, labelname->constStringValue());
-		else
-			thread = Director.CreateScriptThread(scr, m_Self, labelname->stringValue());
+		const ProgramScript* const scr = director.GetProgramScript(script.constStringValue());
+		return director.CreateScriptThread(scr, m_Self, labelname.constStringValue());
 	}
 	else
 	{
-		ScriptError("ScriptClass::CreateThreadInternal: bad argument format");
+		throw ListenerErrors::BadLabelType(label.GetTypeName());
 	}
-
-	return thread;
 }
 
-ScriptThread *ScriptClass::CreateScriptInternal(const ScriptVariable& label)
+ScriptThread *ScriptClass::CreateThreadInternal(const ScriptVariable& label)
 {
-	ScriptThread *thread = nullptr;
-
-	ScriptMaster& Director = ScriptContext::Get().GetDirector();
+	ScriptMaster& director = ScriptContext::Get().GetDirector();
 
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
-		if (label.GetType() == variableType_e::ConstString)
-			thread = Director.CreateScriptThread(Director.GetGameScript(label.stringValue()), m_Self, "");
-		else
-			thread = Director.CreateScriptThread(Director.GetGameScript(label.constStringValue()), m_Self, "");
+		const ScriptClass* const scriptClass = director.CurrentScriptClass();
+		const ProgramScript* const scr = scriptClass->GetScript();
+		return director.CreateScriptThread(scr, m_Self, label.constStringValue());
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
-		const ProgramScript* scr;
-		const ScriptVariable *script = label[1];
-		const ScriptVariable *labelname = label[2];
+		const ScriptVariable& script = label[1];
+		const ScriptVariable& labelname = label[2];
 
-		if (script->GetType() == variableType_e::ConstString)
-			scr = Director.GetGameScript(script->constStringValue());
-		else
-			scr = Director.GetGameScript(script->stringValue());
-
-		if (labelname->GetType() == variableType_e::ConstString)
-			thread = Director.CreateScriptThread(scr, m_Self, labelname->constStringValue());
-		else
-			thread = Director.CreateScriptThread(scr, m_Self, labelname->stringValue());
+		const ProgramScript* const scr = director.GetProgramScript(script.constStringValue());
+		return director.CreateScriptThread(scr, m_Self, labelname.constStringValue());
 	}
 	else
 	{
-		ScriptError("ScriptClass::CreateScriptInternal: bad label type '%s'", label.GetTypeName());
+		throw ListenerErrors::BadLabelType(label.GetTypeName());
 	}
-
-	return thread;
 }
 
 void ScriptClass::AddThread(ScriptVM *m_ScriptVM)
@@ -257,17 +226,12 @@ void ScriptClass::RemoveThread(ScriptVM *m_ScriptVM)
 	}
 }
 
-const xstr& ScriptClass::Filename() const
+const_str ScriptClass::Filename() const
 {
 	return m_Script->Filename();
 }
 
-const opval_t *ScriptClass::FindLabel(const rawchar_t* label) const
-{
-	return m_Script->GetStateScript().FindLabel(label);
-}
-
-const opval_t *ScriptClass::FindLabel(const_str label) const
+const script_label_t* ScriptClass::FindLabel(const_str label) const
 {
 	return m_Script->GetStateScript().FindLabel(label);
 }

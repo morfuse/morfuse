@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(tests)
 
+include(CTest)
+
 enable_testing()
 
 file(GLOB SRCS "*.cpp")
@@ -13,7 +15,7 @@ foreach(source ${SRCS})
 
 	target_link_libraries(${fileName} morfuse)
 
-	add_test(NAME ${fileName} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${fileName})
+	add_test(NAME test_${fileName} COMMAND ${fileName})
 
 	install(
 		TARGETS ${fileName}

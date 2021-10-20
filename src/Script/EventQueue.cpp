@@ -8,12 +8,13 @@ using namespace mfuse;
 //BlockAlloc<EventQueueNode> EventQueueNode::allocator;
 
 EventQueue::EventQueue()
+	: Node()
 {
 }
 
 void EventQueue::ProcessPendingEvents()
 {
-	const uinttime_t t = EventContext::Get().GetTimeManager().GetTime();
+	const inttime_t t = EventContext::Get().GetTimeManager().GetTime();
 
 	//while (!LL::Empty<EventQueueNode*, &EventQueueNode::next, &EventQueueNode::prev>(&Node))
 	size_t numProcessed = 0;
@@ -50,7 +51,7 @@ bool EventQueue::ProcessPendingEvents(Listener* l)
 
 	processedEvents = false;
 
-	const uinttime_t t = EventContext::Get().GetTimeManager().GetTime();
+	const inttime_t t = EventContext::Get().GetTimeManager().GetTime();
 
 	List::iterator event = Node.CreateIterator();
 	while (event)
@@ -153,13 +154,9 @@ void EventQueue::CancelPendingEvents(Listener* l)
 
 bool EventQueue::IsEventPending(Listener* l, const EventDef& ev)
 {
-	List::iterator event = Node.CreateIterator();
-
-	const uintptr_t eventnum = ev.GetEventNum();
-
 	for (List::iterator event = Node.CreateIterator(); event; event = event.Next())
 	{
-		if ((event->GetSourceObject() == l) && (event->event->Num()))
+		if ((event->GetSourceObject() == l) && (event->event->Num() == ev.GetEventNum()))
 		{
 			return true;
 		}
@@ -168,9 +165,9 @@ bool EventQueue::IsEventPending(Listener* l, const EventDef& ev)
 	return false;
 }
 
-void EventQueue::PostEvent(Listener* l, Event* ev, uint64_t delay, uint32_t flags)
+void EventQueue::PostEvent(Listener* l, Event* ev, inttime_t delay, uint32_t flags)
 {
-	const uinttime_t time = EventContext::Get().GetTimeManager().GetTime() + delay; // + 0.0005f;
+	const inttime_t time = EventContext::Get().GetTimeManager().GetTime() + delay; // + 0.0005f;
 	EventQueueNode* node = new EventQueueNode(l);
 	node->time = time;
 	node->event = ev;
@@ -209,7 +206,7 @@ void EventQueue::PostEvent(Listener* l, Event* ev, uint64_t delay, uint32_t flag
 	//LL::Add<EventQueueNode*, &EventQueueNode::next, &EventQueueNode::prev>(i, node);
 }
 
-bool EventQueue::PostponeAllEvents(Listener* l, uint64_t time)
+bool EventQueue::PostponeAllEvents(Listener* l, inttime_t time)
 {
 	for (List::iterator event = Node.CreateIterator(); event; event = event.Next())
 	{
@@ -237,7 +234,7 @@ bool EventQueue::PostponeAllEvents(Listener* l, uint64_t time)
 	return false;
 }
 
-bool EventQueue::PostponeEvent(Listener* l, Event& ev, uint64_t time)
+bool EventQueue::PostponeEvent(Listener* l, Event& ev, inttime_t time)
 {
 	const eventNum_t eventnum = ev.Num();
 
@@ -265,4 +262,9 @@ bool EventQueue::PostponeEvent(Listener* l, Event& ev, uint64_t time)
 	}
 
 	return false;
+}
+
+bool EventQueue::HasPendingEvents() const
+{
+	return !Node.IsEmpty();
 }

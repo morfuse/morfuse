@@ -1,13 +1,18 @@
 #pragma once
 
 #include "../Global.h"
-#include "../Script/Class.h"
-#include "../Script/ScriptThread.h"
+#include "Class.h"
+#include "ScriptThread.h"
+#include "Parm.h"
+#include "StringResolvable.h"
+#include "timer.h"
 #include "../Container/set.h"
 #include "../Container/arrayset.h"
 #include "../Common/str.h"
-#include "../Container/timer.h"
-#include "../Script/Parm.h"
+#include "../Common/StringDictionary.h"
+#include "../Common/Linklist.h"
+
+#include <istream>
 
 namespace mfuse
 {
@@ -15,6 +20,23 @@ namespace mfuse
 	class ScriptClass;
 	class ProgramScript;
 	class FlagList;
+	class StringDictionary;
+
+	class ThreadExecutionProtection
+	{
+	public:
+		mfuse_EXPORTS ThreadExecutionProtection();
+
+		mfuse_EXPORTS uinttime_t GetMaxExecutionTime() const;
+		mfuse_EXPORTS void SetMaxExecutionTime(uinttime_t time);
+
+		mfuse_EXPORTS bool ShouldDrop() const;
+		mfuse_EXPORTS void SetLoopProtection(bool protect);
+
+	private:
+		uinttime_t maxExecutionTime;
+		bool loopProtection;
+	};
 
 	/**
 	 * This is a class that handles string management, thread scheduling and creation, and compiling game script.
@@ -30,54 +52,72 @@ namespace mfuse
 		~ScriptMaster();
 
 		mfuse_EXPORTS Parm& GetParm();
+		mfuse_EXPORTS const con::timer& GetTimerList() const;
 
-		mfuse_EXPORTS const_str AddString(xstrview s);
-		mfuse_EXPORTS const_str GetString(const rawchar_t* s);
-		mfuse_EXPORTS void AllocateMoreString(size_t count);
-
-		mfuse_EXPORTS const xstr& GetString(const_str s);
+		/** Return the dictionary used to map string to integers */
+		mfuse_EXPORTS StringDictionary& GetDictionary();
+		mfuse_EXPORTS const StringDictionary& GetDictionary() const;
 
 		mfuse_EXPORTS void AddTiming(ScriptThread* Thread, uint64_t Time);
 		mfuse_EXPORTS void RemoveTiming(ScriptThread* Thread);
 
-		mfuse_EXPORTS uintptr_t GetStackCount() const;
-		mfuse_EXPORTS void AddStack();
-		mfuse_EXPORTS void RemoveStack();
-
-		mfuse_EXPORTS bool HasLoopDrop() const;
-		mfuse_EXPORTS bool HasLoopProtection() const;
 		mfuse_EXPORTS ScriptClass* GetHeadContainer() const;
 
-		mfuse_EXPORTS ScriptThread* CreateScriptThread(const ProgramScript *scr, Listener *self, const_str label);
-		mfuse_EXPORTS ScriptThread* CreateScriptThread(const ProgramScript *scr, Listener *self, const rawchar_t* label);
-		mfuse_EXPORTS ScriptThread* CreateScriptThread(ScriptClass *ScriptClass, const_str label);
-		mfuse_EXPORTS ScriptThread* CreateScriptThread(ScriptClass *ScriptClass, const rawchar_t* label);
-		mfuse_EXPORTS ScriptThread* CreateScriptThread(ScriptClass *ScriptClass, const opval_t* m_pCodePos);
-		mfuse_EXPORTS ScriptThread* CreateThread(const ProgramScript* scr, const rawchar_t* label, Listener* self = NULL);
-		mfuse_EXPORTS ScriptThread* CreateThread(const ProgramScript* scr, const_str label, Listener* self = NULL);
-		mfuse_EXPORTS ScriptThread* CreateThread(const rawchar_t* scriptName, const rawchar_t* label, Listener* self = NULL);
-		mfuse_EXPORTS ScriptThread* CreateThread(const rawchar_t* scriptName, const_str label, Listener* self = NULL);
+		mfuse_EXPORTS ThreadExecutionProtection& GetThreadExecutionProtection();
+		mfuse_EXPORTS const ThreadExecutionProtection& GetThreadExecutionProtection() const;
+
+		/**
+		 * Create a new script thread.
+		 *
+		 * @param scr The program script to point the thread to.
+		 * @param self The listener value of the self variable.
+		 * @param label Label to start the thread to.
+		 * @return Newly created thread.
+		 */
+		mfuse_EXPORTS ScriptThread* CreateScriptThread(const ProgramScript *scr, Listener *self, const StringResolvable& label);
+
+		/**
+		 * Create a new script thread.
+		 *
+		 * @param scriptClass The class to create the script thread in.
+		 * @param label Label to start the thread to.
+		 * @return Newly created thread.
+		 */
+		mfuse_EXPORTS ScriptThread* CreateScriptThread(ScriptClass *scriptClass, const StringResolvable& label);
+
+		/**
+		 * Create a new script thread.
+		 *
+		 * @param scriptClass The class to create the script thread in.
+		 * @param codePos Initial code position for the thread.
+		 * @return Newly created thread.
+		 */
+		mfuse_EXPORTS ScriptThread* CreateScriptThread(ScriptClass *scriptClass, const opval_t* codePos);
 		mfuse_EXPORTS ScriptClass* CurrentScriptClass();
 
-		mfuse_EXPORTS ScriptThread* CurrentThread();
-		mfuse_EXPORTS ScriptThread* PreviousThread();
+		/** Return the currently running thread. */
+		mfuse_EXPORTS ScriptThread* CurrentThread() noexcept;
+		/** Return the thread that was running before the current thread. */
+		mfuse_EXPORTS ScriptThread* PreviousThread() noexcept;
 
-		mfuse_EXPORTS void ExecuteThread(const ProgramScript* scr, const rawchar_t* label = nullptr);
-		mfuse_EXPORTS void ExecuteThread(const ProgramScript* scr, const rawchar_t* label, Event& parms);
-		mfuse_EXPORTS void ExecuteThread(const rawchar_t* scriptName, const rawchar_t* label = nullptr);
-		mfuse_EXPORTS void ExecuteThread(const rawchar_t* scriptName, const rawchar_t* label, Event& parms);
+		mfuse_EXPORTS void ExecuteThread(const ProgramScript* scr, const StringResolvable& label = {});
+		mfuse_EXPORTS void ExecuteThread(const StringResolvable& scriptName, const StringResolvable& label = {});
+		mfuse_EXPORTS void ExecuteThread(const ProgramScript* scr, Event& parms, const StringResolvable& label = {});
+		mfuse_EXPORTS void ExecuteThread(const StringResolvable& scriptName, Event& parms, const StringResolvable& label = {});
 
-		mfuse_EXPORTS const ProgramScript* GetTempScript(const char* data, uint64_t dataLength);
-		mfuse_EXPORTS const ProgramScript* GetGameScript(const rawchar_t* scriptName, const char* data, uint64_t dataLength, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetGameScript(const_str scriptName, const char* data, uint64_t dataLength, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetGameScript(const rawchar_t* scriptName, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetGameScript(const_str scriptName, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetScript(const rawchar_t* scriptName, const char* data, uint64_t dataLength, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetScript(const_str scriptName, const char* data, uint64_t dataLength, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetScript(const rawchar_t* scriptName, bool recompile = false);
-		mfuse_EXPORTS const ProgramScript* GetScript(const_str scriptName, bool recompile = false);
+		/**
+		 * Compile and return an anonymous program script.
+		 *
+		 * @param stream The stream to compile.
+		 * @return Anonymous program script.
+		 */
+		mfuse_EXPORTS const ProgramScript* GetTempScript(std::istream& stream);
+		mfuse_EXPORTS const ProgramScript* GetProgramScript(const StringResolvable& scriptName, std::istream& stream, bool recompile = false);
+		mfuse_EXPORTS const ProgramScript* GetProgramScript(const StringResolvable& scriptName, bool recompile = false);
 
 		mfuse_EXPORTS void ExecuteRunning();
+		mfuse_EXPORTS size_t GetNumScripts() const;
+		mfuse_EXPORTS size_t GetNumRunningScripts() const;
 		void SetTime(uinttime_t time);
 
 	public:
@@ -85,38 +125,22 @@ namespace mfuse
 
 	private:
 		void InitConstStrings();
-		const ProgramScript* GetGameScriptInternal(const_str scriptName, const rawchar_t* data, size_t dataLength);
+		const ProgramScript* GetProgramScriptInternal(const_str scriptName, std::istream& stream);
+		void DeleteProgramScript(ProgramScript* script);
+		ProgramScript* FindScript(const_str scriptName) const;
 
-		void CloseGameScript();
+		void CloseProgramScript();
 		void ClearAll();
 		void Reset();
 
 	private:
-		/** VM recursions */
-		int32_t stackCount;
-
-		/** The previous thread. */
 		SafePtr<ScriptThread> m_PreviousThread;
-
-		/** The current playing thread. */
 		SafePtr<ScriptThread> m_CurrentThread;
-
-		/** The list of compiled game scripts. */
-		con::map<const_str, ProgramScript*> m_GameScripts;
-
-		/** Threads that are currently waiting */
+		con::map<const_str, ProgramScript*> m_ProgramScripts;
 		con::timer timerList;
-
-		/** The string dictionary, used to cache strings into a number. */
-		con::arrayset<xstr, xstr, Hash<xstr>, EqualTo<xstr>, MEM::DefaultAlloc_set> StringDict;
-
-		/** The head of the script container. */
 		ScriptClass* ContainerHead;
-
-		/** Parm instance for scripts. */
+		StringDictionary dict;
 		Parm parm;
-
-	private:
-		static const rawchar_t* ConstStrings[];
+		ThreadExecutionProtection execProtection;
 	};
 };

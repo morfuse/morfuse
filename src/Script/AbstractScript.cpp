@@ -2,6 +2,8 @@
 #include <morfuse/Script/ScriptMaster.h>
 #include <morfuse/Script/Context.h>
 
+#include <iomanip>
+
 using namespace mfuse;
 
 AbstractScript::AbstractScript()
@@ -30,12 +32,7 @@ void AbstractScript::CreateProgToSource(size_t startLength)
 */
 }
 
-const xstr& AbstractScript::Filename() const
-{
-	return ScriptContext::Get().GetDirector().GetString(m_Filename);
-}
-
-const_str AbstractScript::ConstFilename() const
+const_str AbstractScript::Filename() const
 {
 	return m_Filename;
 }
@@ -128,20 +125,26 @@ bool AbstractScript::GetSourceAt(size_t pos, xstr& sourceLine, uint32_t& column,
 
 bool AbstractScript::GetSourceAt(const sourceLocation_t& sourceLoc, xstr& sourceLine) const
 {
-	return sourceLoc.getLine(m_SourceBuffer, m_SourceLength, sourceLine);
+	if (m_SourceBuffer) {
+		return sourceLoc.getLine(m_SourceBuffer, m_SourceLength, sourceLine);
+	}
+
+	return false;
 }
 
-void AbstractScript::PrintSourcePos(const sourceLocation_t& sourceLoc) const
+void AbstractScript::PrintSourcePos(std::ostream& out, const sourceLocation_t& sourceLoc) const
 {
 	xstr sourceLine;
 
 	if (GetSourceAt(sourceLoc, sourceLine))
 	{
-		PrintSourcePos(sourceLine.c_str(), sourceLoc.column, sourceLoc.line);
+		PrintSourcePos(out, sourceLine.c_str(), sourceLoc.column, sourceLoc.line);
 	}
 	else
 	{
-		ScriptContext::Get().GetOutputInfo().DPrintf("file '%s', source pos %d line %d column %d:\n", Filename().c_str(), sourceLoc.sourcePos, sourceLoc.line, sourceLoc.column);
+		const ScriptContext& context = ScriptContext::Get();
+		const xstr& fileName = context.GetDirector().GetDictionary().Get(Filename());
+		out << "file '" << fileName.c_str() << "', source pos " << sourceLoc.sourcePos << " line " << sourceLoc.line << " column " << sourceLoc.column << ":" << std::endl;
 	}
 }
 
@@ -163,7 +166,7 @@ void AbstractScript::PrintSourcePos(size_t sourcePos) const
 }
 */
 
-void AbstractScript::PrintSourcePos(size_t pos) const
+void AbstractScript::PrintSourcePos(std::ostream& out, size_t pos) const
 {
 	if (!m_ProgToSource) {
 		return;
@@ -176,14 +179,23 @@ void AbstractScript::PrintSourcePos(size_t pos) const
 		return;
 	}
 
-	PrintSourcePos(*sourceLoc);
+	PrintSourcePos(out, *sourceLoc);
 }
 
-void AbstractScript::PrintSourcePos(const rawchar_t* sourceLine, uint32_t column, uint32_t line) const
+void AbstractScript::PrintSourcePos(std::ostream& out, const rawchar_t* sourceLine, uint32_t column, uint32_t line) const
 {
-	OutputInfo& outputInfo = ScriptContext::Get().GetOutputInfo();
-	outputInfo.DPrintf("(%s, %d):\n%s\n", Filename().c_str(), line, sourceLine);
-	outputInfo.DPrintf("%*.s^\n", column, " ");
+	const ScriptContext& context = ScriptContext::Get();
+	const xstr& fileName = context.GetDirector().GetDictionary().Get(Filename());
+
+	out << "(" << fileName << ", " << line << "):" << std::endl << sourceLine << std::endl;
+	if (column >= 1) {
+		out << std::setw(column + 1) << std::setfill(' ') << "^" << std::endl;
+	}
+	else {
+		out << "^" << std::endl;
+	}
+	//outputInfo.DPrintf("(%s, %d):\n%s\n", fileName.c_str(), line, sourceLine);
+	//outputInfo.DPrintf("%*.s^\n", column, " ");
 }
 
 const rawchar_t* AbstractScript::GetSourceBuffer() const

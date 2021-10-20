@@ -211,16 +211,15 @@ EventDef EV_SimpleEntity_UpVector
 );
 
 SimpleEntity::SimpleEntity()
+	: targetComp(*this)
 {
-	entflags = 0;
 }
 
 SimpleEntity::~SimpleEntity()
 {
-	ScriptContext::Get().GetTargetList().RemoveTargetEntity(this);
 }
 
-void SimpleEntity::SimpleArchive( Archiver& arc )
+void SimpleEntity::SimpleArchive(Archiver&)
 {
 	/*
 	int index;
@@ -248,13 +247,13 @@ void SimpleEntity::SimpleArchive( Archiver& arc )
 	*/
 }
 
-void SimpleEntity::Archive( Archiver& arc )
+void SimpleEntity::Archive(Archiver&)
 {
 	/*
-	SimpleEntity::SimpleArchive( arc );
+	SimpleEntity::SimpleArchive(arc);
 
-	arc.ArchiveVector( &origin );
-	arc.ArchiveVector( &centroid );
+	arc.ArchiveVector(&origin);
+	arc.ArchiveVector(&centroid);
 	*/
 }
 
@@ -274,49 +273,19 @@ void SimpleEntity::setAngles( Vector angles )
 	this->angles = angles.AnglesMod();
 }
 
+const mfuse::Vector& SimpleEntity::getAngles() const
+{
+	return angles;
+}
+
 const mfuse::Vector& SimpleEntity::getOrigin() const
 {
 	return origin;
 }
 
-void SimpleEntity::SetTarget( const xstr& target )
+TargetComponent& SimpleEntity::GetTargetComponent()
 {
-	this->target = target;
-}
-
-void SimpleEntity::SetTargetName( const xstr& targetname )
-{
-	TargetList& targetList = ScriptContext::Get().GetTargetList();
-	targetList.RemoveTargetEntity( this );
-
-	this->targetname = targetname;
-
-	targetList.AddTargetEntity( this );
-}
-
-const xstr& SimpleEntity::Target()
-{
-	return target;
-}
-
-const xstr& SimpleEntity::TargetName()
-{
-	return targetname;
-}
-
-SimpleEntity *SimpleEntity::Next( void )
-{
-	TargetList& targetList = ScriptContext::Get().GetTargetList();
-	SimpleEntity *ent = targetList.GetTarget( target, true );
-
-	if( !ent || !ent->inheritsFrom( SimpleEntity::staticclass() ) )
-	{
-		return NULL;
-	}
-	else
-	{
-		return ent;
-	}
+	return targetComp;
 }
 
 void SimpleEntity::EventGetAngle( Event *ev )
@@ -336,12 +305,12 @@ void SimpleEntity::EventGetOrigin( Event *ev )
 
 void SimpleEntity::EventGetTargetname( Event *ev )
 {
-	ev->AddString( TargetName() );
+	ev->AddConstString(targetComp.GetTargetName());
 }
 
 void SimpleEntity::EventGetTarget( Event *ev )
 {
-	ev->AddString( Target() );
+	ev->AddConstString(targetComp.GetTarget());
 }
 
 void SimpleEntity::EventSetAngle( Event *ev )
@@ -371,19 +340,19 @@ void SimpleEntity::EventSetAngles( Event *ev )
 	setAngles( angles );
 }
 
-void SimpleEntity::EventSetOrigin( Event *ev )
+void SimpleEntity::EventSetOrigin(Event* ev)
 {
-	setOriginEvent( ev->GetVector( 1 ) );
+	setOriginEvent(ev->GetVector(1));
 }
 
-void SimpleEntity::EventSetTargetname( Event *ev )
+void SimpleEntity::EventSetTargetname(Event* ev)
 {
-	SetTargetName( ev->GetString( 1 ) );
+	targetComp.SetTargetName(ev->GetConstString(1));
 }
 
-void SimpleEntity::EventSetTarget( Event *ev )
+void SimpleEntity::EventSetTarget(Event* ev)
 {
-	SetTarget( ev->GetString( 1 ) );
+	targetComp.SetTarget(ev->GetConstString(1));
 }
 
 void SimpleEntity::GetCentroid( Event *ev )
@@ -421,116 +390,6 @@ void SimpleEntity::GetUpVector( Event *ev )
 
 	angles.AngleVectorsLeft(NULL, NULL, &up);
 	ev->AddVector( up );
-}
-
-int SimpleEntity::IsSubclassOfEntity( void ) const
-{
-	return ( entflags & EF_ENTITY );
-}
-
-int SimpleEntity::IsSubclassOfAnimate( void ) const
-{
-	return ( entflags & EF_ANIMATE );
-}
-
-int SimpleEntity::IsSubclassOfSentient( void ) const
-{
-	return ( entflags & EF_SENTIENT );
-}
-
-int SimpleEntity::IsSubclassOfPlayer( void ) const
-{
-	return ( entflags & EF_PLAYER );
-}
-
-int SimpleEntity::IsSubclassOfActor( void ) const
-{
-	return ( entflags & EF_ACTOR );
-}
-
-int SimpleEntity::IsSubclassOfItem( void ) const
-{
-	return ( entflags & EF_ITEM );
-}
-
-int SimpleEntity::IsSubclassOfInventoryItem( void ) const
-{
-	return ( entflags & EF_INVENTORYITEM );
-}
-
-int SimpleEntity::IsSubclassOfWeapon( void ) const
-{
-	return ( entflags & EF_WEAPON );
-}
-
-int SimpleEntity::IsSubclassOfProjectile( void ) const
-{
-	return ( entflags & EF_PROJECTILE );
-}
-
-int SimpleEntity::IsSubclassOfDoor( void ) const
-{
-	return ( entflags & EF_DOOR );
-}
-
-int SimpleEntity::IsSubclassOfCamera( void ) const
-{
-	return ( entflags & EF_CAMERA );
-}
-
-int SimpleEntity::IsSubclassOfVehicle( void ) const
-{
-	return ( entflags & EF_VEHICLE );
-}
-
-int SimpleEntity::IsSubclassOfVehicleTank( void ) const
-{
-	return ( entflags & EF_VEHICLETANK );
-}
-
-int SimpleEntity::IsSubclassOfVehicleTurretGun( void ) const
-{
-	return ( entflags & EF_VEHICLETURRET );
-}
-
-int SimpleEntity::IsSubclassOfTurretGun( void ) const
-{
-	return ( entflags & EF_TURRET );
-}
-
-int SimpleEntity::IsSubclassOfPathNode( void ) const
-{
-	return ( entflags & EF_PATHNODE );
-}
-
-int SimpleEntity::IsSubclassOfWaypoint( void ) const
-{
-	return ( entflags & EF_WAYPOINT );
-}
-
-int SimpleEntity::IsSubclassOfTempWaypoint( void ) const
-{
-	return ( entflags & EF_TEMPWAYPOINT );
-}
-
-int SimpleEntity::IsSubclassOfVehiclePoint( void ) const
-{
-	return ( entflags & EF_VEHICLEPOINT );
-}
-
-int SimpleEntity::IsSubclassOfSplinePath( void ) const
-{
-	return ( entflags & EF_SPLINEPATH );
-}
-
-int SimpleEntity::IsSubclassOfCrateObject( void ) const
-{
-	return ( entflags & EF_CRATEOBJECT );
-}
-
-int SimpleEntity::IsSubclassOfBot( void ) const
-{
-	return ( entflags & EF_BOT );
 }
 
 MFUS_CLASS_DECLARATION( Listener, SimpleEntity, NULL )

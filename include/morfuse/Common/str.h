@@ -15,45 +15,15 @@ namespace mfuse
 	class strdata
 	{
 	public:
-		strdata()
-			//: data(nullptr)
-			: refcount(0)
-			, alloced(0)
-			, len(0)
-		{}
+		strdata();
+		~strdata();
 
-		~strdata()
-		{
-		/*
-			if (data) {
-				delete[] data;
-			}
-		*/
-		}
+		void AddRef();
+		bool DelRef();
+		CharT* data();
+		const CharT* data() const;
 
-		void AddRef() { refcount++; }
-		bool DelRef() // True if killed
-		{
-			if (!refcount)
-			{
-				delete this;
-				return true;
-			}
-
-			--refcount;
-			return false;
-		}
-
-		CharT* data()
-		{
-			return reinterpret_cast<CharT*>(this + 1);
-		}
-
-		const CharT* data() const
-		{
-			return reinterpret_cast<const CharT*>(this + 1);
-		}
-
+	public:
 		uintptr_t refcount;
 		size_t alloced;
 		size_t len;
@@ -92,8 +62,8 @@ namespace mfuse
 		void reserve(size_t len);
 		void clear();
 
-		CharT operator[](intptr_t index) const;
-		CharT& operator[](intptr_t index);
+		CharT operator[](uintptr_t index) const;
+		CharT& operator[](uintptr_t index);
 
 		void operator=(const base_str& text);
 		base_str& operator=(base_str&& text) noexcept;
@@ -145,6 +115,7 @@ namespace mfuse
 		static CharT tolower(CharT c);
 		static CharT toupper(CharT c);
 
+		static bool isEmpty(const CharT* s);
 		static void copy(CharT* dest, const CharT* s);
 		static void copyn(CharT* dest, const CharT* s, size_t max);
 		static CharT* cat(CharT* dest, const CharT* s);
@@ -192,6 +163,9 @@ namespace mfuse
 			return printfImpl(fmt, std::forward<Args>(args)...);
 		}
 
+	public:
+		static const base_str& getEmpty();
+
 	private:
 		static base_str printfImpl(const CharT* fmt, ...);
 
@@ -199,6 +173,8 @@ namespace mfuse
 		strdata<CharT> *m_data;
 		void EnsureAlloced(size_t, bool keepold = true);
 		void EnsureDataWritable();
+
+		static const base_str empty;
 	};
 
 	using str = base_str<char>;

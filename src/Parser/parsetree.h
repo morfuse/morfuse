@@ -74,7 +74,7 @@ namespace mfuse
 	 * 3) it's faster because it relies on switch-case only
 	 */
 	union sval_u {
-		statementType_e	type;
+		statementType_e		type;
 		const char*			stringValue;
 		float				floatValue;
 		uint32_t			intValue;

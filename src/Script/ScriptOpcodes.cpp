@@ -1,5 +1,5 @@
 #include <morfuse/Script/ScriptOpcodes.h>
-#include <morfuse/Script/ConstStr.h>
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Common/short3.h>
 #include <morfuse/Common/Vector.h>
 

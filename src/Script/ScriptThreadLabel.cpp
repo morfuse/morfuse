@@ -1,10 +1,10 @@
+#include <morfuse/Common/ConstStr.h>
 #include <morfuse/Script/ScriptThreadLabel.h>
 #include <morfuse/Script/ScriptThread.h>
 #include <morfuse/Script/ScriptClass.h>
 #include <morfuse/Script/ScriptException.h>
 #include <morfuse/Script/ScriptVariable.h>
 #include <morfuse/Script/Level.h>
-#include <morfuse/Script/ConstStr.h>
 #include <morfuse/Script/ProgramScript.h>
 #include <morfuse/Script/StateScript.h>
 #include <morfuse/Script/Context.h>
@@ -47,16 +47,11 @@ void ScriptThreadLabel::Execute(Listener *listener)
 
 void ScriptThreadLabel::Execute(Listener *listener, Event &ev)
 {
-	Execute(listener, &ev);
-}
-
-void ScriptThreadLabel::Execute(Listener *listener, Event *ev)
-{
 	if (!m_Script) {
 		return;
 	}
 
-	ScriptThread *thread = Create(listener);
+	ScriptThread* thread = Create(listener);
 
 	if (thread)
 	{
@@ -87,7 +82,7 @@ void ScriptThreadLabel::Set(const rawchar_t *label)
 			*p = '\0';
 
 			script = buffer;
-			m_Label = ScriptContext::Get().GetDirector().AddString(&p[2]);
+			m_Label = ScriptContext::Get().GetDirector().GetDictionary().Add(&p[2]);
 			foundLabel = true;
 
 			break;
@@ -102,19 +97,19 @@ void ScriptThreadLabel::Set(const rawchar_t *label)
 	if (!foundLabel)
 	{
 		script = context.GetLevel()->GetCurrentScript();
-		m_Label = director.AddString(buffer);
+		m_Label = director.GetDictionary().Add(buffer);
 	}
 
-	m_Script = director.GetGameScript(script.c_str());
+	m_Script = director.GetProgramScript(script.c_str());
 
 	if (!m_Script->GetStateScript().FindLabel(m_Label))
 	{
-		const xstr& l = director.GetString(m_Label);
+		const xstr& l = director.GetDictionary().Get(m_Label);
 
 		m_Script = NULL;
 		m_Label = STRING_EMPTY;
 
-		ScriptError("^~^~^ Could not find label '%s' in '%s'", l.c_str(), script.c_str());
+		throw ScriptException("^~^~^ Could not find label '" + l + "' in '" + script + "'");
 	}
 }
 
@@ -122,28 +117,28 @@ void ScriptThreadLabel::SetScript(const ScriptVariable& label)
 {
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
-		m_Script = ScriptContext::Get().GetDirector().GetGameScript(label.stringValue());
+		m_Script = ScriptContext::Get().GetDirector().GetProgramScript(label.stringValue());
 		m_Label = STRING_EMPTY;
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
-		ScriptVariable *script = label[1];
-		ScriptVariable *labelname = label[2];
+		const ScriptVariable& script = label[1];
+		const ScriptVariable& labelname = label[2];
 
-		m_Script = ScriptContext::Get().GetDirector().GetGameScript(script->stringValue());
-		m_Label = labelname->constStringValue();
+		m_Script = ScriptContext::Get().GetDirector().GetProgramScript(script.constStringValue());
+		m_Label = labelname.constStringValue();
 
 		if (!m_Script->GetStateScript().FindLabel(m_Label))
 		{
-			m_Script = NULL;
+			m_Script = nullptr;
 			m_Label = STRING_EMPTY;
 
-			ScriptError("^~^~^ Could not find label '%s' in '%s'", labelname->stringValue().c_str(), script->stringValue().c_str());
+			throw ScriptException("^~^~^ Could not find label '" + labelname.stringValue() + "' in '" + script.stringValue() + "'");
 		}
 	}
 	else
 	{
-		ScriptError("ScriptThreadLabel::SetScript: bad label type '%s'", label.GetTypeName());
+		throw ScriptException("bad label type '" + xstr(label.GetTypeName()) + "'");
 	}
 }
 
@@ -154,8 +149,6 @@ void ScriptThreadLabel::SetScript(const rawchar_t *label)
 
 void ScriptThreadLabel::SetThread(const ScriptVariable& label)
 {
-	ScriptThread *thread = NULL;
-
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
 		m_Script = ScriptContext::Get().GetDirector().CurrentScriptClass()->GetScript();
@@ -163,23 +156,23 @@ void ScriptThreadLabel::SetThread(const ScriptVariable& label)
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
-		ScriptVariable *script = label[1];
-		ScriptVariable *labelname = label[2];
+		const ScriptVariable& script = label[1];
+		const ScriptVariable& labelname = label[2];
 
-		m_Script = ScriptContext::Get().GetDirector().GetGameScript(script->stringValue());
-		m_Label = labelname->constStringValue();
+		m_Script = ScriptContext::Get().GetDirector().GetProgramScript(script.constStringValue());
+		m_Label = labelname.constStringValue();
 
 		if (!m_Script->GetStateScript().FindLabel(m_Label))
 		{
-			m_Script = NULL;
+			m_Script = nullptr;
 			m_Label = STRING_EMPTY;
 
-			ScriptError("^~^~^ Could not find label '%s' in '%s'", labelname->stringValue().c_str(), script->stringValue().c_str());
+			throw ScriptException("^~^~^ Could not find label '" + labelname.stringValue() + "' in '" + script.stringValue() + "'");
 		}
 	}
 	else
 	{
-		ScriptError("ScriptThreadLabel::SetThread bad label type '%s'", label.GetTypeName());
+		throw ScriptException("bad label type '" + xstr(label.GetTypeName()) + "'");
 	}
 }
 
@@ -200,7 +193,7 @@ bool ScriptThreadLabel::TrySet(const rawchar_t *label)
 
 bool ScriptThreadLabel::TrySet(const_str label)
 {
-	return TrySet(ScriptContext::Get().GetDirector().GetString(label));
+	return TrySet(ScriptContext::Get().GetDirector().GetDictionary().Get(label));
 }
 
 bool ScriptThreadLabel::TrySetScript(const rawchar_t *label)
@@ -220,7 +213,7 @@ bool ScriptThreadLabel::TrySetScript(const rawchar_t *label)
 
 bool ScriptThreadLabel::TrySetScript(const_str label)
 {
-	return TrySetScript(ScriptContext::Get().GetDirector().GetString(label));
+	return TrySetScript(ScriptContext::Get().GetDirector().GetDictionary().Get(label));
 }
 
 bool ScriptThreadLabel::IsSet(void)
@@ -228,9 +221,11 @@ bool ScriptThreadLabel::IsSet(void)
 	return m_Script != NULL ? true : false;
 }
 
-void ScriptThreadLabel::Archive(Archiver& arc)
+void ScriptThreadLabel::Archive(Archiver&)
 {
-	//m_Script->Archive(arc);
-	//arc.ArchiveConstString(m_Label);
+	/*
+	m_Script->Archive(arc);
+	arc.ArchiveConstString(m_Label);
+	*/
 }
 

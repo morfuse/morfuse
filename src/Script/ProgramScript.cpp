@@ -178,7 +178,7 @@ void con::Entry <opval_t *, sourceinfo_t>::Archive(Archiver& arc)
 }
 #endif
 
-void ProgramScript::Archive(Archiver& arc)
+void ProgramScript::Archive(Archiver&)
 {
 	/*
 	int count = 0, i;
@@ -342,8 +342,9 @@ void ProgramScript::Archive(Archiver& arc)
 	*/
 }
 
-void ProgramScript::Archive(Archiver& arc, ProgramScript *& scr)
+void ProgramScript::Archive(Archiver&, ProgramScript *&)
 {
+	// FIXME
 	/*
 	xstr filename;
 
@@ -369,8 +370,9 @@ void ProgramScript::Archive(Archiver& arc, ProgramScript *& scr)
 	*/
 }
 
-void ProgramScript::ArchiveCodePos(Archiver& arc, opval_t **codePos) const
+void ProgramScript::ArchiveCodePos(Archiver&, opval_t **) const
 {
+	// FIXME
 	/*
 	int pos = 0;
 	xstr filename;
@@ -399,18 +401,12 @@ void ProgramScript::ArchiveCodePos(Archiver& arc, opval_t **codePos) const
 
 void ProgramScript::Close()
 {
-/*
-	for (uintptr_t i = m_CatchBlocks.NumObjects(); i > 0; i--)
-	{
-		delete m_CatchBlocks.ObjectAt(i);
-	}
-*/
 	m_CatchBlocks.FreeObjectList();
 	m_StateScripts.FreeObjectList();
 
 	if (m_ProgToSource)
 	{
-		delete m_ProgToSource;
+		//delete m_ProgToSource;
 		m_ProgToSource = nullptr;
 	}
 
@@ -422,7 +418,7 @@ void ProgramScript::Close()
 
 	if (m_SourceBuffer)
 	{
-		delete[] (rawchar_t*)m_SourceBuffer;
+		freeMemory((void*)m_SourceBuffer);
 		m_SourceBuffer = nullptr;
 	}
 
@@ -430,24 +426,41 @@ void ProgramScript::Close()
 	m_SourceLength = 0;
 }
 
-void ProgramScript::Load(const void *sourceBuffer, uint64_t sourceLength)
+void ProgramScript::Load(std::istream& stream)
 {
-	char* newBuf = new char[sourceLength + 1];
-	newBuf[sourceLength] = 0;
-	memcpy(newBuf, sourceBuffer, sourceLength);
+	const ScriptContext& context = ScriptContext::Get();
 
-	m_SourceBuffer = newBuf;
-	m_SourceLength = sourceLength;
+	if (context.GetSettings().IsDeveloperEnabled())
+	{
+		std::streamsize start = stream.tellg();
+		stream.seekg(0, stream.end);
+		const std::streamsize sz = stream.tellg() - start;
+		stream.seekg(start, stream.beg);
+
+		// copy the whole script content for locating positions
+		if (sz)
+		{
+			char* newBuf = (char*)allocateMemory(sz + 1);
+			newBuf[sz] = 0;
+			stream.read(newBuf, sz);
+			stream.seekg(start, stream.beg);
+
+			m_SourceBuffer = newBuf;
+			m_SourceLength = sz;
+		}
+	}
+
+	const xstr& fileName = context.GetDirector().GetDictionary().Get(Filename());
 
 	try
 	{
 		ScriptParser parser;
-		OutputInfo& info = ScriptContext::Get().GetOutputInfo();
+		const OutputInfo& info = context.GetOutputInfo();
 		parser.SetOutputInfo(&info);
 		// preprocess the buffer
-		const char* m_PreprocessedBuffer = parser.Preprocess(m_SourceBuffer);
+		//const char* m_PreprocessedBuffer = parser.Preprocess(stream);
 		// parse the buffer into an Abstract Syntax Tree
-		const ParseTree parseTree = parser.Parse(Filename().c_str(), m_PreprocessedBuffer, sourceLength);
+		const ParseTree parseTree = parser.Parse(fileName.c_str(), stream, m_SourceBuffer, m_SourceLength);
 
 		ScriptCompiler Compiler;
 		Compiler.SetOutputInfo(&info);
@@ -459,30 +472,47 @@ void ProgramScript::Load(const void *sourceBuffer, uint64_t sourceLength)
 
 		successCompile = true;
 	}
-	catch(ParseException::Base&)
+	catch(ParseException::Base& e)
 	{
 		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err) *err << "^~^~^ Script file compile error:  Couldn't parse '" << Filename().c_str() << "'\n";
+		if (err) {
+			*err << "^~^~^ Script file compile error: Couldn't parse '" << fileName.c_str() << "': '" << e.what() << "'\n";
+		}
 		Close();
 		throw;
 	}
-	catch (CompileException::Base&)
+	catch (CompileException::BaseSource& e)
 	{
 		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err) *err << "^~^~^ Script file compile error:  Couldn't compile '" << Filename().c_str() << "'\n";
+		if (err)
+		{
+			this->PrintSourcePos(*err, e.getSourceLoc());
+			*err << "^~^~^ Script file compile error: Couldn't compile '" << fileName.c_str() << "': " << e.what() << std::endl;
+		}
+		Close();
+		throw;
+	}
+	catch (CompileException::Base& e)
+	{
+		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
+		if (err) {
+			*err << "^~^~^ Script file compile error: Couldn't compile '" << fileName.c_str() << "': " << e.what() << std::endl;
+		}
 		Close();
 		throw;
 	}
 	catch(std::exception& e)
 	{
 		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err) *err << "^~^~^ Unknown script compile error:  Couldn't load '" << Filename().c_str() << "': " << e.what() << "\n";
+		if (err) {
+			*err << "^~^~^ Unknown script compile error: Couldn't load '" << fileName.c_str() << "': " << e.what() << "\n";
+		}
 		Close();
 		throw;
 	}
 }
 
-bool ProgramScript::GetCodePos(opval_t *codePos, xstr& filename, uintptr_t& pos)
+bool ProgramScript::GetCodePos(opval_t *codePos, const_str& filename, uintptr_t& pos)
 {
 	pos = codePos - m_ProgBuffer;
 
@@ -497,7 +527,7 @@ bool ProgramScript::GetCodePos(opval_t *codePos, xstr& filename, uintptr_t& pos)
 	}
 }
 
-bool ProgramScript::SetCodePos(opval_t *&codePos, const rawchar_t* filename, uintptr_t pos)
+bool ProgramScript::SetCodePos(opval_t *&codePos, const_str filename, uintptr_t pos)
 {
 	if (Filename() == filename)
 	{
@@ -515,17 +545,15 @@ size_t ProgramScript::GetRequiredStackSize() const
 	return requiredStackSize;
 }
 
-bool ProgramScript::labelExists(const rawchar_t *name)
+bool ProgramScript::labelExists(const_str labelName)
 {
-	xstr labelname;
-
 	// if we got passed a nullptr than that means just run the script so of course it exists
-	if (!name)
+	if (!labelName || labelName == const_str_e::STRING_EMPTY)
 	{
 		return true;
 	}
 
-	if (m_State.FindLabel(name))
+	if (m_State.FindLabel(labelName))
 	{
 		return true;
 	}

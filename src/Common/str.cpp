@@ -1,4 +1,5 @@
 #include <morfuse/Common/str.h>
+#include <morfuse/Common/MEM/Memory.h>
 #include <morfuse/Container/set_generic_hash.h>
 
 #include <cmath>
@@ -19,8 +20,6 @@ using namespace mfuse;
 #pragma warning(disable : 4710)     // function 'blah' not inlined
 #endif
 
-static constexpr unsigned int STR_ALLOC_GRAN = 11;
-
 template<typename CharT>
 static constexpr CharT trueStr[] = { 't', 'r', 'u', 'e', 0 };
 
@@ -29,6 +28,9 @@ static constexpr CharT falseStr[] = { 'f', 'a', 'l', 's', 'e', 0 };
 
 template<typename CharT>
 static constexpr CharT emptyStr[] = { 0 };
+
+template<typename CharT>
+const base_str<CharT> base_str<CharT>::empty;
 
 template<>
 mfuse_EXPORTS intptr_t Hash<str>::operator()(const str& key) const
@@ -71,6 +73,49 @@ static size_t numtoStr(intType num, CharT* output, size_t len, uintptr_t base)
 	base_str<CharT>::reverse(output);
 
 	return i;
+}
+
+template<typename CharT>
+strdata<CharT>::strdata()
+	: refcount(0)
+	, alloced(0)
+	, len(0)
+{}
+
+template<typename CharT>
+strdata<CharT>::~strdata()
+{
+}
+
+template<typename CharT>
+void strdata<CharT>::AddRef()
+{
+	refcount++;
+}
+
+template<typename CharT>
+bool strdata<CharT>::DelRef() // True if killed
+{
+	if (!refcount)
+	{
+		freeMemory((unsigned char*)this);
+		return true;
+	}
+
+	--refcount;
+	return false;
+}
+
+template<typename CharT>
+CharT* strdata<CharT>::data()
+{
+	return reinterpret_cast<CharT*>(this + 1);
+}
+
+template<typename CharT>
+const CharT* strdata<CharT>::data() const
+{
+	return reinterpret_cast<const CharT*>(this + 1);
 }
 
 template<typename CharT>
@@ -184,12 +229,9 @@ base_str<CharT>::base_str(const float num)
 	: m_data(nullptr)
 
 {
-	static constexpr CharT formatSpecifier[] = { '%', '.', '3', 'f', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	floattoStr(num, text, 32, 3);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -201,12 +243,9 @@ template<typename CharT>
 base_str<CharT>::base_str(const int num)
 	: m_data(nullptr)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'd', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	i32toStr(num, text, 32);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -219,12 +258,9 @@ base_str<CharT>::base_str(const unsigned int num)
 	: m_data(nullptr)
 
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'u', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	ui32toStr(num, text, 32);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -236,12 +272,9 @@ template<typename CharT>
 base_str<CharT>::base_str(const long num)
 	: m_data(nullptr)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'l', 'd', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	i64toStr(num, text, 32);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -253,12 +286,9 @@ template<typename CharT>
 base_str<CharT>::base_str(const unsigned long num)
 	: m_data(nullptr)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'l', 'u', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	ui64toStr(num, text, 32);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -270,12 +300,9 @@ template<typename CharT>
 base_str<CharT>::base_str(const long long num)
 	: m_data(nullptr)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'l', 'l', 'd', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	i64toStr(num, text, 32);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -287,12 +314,9 @@ template<typename CharT>
 base_str<CharT>::base_str(const unsigned long long num)
 	: m_data(nullptr)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'l', 'l', 'u', 0 };
-
 	CharT text[32];
 	size_t len;
 
-	//bprintf(text, formatSpecifier, num);
 	ui64toStr(num, text, 32);
 	len = base_str::len(text);
 	EnsureAlloced(len + 1);
@@ -304,6 +328,12 @@ template<typename CharT>
 const CharT* base_str<CharT>::c_str() const
 {
 	return m_data ? m_data->data() : emptyStr<CharT>;
+}
+
+template<typename CharT>
+const base_str<CharT>& base_str<CharT>::getEmpty()
+{
+	return empty;
 }
 
 template<typename CharT>
@@ -354,7 +384,7 @@ void base_str<CharT>::append(const base_str& text)
 }
 
 template<typename CharT>
-CharT base_str<CharT>::operator[](intptr_t index) const
+CharT base_str<CharT>::operator[](uintptr_t index) const
 {
 	assert(m_data);
 
@@ -367,7 +397,7 @@ CharT base_str<CharT>::operator[](intptr_t index) const
 
 	// In release mode, give them a nullptr character
 	// don't include the '/0' in the test, because technically, it's out of bounds
-	if ((index < 0) || (index >= m_data->len)) {
+	if (index >= m_data->len) {
 		return 0;
 	}
 
@@ -375,7 +405,7 @@ CharT base_str<CharT>::operator[](intptr_t index) const
 }
 
 template<typename CharT>
-CharT& base_str<CharT>::operator[](intptr_t index)
+CharT& base_str<CharT>::operator[](uintptr_t index)
 {
 	// Used for result for invalid indices
 	assert(m_data);
@@ -395,7 +425,7 @@ CharT& base_str<CharT>::operator[](intptr_t index)
 
 	// In release mode, let them change a safe variable
 	// don't include the '/0' in the test, because technically, it's out of bounds
-	if ((index < 0) || (index >= m_data->len))
+	if (index >= m_data->len)
 	{
 		static CharT dummy;
 		return dummy;
@@ -451,7 +481,7 @@ void base_str<CharT>::operator=(const CharT* text)
 	{
 		len = base_str::len(text);
 
-		unsigned char* buf = new unsigned char[sizeof(strdata<CharT>) + sizeof(CharT) * (len + 1)];
+		unsigned char* buf = (unsigned char*)allocateMemory(sizeof(strdata<CharT>) + sizeof(CharT) * (len + 1));
 		//m_data = new strdata<CharT>;
 		m_data = new (buf) strdata<CharT>;
 		m_data->len = len;
@@ -516,13 +546,10 @@ base_str<CharT> base_str<CharT>::operator+(const CharT b)
 template<typename CharT>
 base_str<CharT> base_str<CharT>::operator+(const float b)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'f', 0 };
-
 	CharT text[20];
 
 	base_str result(*this);
 
-	//bprintf(text, formatSpecifier, b);
 	floattoStr(b, text, 20);
 	result.append(text);
 
@@ -532,13 +559,10 @@ base_str<CharT> base_str<CharT>::operator+(const float b)
 template<typename CharT>
 base_str<CharT> base_str<CharT>::operator+(const int b)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'd', 0 };
-
 	CharT text[20];
 
 	base_str result(*this);
 
-	//bprintf(text, formatSpecifier, b);
 	i32toStr(b, text, 20);
 	result.append(text);
 
@@ -548,13 +572,10 @@ base_str<CharT> base_str<CharT>::operator+(const int b)
 template<typename CharT>
 base_str<CharT> base_str<CharT>::operator+(const unsigned b)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'u', 0 };
-
 	CharT text[20];
 
 	base_str result(*this);
 
-	//bprintf(text, formatSpecifier, b);
 	ui32toStr(b, text, 20);
 	result.append(text);
 
@@ -1144,13 +1165,16 @@ bool base_str<CharT>::isEmpty() const
 }
 
 template<typename CharT>
+bool base_str<CharT>::isEmpty(const CharT* s)
+{
+	return !s || !*s;
+}
+
+template<typename CharT>
 base_str<CharT>& base_str<CharT>::operator+=(const float a)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'f', 0 };
-
 	CharT text[20];
 
-	//bprintf(text, formatSpecifier, a);
 	floattoStr(a, text, 20);
 	append(text);
 
@@ -1160,11 +1184,8 @@ base_str<CharT>& base_str<CharT>::operator+=(const float a)
 template<typename CharT>
 base_str<CharT>& base_str<CharT>::operator+=(const int a)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'd', 0 };
-
 	CharT text[20];
 
-	//bprintf(text, formatSpecifier, a);
 	i32toStr(a, text, 20);
 	append(text);
 
@@ -1174,11 +1195,8 @@ base_str<CharT>& base_str<CharT>::operator+=(const int a)
 template<typename CharT>
 base_str<CharT>& base_str<CharT>::operator+=(const unsigned a)
 {
-	static constexpr CharT formatSpecifier[] = { '%', 'u', 0 };
-
 	CharT text[20];
 
-	//bprintf(text, formatSpecifier, a);
 	ui32toStr(a, text, 20);
 	append(text);
 
@@ -1266,7 +1284,7 @@ void base_str<CharT>::EnsureAlloced(size_t amount, bool keepold)
 	{
 		if (amount > 1)
 		{
-			unsigned char* buf = new unsigned char[sizeof(strdata<CharT>) + sizeof(CharT) * amount];
+			unsigned char* buf = (unsigned char*)allocateMemory(sizeof(strdata<CharT>) + sizeof(CharT) * amount);
 			m_data = new (buf) strdata<CharT>;
 
 			//m_data->data() = new CharT[amount];
@@ -1282,7 +1300,6 @@ void base_str<CharT>::EnsureAlloced(size_t amount, bool keepold)
 	}
 
 	CharT* newbuffer;
-	bool wasalloced = (m_data->alloced != 0);
 
 	if (amount < m_data->alloced) {
 		return;
@@ -1294,50 +1311,19 @@ void base_str<CharT>::EnsureAlloced(size_t amount, bool keepold)
 		return;
 	}
 
-	// Now, let's make sure it's writable
-	//EnsureDataWritable();
-
 	assert(amount);
 
-	/*
-	if (amount == 1)
-	{
-		m_data->alloced = 1;
-	}
-	else
-	{
-		size_t newsize;
-		const size_t mod = amount % STR_ALLOC_GRAN;
-
-		if (!mod)
-			newsize = amount;
-		else
-			newsize = amount + STR_ALLOC_GRAN - mod;
-
-		m_data->alloced = newsize;
-	}
-	*/
-
-	unsigned char* buf = new unsigned char[sizeof(strdata<CharT>) + sizeof(CharT) * amount];
+	unsigned char* buf = (unsigned char*)allocateMemory(sizeof(strdata<CharT>) + sizeof(CharT) * amount);
 	strdata<CharT>* newdata = new (buf) strdata<CharT>;
 	newbuffer = reinterpret_cast<CharT*>(buf + sizeof(strdata<CharT>));
 
-	//if (wasalloced && keepold)
 	if (keepold)
 	{
 		copy(newbuffer, m_data->data());
 	}
 
-	/*
-	if (m_data->data())
-	{
-		delete[] m_data->data();
-	}
-	*/
 	m_data->DelRef();
-
 	m_data = newdata;
-	//m_data->data() = newbuffer;
 }
 
 template<typename CharT>
@@ -1610,7 +1596,7 @@ base_strview<CharT>::base_strview()
 template<typename CharT>
 base_strview<CharT>::base_strview(const CharT* inCharArray, size_t inLength)
 	: charArray(inCharArray)
-	, length(inLength != -1 ? inLength : base_str<CharT>::len(inCharArray))
+	, length(inLength != (size_t)-1 ? inLength : base_str<CharT>::len(inCharArray))
 	, isCharArray(true)
 {
 	if (!charArray) charArray = emptyStr<CharT>;
@@ -1803,17 +1789,17 @@ void mfuse::StringConvert(base_str<char>& to, const wchar_t* from)
 
 namespace mfuse
 {
-template mfuse_EXPORTS class base_str<char>;
+template class mfuse_EXPORTS base_str<char>;
 //template mfuse_EXPORTS class base_str<char16_t>;
-template mfuse_EXPORTS class base_str<wchar_t>;
+template class mfuse_EXPORTS base_str<wchar_t>;
 template mfuse_EXPORTS base_str<char> mfuse::operator+(const char* a, const base_str<char>& b);
 template mfuse_EXPORTS base_str<wchar_t> mfuse::operator+(const wchar_t* a, const base_str<wchar_t>& b);
 template mfuse_EXPORTS bool mfuse::operator==(const char* a, const base_str<char>& b);
 template mfuse_EXPORTS bool mfuse::operator==(const wchar_t* a, const base_str<wchar_t>& b);
 template mfuse_EXPORTS bool mfuse::operator!=(const char* a, const base_str<char>& b);
 template mfuse_EXPORTS bool mfuse::operator!=(const wchar_t* a, const base_str<wchar_t>& b);
-template mfuse_EXPORTS class base_strview<char>;
-template mfuse_EXPORTS class base_strview<wchar_t>;
-template mfuse_EXPORTS class base_const_str_static<char>;
-template mfuse_EXPORTS class base_const_str_static<wchar_t>;
+template class mfuse_EXPORTS base_strview<char>;
+template class mfuse_EXPORTS base_strview<wchar_t>;
+template class mfuse_EXPORTS base_const_str_static<char>;
+template class mfuse_EXPORTS base_const_str_static<wchar_t>;
 }

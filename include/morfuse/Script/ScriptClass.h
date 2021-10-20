@@ -2,6 +2,7 @@
 
 #include "Listener.h"
 #include "ScriptOpcodes.h"
+#include "StringResolvable.h"
 
 namespace mfuse
 {
@@ -9,6 +10,7 @@ namespace mfuse
 	class ScriptThread;
 	class ScriptVM;
 	class StateScript;
+	struct script_label_t;
 
 	class ScriptClass : public Listener
 	{
@@ -22,9 +24,8 @@ namespace mfuse
 		void* operator new(size_t size);
 		void operator delete(void* ptr);
 
-		mfuse_EXPORTS const xstr& Filename() const;
-		mfuse_EXPORTS const opval_t* FindLabel(const rawchar_t* label) const;
-		mfuse_EXPORTS const opval_t* FindLabel(const_str label) const;
+		mfuse_EXPORTS const_str Filename() const;
+		mfuse_EXPORTS const script_label_t* FindLabel(const_str label) const;
 		mfuse_EXPORTS Listener* GetSelf() const;
 		mfuse_EXPORTS void SetSelf(Listener* l);
 

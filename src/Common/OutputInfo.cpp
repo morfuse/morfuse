@@ -20,7 +20,7 @@ std::ostream* OutputInfo::GetOutput(outputLevel_e level) const
 	return outputs[(uintptr_t)level];
 }
 
-void OutputInfo::Printf(outputLevel_e level, const char* fmt, va_list args)
+void OutputInfo::Printf(outputLevel_e level, const char* fmt, va_list args) const
 {
 	std::ostream* stream = outputs[(uintptr_t)level];
 	if (!stream) return;
@@ -35,7 +35,7 @@ void OutputInfo::Printf(outputLevel_e level, const char* fmt, va_list args)
 	delete[] data;
 }
 
-void OutputInfo::Printf(outputLevel_e level, const char* fmt, ...)
+void OutputInfo::Printf(outputLevel_e level, const char* fmt, ...) const
 {
 	va_list args;
 	va_start(args, fmt);
@@ -43,7 +43,7 @@ void OutputInfo::Printf(outputLevel_e level, const char* fmt, ...)
 	va_end(args);
 }
 
-void OutputInfo::VPrintf(const char* fmt, ...)
+void OutputInfo::VPrintf(const char* fmt, ...) const
 {
 	va_list args;
 	va_start(args, fmt);
@@ -51,7 +51,7 @@ void OutputInfo::VPrintf(const char* fmt, ...)
 	va_end(args);
 }
 
-void OutputInfo::DPrintf(const char* fmt, ...)
+void OutputInfo::DPrintf(const char* fmt, ...) const
 {
 	va_list args;
 	va_start(args, fmt);
@@ -59,7 +59,7 @@ void OutputInfo::DPrintf(const char* fmt, ...)
 	va_end(args);
 }
 
-void OutputInfo::Printf(const char* fmt, ...)
+void OutputInfo::Printf(const char* fmt, ...) const
 {
 	va_list args;
 	va_start(args, fmt);
@@ -67,7 +67,7 @@ void OutputInfo::Printf(const char* fmt, ...)
 	va_end(args);
 }
 
-void OutputInfo::Warn(const char* fmt, ...)
+void OutputInfo::Warn(const char* fmt, ...) const
 {
 	va_list args;
 	va_start(args, fmt);
@@ -75,7 +75,7 @@ void OutputInfo::Warn(const char* fmt, ...)
 	va_end(args);
 }
 
-void OutputInfo::Error(const char* fmt, ...)
+void OutputInfo::Error(const char* fmt, ...) const
 {
 	va_list args;
 	va_start(args, fmt);

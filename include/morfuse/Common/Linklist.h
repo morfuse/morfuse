@@ -50,7 +50,7 @@ namespace mfuse
 		}
 
 		template<typename T, T remove_pointer_t<T>::*next, T remove_pointer_t<T>::*prev>
-		void Transfer(T oldroot, T newroot, const T& newnode)
+		void Transfer(T oldroot, T newroot)
 		{
 			if (oldroot->*prev != oldroot)
 			{
@@ -187,17 +187,17 @@ namespace mfuse
 		using iterator = LinkListIterator<T, next, prev>;
 		using Type = T;
 
-		bool IsEmpty() const
+		constexpr bool IsEmpty() const
 		{
 			return rootnode.*next == rootnode && rootnode.*prev == rootnode;
 		}
 
-		void Reset()
+		constexpr void Reset()
 		{
 			(rootnode.*next) = (rootnode.*prev) = rootnode;
 		}
 
-		void Add(Type* newnode)
+		constexpr void Add(Type* newnode)
 		{
 			(newnode->*next) = rootnode;
 			(newnode->*prev) = (rootnode.*prev);
@@ -205,7 +205,7 @@ namespace mfuse
 			(rootnode.*prev) = newnode;
 		}
 
-		void AddFirst(Type* newnode)
+		constexpr void AddFirst(Type* newnode)
 		{
 			(newnode->*next) = (rootnode.*next);
 			(newnode->*prev) = rootnode;
@@ -213,7 +213,7 @@ namespace mfuse
 			(rootnode.*next) = newnode;
 		}
 
-		void Remove(Type* node)
+		constexpr void Remove(Type* node)
 		{
 			(node->*prev->*next) = (node->*next);
 			(node->*next->*prev) = (node->*prev);
@@ -221,7 +221,7 @@ namespace mfuse
 			(node->*prev) = node;
 		}
 
-		void Transfer(Type* oldroot, Type* newnode)
+		constexpr void Transfer(Type* oldroot)
 		{
 			if (oldroot->*prev != oldroot)
 			{
@@ -235,7 +235,7 @@ namespace mfuse
 			}
 		}
 
-		void Reverse(Type* root)
+		constexpr void Reverse(Type* root)
 		{
 			Type* newend, * trav, * tprev;
 
@@ -248,7 +248,7 @@ namespace mfuse
 		}
 
 		template<typename TSortParm, TSortParm Type::*sortparm>
-		void SortedInsertion(Type* insertnode)
+		constexpr void SortedInsertion(Type* insertnode)
 		{
 			Type* hoya;
 
@@ -260,18 +260,24 @@ namespace mfuse
 			Add(hoya, insertnode, insertnode->*next, insertnode->*prev);
 		}
 
-		void Move(Type* node)
+		constexpr void Move(Type* newnode, Type* older)
 		{
-			Remove(node);
-			Add(node);
+			newnode->*prev->*next = newnode->*next;
+			newnode->*next->*prev = newnode->*prev;
+			newnode->*next = older->*next;
+			newnode->*prev = older->*prev;
+			newnode->*next->*prev = newnode;
+			newnode->*prev->*next = newnode;
+			older->*prev = rootnode;
+			older->*next = rootnode;
 		}
 
-		T& Root()
+		constexpr T& Root()
 		{
 			return rootnode;
 		}
 
-		iterator CreateIterator()
+		constexpr iterator CreateIterator()
 		{
 			return iterator(&rootnode);
 		}
@@ -287,21 +293,17 @@ namespace mfuse
 		using iterator = LinkListIterator<T, next, prev>;
 		using Type = T;
 
-		LinkedList()
-			: rootnode(nullptr)
-		{}
-
-		bool IsEmpty() const
+		constexpr bool IsEmpty() const
 		{
 			return !rootnode;
 		}
 
-		void Reset()
+		constexpr void Reset()
 		{
 			rootnode = nullptr;
 		}
 
-		void Add(Type* newnode)
+		constexpr void Add(Type* newnode)
 		{
 			if (!rootnode)
 			{
@@ -319,7 +321,7 @@ namespace mfuse
 			}
 		}
 
-		void AddFirst(Type* newnode)
+		constexpr void AddFirst(Type* newnode)
 		{
 			if (!rootnode)
 			{
@@ -336,7 +338,7 @@ namespace mfuse
 			rootnode = newnode;
 		}
 
-		void Insert(Type* currentnode, Type* newnode)
+		constexpr void Insert(Type* currentnode, Type* newnode)
 		{
 			newnode->*prev = currentnode->*prev;
 			newnode->*next = currentnode;
@@ -346,7 +348,7 @@ namespace mfuse
 			//rootnode = newnode;
 		}
 
-		void Remove(Type* node)
+		constexpr void Remove(Type* node)
 		{
 			if (node == rootnode) rootnode = rootnode->*next;
 			if (node == tail) tail = tail->*prev;
@@ -354,7 +356,7 @@ namespace mfuse
 			if (node->*next) node->*next->*prev = node->*prev;
 		}
 
-		void Transfer(Type* oldroot, Type* newnode)
+		constexpr void Transfer(Type* oldroot)
 		{
 			if (oldroot->*prev != oldroot)
 			{
@@ -368,7 +370,7 @@ namespace mfuse
 			}
 		}
 
-		void Reverse(Type* root)
+		constexpr void Reverse(Type* root)
 		{
 			Type *newend, *trav, *tprev;
 
@@ -381,7 +383,7 @@ namespace mfuse
 		}
 
 		template<typename TSortParm, TSortParm Type::*sortparm>
-		void SortedInsertion(Type* insertnode)
+		constexpr void SortedInsertion(Type* insertnode)
 		{
 			Type* hoya;
 
@@ -393,46 +395,55 @@ namespace mfuse
 			Add(hoya, insertnode, insertnode->*next, insertnode->*prev);
 		}
 
-		void Move(Type* node)
+		constexpr void Move(Type* newnode, Type* older)
 		{
-			Remove(node);
-			Add(node);
+			if (rootnode == older) rootnode = newnode;
+			if (tail == older) tail = newnode;
+
+			if (newnode->*prev) newnode->*prev->*next = newnode->*next;
+			if (newnode->*next) newnode->*next->*prev = newnode->*prev;
+			newnode->*next = older->*next;
+			newnode->*prev = older->*prev;
+			if (newnode->*prev) older->*prev->*next = newnode;
+			if (newnode->*next) older->*next->*prev = newnode;
+			older->*prev = nullptr;
+			older->*next = nullptr;
 		}
 
-		void SetRoot(T* newroot)
+		constexpr void SetRoot(T* newroot)
 		{
 			rootnode = newroot;
 		}
 
-		T* TakeRoot()
+		constexpr T* TakeRoot()
 		{
 			T* const node = rootnode;
 			rootnode = nullptr;
 			return node;
 		}
 
-		T* Root() const
+		constexpr T* Root() const
 		{
 			return rootnode;
 		}
 
-		T* Tail() const
+		constexpr T* Tail() const
 		{
 			return tail;
 		}
 
-		iterator CreateIterator()
+		constexpr iterator CreateIterator()
 		{
 			return iterator(rootnode);
 		}
 
-		iterator CreateConstIterator() const
+		constexpr iterator CreateConstIterator() const
 		{
 			return iterator(rootnode);
 		}
 
-		bool operator==(T* other) const { return rootnode == other; }
-		bool operator!=(T* other) const { return rootnode != other; }
+		constexpr bool operator==(T* other) const { return rootnode == other; }
+		constexpr bool operator!=(T* other) const { return rootnode != other; }
 
 	private:
 		T* rootnode;

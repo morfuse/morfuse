@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 namespace mfuse
 {
 	template<typename T>

@@ -2,6 +2,7 @@
 
 #include <morfuse/Script/Class.h>
 #include <morfuse/Script/ScriptOpcodes.h>
+#include <morfuse/Script/ScriptException.h>
 #include "../Parser/parsetree.h"
 
 #include <ostream>
@@ -13,7 +14,7 @@ namespace mfuse
 	class StateScript;
 	class ProgramScript;
 	class StateScript;
-	class ScriptMaster;
+	class StringDictionary;
 	class OutputInfo;
 
 	constexpr unsigned int BREAK_JUMP_LOCATION_COUNT = 100;
@@ -80,7 +81,7 @@ namespace mfuse
 		 *
 		 * @status not implemented
 		 */
-		const prchar_t* Preprocess(const prchar_t* sourceBuffer);
+		//const prchar_t* Preprocess(std::istream& stream);
 
 		/**
 		 * Parse the source buffer and return an abstraction syntax tree.
@@ -89,23 +90,23 @@ namespace mfuse
 		 * @param sourceBuffer The buffer to parse.
 		 * @param sourceLength The size of the buffer.
 		 */
-		ParseTree Parse(const prchar_t* scriptName, const prchar_t* sourceBuffer, uint64_t sourceLength);
+		ParseTree Parse(const prchar_t* scriptName, std::istream& stream, const rawchar_t* sourceBuffer, uint64_t sourceLength);
 
 		/**
 		 * Set the output info used to display debug info to end-user.
 		 *
 		 * @param infoValue The output info.
 		 */
-		void SetOutputInfo(OutputInfo* infoValue);
+		void SetOutputInfo(const OutputInfo* infoValue);
 
 	private:
-		OutputInfo* info;
+		const OutputInfo* info;
 	};
 
 	class ScriptEmitter
 	{
 	public:
-		ScriptEmitter(IScriptManager& manager, StateScript& stateScriptValue, OutputInfo* info, size_t maxDepth = -1);
+		ScriptEmitter(IScriptManager& manager, StateScript& stateScriptValue, const OutputInfo* info, size_t maxDepth = -1);
 		void Reset();
 
 	public:
@@ -207,7 +208,7 @@ namespace mfuse
 		EventSystem& eventSystem;
 		size_t depth;
 		size_t switchDepth;
-		OutputInfo* info;
+		const OutputInfo* info;
 		const rawchar_t* fileName;
 		const rawchar_t* sourceBuffer;
 		size_t sourceLength;
@@ -230,6 +231,17 @@ namespace mfuse
 		bool canBreak;
 		bool canContinue;
 		bool hasExternal;
+
+	private:
+		class StackDepth
+		{
+		public:
+			StackDepth(size_t& depthRef);
+			~StackDepth();
+
+		private:
+			size_t& depth;
+		};
 	};
 
 	class ScriptCompiler
@@ -256,7 +268,7 @@ namespace mfuse
 		 *
 		 * @param infoValue The output info.
 		 */
-		void SetOutputInfo(OutputInfo* infoValue);
+		void SetOutputInfo(const OutputInfo* infoValue);
 
 		/**
 		 * Return whether or not the compiler can show debug info.
@@ -273,10 +285,21 @@ namespace mfuse
 		void EmitProgram(ProgramScript* script, sval_t rootNode, opval_t*& progBuffer, size_t progLength);
 
 	private:
-		ScriptMaster& director;
-		OutputInfo* info;
+		StringDictionary& dict;
+		const OutputInfo* info;
 		int16_t m_iInternalMaxVarStackOffset;
 		int16_t m_iMaxExternalVarStackOffset;
 		bool compileSuccess;
 	};
+
+	namespace CompileErrors
+	{
+		class Base : public ScriptExceptionBase {};
+
+		class StackOverflow : public Base
+		{
+		public:
+			const char* what() const noexcept override;
+		};
+	}
 };

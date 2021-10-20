@@ -3,6 +3,8 @@
 #include "Class.h"
 #include "ScriptVariable.h"
 #include "../Container/Container.h"
+#include "../Container/ContainerView.h"
+#include "../Common/TimeTypes.h"
 
 namespace mfuse
 {
@@ -49,15 +51,17 @@ namespace mfuse
 	 */
 
 	/** remove any unused entities before spawnargs are parsed */
-	static constexpr float EV_REMOVE				= -12.0f;
+	static constexpr inttime_t EV_REMOVE			= -12000;
 	/** for priority spawn args passed in by the bsp file */
-	static constexpr float EV_PRIORITY_SPAWNARG		= -11.0f;
+	static constexpr inttime_t EV_PRIORITY_SPAWNARG	= -11000;
 	/** for spawn args passed in by the bsp file */
-	static constexpr float EV_SPAWNARG				= -10.0f;
-	static constexpr float EV_PROCESS_INIT			= -6.0f;
+	static constexpr inttime_t EV_SPAWNARG			= -10000;
+	static constexpr inttime_t EV_PROCESS_INIT		= -6000;
 	/** for any processing that must occur after all objects are spawned */
-	static constexpr float EV_POSTSPAWN				= -5.0f;
-	static constexpr float EV_SPAWNENTITIES			= -4.0f;
+	static constexpr inttime_t EV_POSTSPAWN			= -5000;
+	static constexpr inttime_t EV_SPAWNENTITIES		= -4000;
+
+	using VarListView = con::ContainerView<const ScriptVariable>;
 
 	class Listener;
 	class SimpleEntity;
@@ -72,6 +76,10 @@ namespace mfuse
 	public:
 		EventDefAttributes();
 		EventDefAttributes(const rawchar_t* inName, evType_e type, eventNum_t num);
+		EventDefAttributes(const EventDefAttributes& other);
+		EventDefAttributes& operator=(const EventDefAttributes& other);
+		EventDefAttributes(EventDefAttributes&& other);
+		EventDefAttributes& operator=(EventDefAttributes&& other);
 
 		bool operator==(const rawchar_t* inName) const;
 		bool operator!=(const rawchar_t* inName) const;
@@ -98,22 +106,24 @@ namespace mfuse
 		mfuse_EXPORTS EventDef(const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type = evType_e::Normal);
 		mfuse_EXPORTS EventDef(const ModuleDef* def, const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type = evType_e::Normal);
 		mfuse_EXPORTS ~EventDef();
+		mfuse_EXPORTS EventDef(EventDef&& other);
+		mfuse_EXPORTS EventDef& operator=(EventDef&& other);
 
-		bool operator==(const rawchar_t* name) const;
-		bool operator!=(const rawchar_t* name) const;
-		bool operator==(const EventDef& other) const;
-		bool operator!=(const EventDef& other) const;
+		mfuse_EXPORTS bool operator==(const rawchar_t* name) const;
+		mfuse_EXPORTS bool operator!=(const rawchar_t* name) const;
+		mfuse_EXPORTS bool operator==(const EventDef& other) const;
+		mfuse_EXPORTS bool operator!=(const EventDef& other) const;
 
-		const EventDefAttributes& GetAttributes() const;
-		EventDef* GetNext() const;
-		EventDef* GetPrev() const;
-		eventNum_t GetEventNum() const;
-		uint32_t GetFlags() const;
-		const rawchar_t* GetFormatSpec() const;
-		const rawchar_t* GetArgumentNames() const;
-		const rawchar_t* GetDocumentation() const;
+		mfuse_EXPORTS const EventDefAttributes& GetAttributes() const;
+		mfuse_EXPORTS EventDef* GetNext() const;
+		mfuse_EXPORTS EventDef* GetPrev() const;
+		mfuse_EXPORTS eventNum_t GetEventNum() const;
+		mfuse_EXPORTS uint32_t GetFlags() const;
+		mfuse_EXPORTS const rawchar_t* GetFormatSpec() const;
+		mfuse_EXPORTS const rawchar_t* GetArgumentNames() const;
+		mfuse_EXPORTS const rawchar_t* GetDocumentation() const;
 
-		static size_t GetDefCount();
+		mfuse_EXPORTS static size_t GetDefCount();
 
 	public:
 		EventDef* next;
@@ -203,6 +213,8 @@ namespace mfuse
 		mfuse_EXPORTS ScriptVariable& GetValue(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValueChecked(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValue();
+		mfuse_EXPORTS VarListView GetListView() const;
+		mfuse_EXPORTS VarListView GetListView(uintptr_t startPos) const;
 		mfuse_EXPORTS ScriptVariable* GetData();
 		mfuse_EXPORTS const ScriptVariable* GetData() const;
 		mfuse_EXPORTS Vector GetVector(uintptr_t pos);

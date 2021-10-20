@@ -15,9 +15,8 @@ namespace mfuse
 		ScriptThreadLabel();
 
 		ScriptThread* Create(Listener* listener);
-		void Execute(Listener* listener = NULL);
+		void Execute(Listener* listener = nullptr);
 		void Execute(Listener* listener, Event &ev);
-		void Execute(Listener* listener, Event *ev);
 
 		void Set(const rawchar_t* label);
 		void SetScript(const ScriptVariable& label);

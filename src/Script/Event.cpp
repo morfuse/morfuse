@@ -10,7 +10,7 @@
 
 using namespace mfuse;
 
-EventDef::List EventDef::head;
+EventDef::List EventDef::head = EventDef::List();
 size_t EventDef::defCount = 0;
 
 //static MEM_BlockAllocSafe<Event, MEM_DefaultBlock> Event_allocator;
@@ -36,9 +36,45 @@ EventDefAttributes::EventDefAttributes()
 
 EventDefAttributes::EventDefAttributes(const rawchar_t* inName, evType_e inType, eventNum_t inNum)
 	: name(inName)
-	, type(inType)
 	, eventNum(inNum)
+	, type(inType)
 {
+}
+
+EventDefAttributes::EventDefAttributes(const EventDefAttributes& other)
+	: name(other.name)
+	, eventNum(other.eventNum)
+	, type(other.type)
+{
+}
+
+EventDefAttributes& EventDefAttributes::operator=(const EventDefAttributes& other)
+{
+	name = other.name;
+	eventNum = other.eventNum;
+	type = other.type;
+	return *this;
+}
+
+EventDefAttributes::EventDefAttributes(EventDefAttributes&& other)
+	: name(other.name)
+	, eventNum(other.eventNum)
+	, type(other.type)
+{
+	other.name = nullptr;
+	other.eventNum = 0;
+	other.type = evType_e::None;
+}
+
+EventDefAttributes& EventDefAttributes::operator=(EventDefAttributes&& other)
+{
+	name = other.name;
+	eventNum = other.eventNum;
+	type = other.type;
+	other.name = nullptr;
+	other.eventNum = 0;
+	other.type = evType_e::None;
+	return *this;
 }
 
 const rawchar_t* EventDefAttributes::GetString() const
@@ -117,11 +153,41 @@ EventDef::EventDef(const ModuleDef* def, const rawchar_t* command, uint32_t flag
 	}
 }
 
+EventDef::EventDef(EventDef&& other)
+	: moduleDef(other.moduleDef)
+	, attributes(std::move(other.attributes))
+	, formatspec(other.formatspec)
+	, argument_names(other.argument_names)
+	, documentation(other.documentation)
+	, minArgs(other.minArgs)
+	, flags(other.flags)
+{
+	prev = next = nullptr;
+	head.Move(this, &other);
+}
+
+EventDef& EventDef::operator=(EventDef&& other)
+{
+	moduleDef = other.moduleDef;
+	attributes = std::move(other.attributes);
+	formatspec = other.formatspec;
+	argument_names = other.argument_names;
+	documentation = other.documentation;
+	minArgs = other.minArgs;
+	flags = other.flags;
+
+	head.Move(this, &other);
+
+	return *this;
+}
+
 EventDef::~EventDef()
 {
 	head.Remove(this);
 
-	--defCount;
+	if (GetAttributes().GetType() != evType_e::None) {
+		--defCount;
+	}
 }
 
 EventDefAttributes EventDef::GetNewAttributes(const rawchar_t* command, evType_e type)
@@ -133,6 +199,7 @@ EventDefAttributes EventDef::GetNewAttributes(const rawchar_t* command, evType_e
 		const EventDefAttributes& eAttr = e->GetAttributes();
 		if (!xstr::icmp(eAttr.GetString(), command) && eAttr.GetType() == type)
 		{
+			next = prev = nullptr;
 			//head.AddFirst(this);
 			// use the matching event's attributes
 			return eAttr;
@@ -224,7 +291,7 @@ MFUS_CLASS_DECLARATION(Class, Event, NULL)
 	{ NULL, NULL }
 };
 
-void Event::Archive(Archiver &arc)
+void Event::Archive(Archiver&)
 {
 	/*
 	if (arc.Loading())
@@ -283,9 +350,9 @@ Event::Event(uintptr_t eventnumValue, size_t numArgs)
 }
 
 Event::Event(const Event& other)
-	: fromScript(other.fromScript)
+	: data(other.data)
 	, eventnum(other.eventnum)
-	, data(other.data)
+	, fromScript(other.fromScript)
 {
 	/*
 	dataSize = other.dataSize;
@@ -335,15 +402,13 @@ Event& Event::operator=(Event&& other)
 	return *this;
 }
 
-void* Event::operator new(size_t size)
+void* Event::operator new(size_t)
 {
-	//return Event_allocator.Alloc();
 	return EventContext::Get().GetAllocator().GetBlock<Event>().Alloc();
 }
 
 void Event::operator delete(void* ptr)
 {
-	//return Event_allocator.Free(ptr);
 	return EventContext::Get().GetAllocator().GetBlock<Event>().Free(ptr);
 }
 
@@ -370,7 +435,7 @@ void Event::ReserveArguments(size_t count)
 void Event::CheckPos(uintptr_t pos)
 {
 	if (pos > NumArgs()) {
-		ScriptError("Index %d out of range.", pos);
+		throw ScriptException("Index " + str(pos) + " out of range");
 	}
 }
 const EventDef* Event::GetInfo() const
@@ -544,6 +609,21 @@ ScriptVariable&	Event::GetValue()
 */
 	const uintptr_t index = data.AddObject();
 	return data[index];
+}
+
+VarListView Event::GetListView() const
+{
+	return VarListView(data.Data(), NumArgs());
+}
+
+VarListView Event::GetListView(uintptr_t startPos) const
+{
+	if (startPos < 1 || startPos > NumArgs()) {
+		return VarListView();
+	}
+
+	const size_t offset = startPos - 1;
+	return VarListView(data.Data() + offset, NumArgs() - offset);
 }
 
 void* Event::GetUninitializedValue()

@@ -28,7 +28,7 @@ namespace mfuse
 	private:
 		Event* event;
 		SafePtr<Listener> m_sourceobject;
-		uinttime_t time;
+		inttime_t time;
 		uint32_t flags;
 
 		EventQueueNode* prev;

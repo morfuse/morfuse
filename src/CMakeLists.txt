@@ -14,11 +14,33 @@ add_flex_bison_dependency(mfuse-lexer mfuse-parser)
 add_library(morfuse SHARED ${SRC} ${BISON_mfuse-parser_OUTPUTS} ${FLEX_mfuse-lexer_OUTPUTS})
 add_library(morfuse::morfuse ALIAS morfuse)
 
-if(WIN32)
-	target_compile_options(morfuse PRIVATE /W3)
+if(DEBUG_MEM)
+	target_compile_definitions(morfuse PUBLIC "_DEBUG_MEMBLOCK=1")
 endif()
 
-set_property(TARGET morfuse PROPERTY INTERPROCEDURAL_OPTIMIZATION true)
+if(WIN32)
+	target_compile_options(morfuse PRIVATE "/W3")
+	target_compile_definitions(morfuse PRIVATE "_CRT_SECURE_NO_WARNINGS=1")
+elseif(UNIX)
+	target_compile_options(morfuse PRIVATE "-Wall" "-Wextra")
+	target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete-hidden")
+	set_target_properties(morfuse PROPERTIES
+		C_VISIBILITY_PRESET hidden
+		CXX_VISIBILITY_PRESET hidden
+	)
+
+	set_target_properties(morfuse PROPERTIES VISIBILITY_INLINES_HIDDEN 1)
+endif()
+
+if(NOT (${CMAKE_BUILD_TYPE} STREQUAL "Debug"))
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT ipo_supported OUTPUT error)
+	if(ipo_supported)
+		# currently not unix because clang doesn't like it (invalid record)
+		message(STATUS "Interprocedural optimization enabled")
+		set_property(TARGET morfuse PROPERTY INTERPROCEDURAL_OPTIMIZATION true)
+	endif()
+endif()
 
 set_target_properties(morfuse PROPERTIES
 	CXX_STANDARD 17
@@ -34,12 +56,7 @@ target_include_directories(morfuse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(morfuse PRIVATE ${PROJECT_SOURCE_DIR}/../thirdparty/utfcpp)
 target_include_directories(morfuse PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated/)
 
-#target_include_directories(morfuse PUBLIC ${FMT_INCS})
 target_link_libraries(morfuse PRIVATE 3pt)
-
-if(WIN32)
-	target_compile_definitions(morfuse PRIVATE _CRT_SECURE_NO_WARNINGS=1)
-endif()
 
 install(
 	TARGETS morfuse

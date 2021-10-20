@@ -14,11 +14,18 @@
 #include <morfuse/Script/ScriptMaster.h>
 #include <morfuse/Script/ScriptOpcodes.h>
 #include <morfuse/Script/Context.h>
+#include <morfuse/Script/PredefinedString.h>
 #include <morfuse/Common/short3.h>
 #include "ScriptVMOperation.h"
 #include <cstdarg>
 
 using namespace mfuse;
+
+/** The maximum number of thread execution depth. */
+constexpr unsigned int MAX_STACK_DEPTH_DEFAULT = 20;
+
+thread_local size_t ScriptExecutionStack::stackDepth = 0;
+thread_local size_t ScriptExecutionStack::maxStackDepth = MAX_STACK_DEPTH_DEFAULT;
 
 ScriptVM::ScriptVM(ScriptClass *scriptClass, const opval_t *pCodePos, ScriptThread *thread)
 {
@@ -33,7 +40,6 @@ ScriptVM::ScriptVM(ScriptClass *scriptClass, const opval_t *pCodePos, ScriptThre
 	m_CodePos = pCodePos;
 
 	state = vmState_e::Running;
-	m_ThreadState = threadState_e::Running;
 
 	//m_pOldData = NULL;
 	//m_OldDataSize = 0;
@@ -42,10 +48,12 @@ ScriptVM::ScriptVM(ScriptClass *scriptClass, const opval_t *pCodePos, ScriptThre
 	m_StackPos = NULL;
 
 	size_t localStackSize = m_ScriptClass->GetScript()->GetRequiredStackSize();
-	if (!localStackSize) localStackSize = 1;
+	if (!localStackSize) {
+		localStackSize = 1;
+	}
 
 	// allocate at once
-	uint8_t* data = new uint8_t[(sizeof(ScriptVariable) + sizeof(ScriptVariable*)) * localStackSize];
+	uint8_t* data = (uint8_t*)allocateMemory((sizeof(ScriptVariable) + sizeof(ScriptVariable*)) * localStackSize);
 	localStack = new (data) ScriptVariable[localStackSize];
 	data += sizeof(ScriptVariable) * localStackSize;
 
@@ -75,27 +83,30 @@ ScriptVM::~ScriptVM()
 		LeaveFunction();
 	}
 	
-	const size_t localStackSize = stackBottom - localStack;
+	const size_t localStackSize = GetLocalStackSize();
 	for(uintptr_t i = 0; i < localStackSize; ++i) {
 		localStack[i].~ScriptVariable();
 	}
 	
 	uint8_t* data = (uint8_t*)localStack;
-	delete[] data;
+	freeMemory(data);
 	// listenerVarPtr will also be deleted as it was allocated in the same chunk
 	//delete fastEvent;
 }
 
-void* ScriptVM::operator new(size_t size)
+void* ScriptVM::operator new(size_t)
 {
 	return ScriptContext::Get().GetAllocator().GetBlock<ScriptVM>().Alloc();
-	//return allocateMemory(size);
 }
 
 void ScriptVM::operator delete(void* ptr)
 {
 	ScriptContext::Get().GetAllocator().GetBlock<ScriptVM>().Free(ptr);
-	//freeMemory(ptr);
+}
+
+size_t ScriptVM::GetLocalStackSize() const
+{
+	return stackBottom - localStack;
 }
 
 /*
@@ -103,7 +114,7 @@ void ScriptVM::operator delete(void* ptr)
 Archive
 ====================
 */
-void ScriptVM::Archive(Archiver& arc)
+void ScriptVM::Archive(Archiver&)
 {
 	/*
 	int stack = 0;
@@ -165,19 +176,18 @@ const opval_t *ScriptVM::ProgBuffer()
 	return m_CodePos;
 }
 
-void ScriptVM::EnterFunction(ScriptMaster& Director, ScriptVariableContainer&& data)
+void ScriptVM::EnterFunction(ScriptVariableContainer&& data)
 {
 	ScriptCallStack *stack;
 	const const_str label = data[0].constStringValue();
 
 	SetFastData(std::move(data));
 
-	const opval_t *codePos = m_ScriptClass->FindLabel(label);
+	const script_label_t *s = m_ScriptClass->FindLabel(label);
 
-	if (!codePos)
+	if (!s)
 	{
-		const xstr& labelName = Director.GetString(label);
-		ScriptError("ScriptVM::EnterFunction: label '%s' does not exist in '%s'.", labelName.c_str(), Filename().c_str());
+		throw StateScriptErrors::LabelNotFound(label, Filename());
 	}
 
 	stack = new ScriptCallStack;
@@ -191,7 +201,7 @@ void ScriptVM::EnterFunction(ScriptMaster& Director, ScriptVariableContainer&& d
 
 	callStack.AddObject(stack);
 
-	m_CodePos = codePos;
+	m_CodePos = s->codepos;
 
 	const size_t localStackSize = stackBottom - localStack;
 	localStack = new ScriptVariable[localStackSize];
@@ -243,44 +253,51 @@ void ScriptVM::End()
 	LeaveFunction();
 }
 
-void ScriptVM::HandleScriptException(ScriptException& exc, std::ostream* out)
+void ScriptVM::HandleScriptException(const std::exception& exc, const OutputInfo& info)
 {
+	std::ostream* out = info.GetOutput(outputLevel_e::Warn);
+
 	if (m_ScriptClass)
 	{
 		const ProgramScript* const scr = m_ScriptClass->GetScript();
-		scr->PrintSourcePos(m_PrevCodePos - scr->GetProgBuffer());
+		scr->PrintSourcePos(*out, m_PrevCodePos - scr->GetProgBuffer());
 	}
 
 	if (out)
 	{
 		// write debug message
-		*out << "^~^~^ Script Error : " << exc.string.c_str() << "\n\n";
+		*out << "^~^~^ Script Warning : " << exc.what() << std::endl << std::endl;
 	}
 }
 
-void ScriptVM::HandleScriptExceptionAbort(ScriptException& exc, std::ostream* out)
+void ScriptVM::HandleScriptExceptionAbort(const OutputInfo& info)
 {
-	if (m_ScriptClass)
+	std::ostream* out = info.GetOutput(outputLevel_e::Error);
+	std::ostream* verb = info.GetOutput(outputLevel_e::Verbose);
+	if (verb) {
+		*verb << "----FRAME: " << ScriptExecutionStack::GetStackDepth() << "(" << this << ") -------------------------------------------------------------------" << std::endl;
+	}
+
+	if (m_ScriptClass && out)
 	{
 		const ProgramScript* const scr = m_ScriptClass->GetScript();
-		scr->PrintSourcePos(m_PrevCodePos - scr->GetProgBuffer());
+		scr->PrintSourcePos(*out, m_PrevCodePos - scr->GetProgBuffer());
 	}
 
-	state = vmState_e::Execution;
-	throw exc;
+	state = vmState_e::Idling;
 }
 
-void ScriptVM::SetFastData(const ScriptVariable* data, size_t dataSize)
+void ScriptVM::SetFastData(const VarListView& data)
 {
 	fastEvent.Clear();
 	fastIndex = 0;
 
-	if (dataSize)
+	if (data.NumObjects())
 	{
-		fastEvent.data.SetNumObjects(dataSize);
+		fastEvent.data.SetNumObjects(data.NumObjects());
 		fastIndex = 0;
 
-		for (uintptr_t i = 0; i < dataSize; i++)
+		for (uintptr_t i = 0; i < data.NumObjects(); i++)
 		{
 			fastEvent.data[i] = std::move(data[i]);
 		}
@@ -304,12 +321,12 @@ void ScriptVM::NotifyDelete()
 	switch (state)
 	{
 	case vmState_e::Destroyed:
-		ScriptError("Attempting to delete a dead thread.");
+		throw ScriptException("Attempting to delete a dead thread.");
 		break;
 
 	case vmState_e::Running:
 	case vmState_e::Suspended:
-	case vmState_e::Waiting:
+	case vmState_e::Destroy:
 		state = vmState_e::Destroyed;
 
 		if (m_ScriptClass) {
@@ -318,7 +335,7 @@ void ScriptVM::NotifyDelete()
 
 		break;
 
-	case vmState_e::Execution:
+	case vmState_e::Idling:
 		state = vmState_e::Destroyed;
 
 		if (m_ScriptClass) {
@@ -341,7 +358,7 @@ void ScriptVM::Resume(bool bForce)
 void ScriptVM::Suspend()
 {
 	if (state == vmState_e::Destroyed) {
-		ScriptError("Cannot suspend a dead thread.");
+		throw ScriptException("Cannot suspend a dead thread.");
 	}
 	else if (state == vmState_e::Running) {
 		state = vmState_e::Suspended;
@@ -352,33 +369,32 @@ bool ScriptVM::Switch(const StateScript *stateScript, ScriptVariable& var)
 {
 	//fastEvent.dataSize = 0;
 
-	const opval_t* pos = stateScript->FindLabel(var.constStringValue());
+	const script_label_t* s = stateScript->FindLabel(var.constStringValue());
 
-	if (!pos)
+	if (!s)
 	{
-		pos = stateScript->FindLabel(STRING_EMPTY);
+		s = stateScript->FindLabel(STRING_EMPTY);
 
-		if (!pos) {
+		if (!s) {
 			return false;
 		}
 	}
 
-	m_CodePos = pos;
+	m_CodePos = s->codepos;
 
 	return true;
 }
 
-const xstr& ScriptVM::Filename()
+const_str ScriptVM::Filename()
 {
 	return m_ScriptClass->Filename();
 }
 
-const xstr& ScriptVM::Label()
+const_str ScriptVM::Label()
 {
 	// FIXME: Find VM label
 	//const_str label = m_ScriptClass->NearestLabel(m_CodePos);
-	ScriptMaster& Director = ScriptContext::Get().GetDirector();
-	return Director.GetString(STRING_EMPTY);
+	return ConstStrings::Empty;
 }
 
 ScriptClass *ScriptVM::GetScriptClass() const
@@ -416,31 +432,20 @@ vmState_e ScriptVM::State()
 	return state;
 }
 
-threadState_e ScriptVM::ThreadState()
-{
-	return m_ThreadState;
-}
-
-void ScriptVM::SetThreadState(threadState_e newThreadState)
-{
-	m_ThreadState = newThreadState;
-}
-
 void ScriptVM::EventGoto(Event *ev)
 {
 	const const_str label = ev->GetConstString(1);
 
 	SetFastData(std::move(*ev));
 
-	const opval_t *codePos = m_ScriptClass->FindLabel(label);
+	const script_label_t *s = m_ScriptClass->FindLabel(label);
 
-	if (!codePos)
+	if (!s)
 	{	
-		const xstr& labelName = ScriptContext::Get().GetDirector().GetString(label);
-		ScriptError("ScriptVM::EventGoto: label '%s' does not exist in '%s'.", labelName.c_str(), Filename().c_str());
+		throw StateScriptErrors::LabelNotFound(label, Filename());
 	}
 
-	m_CodePos = codePos;
+	m_CodePos = s->codepos;
 }
 
 bool ScriptVM::EventThrow(Event *ev)
@@ -457,13 +462,17 @@ bool ScriptVM::EventThrow(Event *ev)
 			break;
 		}
 
-		m_CodePos = stateScript->FindLabel(label);
+		const script_label_t* s = stateScript->FindLabel(label);
+		s = stateScript->FindLabel(label);
 
-		if (m_CodePos)
+		if (s)
 		{
+			m_CodePos = s->codepos;
 			++fastIndex;
 			return true;
 		}
+
+		m_CodePos = nullptr;
 	}
 
 	return false;
@@ -478,4 +487,138 @@ void ScriptVM::ReadOpcodeValue(void* outValue, size_t size)
 void ScriptVM::ReadGetOpcodeValue(void* outValue, size_t size)
 {
 	std::memcpy(outValue, m_CodePos, size);
+}
+
+ScriptVMErrors::StackError::StackError(intptr_t stackVal)
+	: stack(stackVal)
+{
+}
+
+intptr_t ScriptVMErrors::StackError::GetStack() const noexcept
+{
+	return stack;
+}
+
+const char* ScriptVMErrors::StackError::what() const noexcept
+{
+	if (!filled())
+	{
+		if (stack < 0) {
+			fill("VM stack error. Negative stack value " + xstr(stack));
+		}
+		else {
+			fill("VM stack error. Exceeded the maximum stack size " + xstr(stack));
+		}
+	}
+
+	return Messageable::what();
+}
+
+const char* ScriptVMErrors::CommandOverflow::what() const noexcept
+{
+	return "Command overflow. Possible infinite loop in thread.";
+}
+
+const char* ScriptVMErrors::MaxStackDepth::what() const noexcept
+{
+	return "stack overflow";
+}
+
+const char* ScriptVMErrors::NegativeStackDepth::what() const noexcept
+{
+	return "stack underflow";
+}
+
+ScriptExecutionStack::ScriptExecutionStack()
+{
+	if (stackDepth > maxStackDepth) {
+		throw ScriptVMErrors::MaxStackDepth();
+	}
+
+	stackDepth++;
+}
+
+ScriptExecutionStack::~ScriptExecutionStack()
+{
+	stackDepth--;
+}
+
+void ScriptExecutionStack::SetMaxStackDepth(size_t maxDepth)
+{
+	maxStackDepth = maxDepth;
+}
+
+size_t ScriptExecutionStack::GetMaxStackDepth()
+{
+	return maxStackDepth;
+}
+
+size_t ScriptExecutionStack::GetStackDepth()
+{
+	return stackDepth;
+}
+
+ScriptVMErrors::NullListenerField::NullListenerField(const_str fieldNameValue)
+	: fieldName(fieldNameValue)
+{
+}
+
+const_str ScriptVMErrors::NullListenerField::GetFieldName() const
+{
+	return fieldName;
+}
+
+const char* ScriptVMErrors::NullListenerField::what() const noexcept
+{
+	if (!filled())
+	{
+		const ScriptContext& context = ScriptContext::Get();
+		const StringDictionary& dict = context.GetDirector().GetDictionary();
+		fill("Field '" + dict.Get(fieldName) + "' applied to NULL listener");
+	}
+
+	return Messageable::what();
+}
+
+ScriptVMErrors::NilListenerCommand::NilListenerCommand(eventNum_t eventNumValue)
+	: eventNum(eventNumValue)
+{
+}
+
+eventNum_t ScriptVMErrors::NilListenerCommand::GetEventNum() const
+{
+	return eventNum;
+}
+
+const char* ScriptVMErrors::NilListenerCommand::what() const noexcept
+{
+	if (!filled())
+	{
+		const EventSystem& eventSystem = EventSystem::Get();
+		fill("command '" + xstr(eventSystem.GetEventName(eventNum)) + "' applied to NIL");
+	}
+
+	return Messageable::what();
+}
+
+ScriptVMErrors::NullListenerCommand::NullListenerCommand(eventNum_t eventNumValue)
+	: eventNum(eventNumValue)
+{
+
+}
+
+eventNum_t ScriptVMErrors::NullListenerCommand::GetEventNum() const
+{
+	return eventNum;
+}
+
+const char* ScriptVMErrors::NullListenerCommand::what() const noexcept
+{
+	if (!filled())
+	{
+		const EventSystem& eventSystem = EventSystem::Get();
+		fill("command '" + xstr(eventSystem.GetEventName(eventNum)) + "' applied to NULL listener");
+	}
+
+	return Messageable::what();
 }

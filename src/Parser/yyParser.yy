@@ -245,7 +245,7 @@ nonident_prim_expr
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_IDENTIFIER { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_STRING { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_SIZE { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_SIZE), $1, TOKPOS(@3)); }
-	| nonident_prim_expr TOKEN_LEFT_SQUARE_BRACKET expr TOKEN_RIGHT_SQUARE_BRACKET { $$ = pt.node3(statementType_e::ArrayExpr, $1, $3, $1); }
+	| nonident_prim_expr TOKEN_LEFT_SQUARE_BRACKET expr TOKEN_RIGHT_SQUARE_BRACKET { $$ = pt.node3(statementType_e::ArrayExpr, $1, $3, TOKPOS(@2)); }
 	| TOKEN_STRING { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
 	| number
 	| TOKEN_LEFT_BRACKET expr[exp1] expr[exp2] expr[exp3] TOKEN_RIGHT_BRACKET { $$ = pt.node4(statementType_e::Vector, $exp1, $exp2, $exp3, TOKPOS(@1)); }

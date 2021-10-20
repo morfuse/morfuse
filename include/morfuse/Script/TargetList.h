@@ -1,40 +1,76 @@
 #pragma once
 
-#include "ConstStr.h"
+#include "../Common/ConstStr.h"
 #include "../Common/SafePtr.h"
 #include "../Common/rawchar.h"
 #include "../Container/Container.h"
 #include "../Container/set.h"
+#include "ScriptException.h"
+
 #include <cstdint>
 
 namespace mfuse
 {
-	class SimpleEntity;
-	using ConSimple = con::Container<SafePtr<SimpleEntity>>;
+	class Listener;
+	template<class T>
+	class SafePtr;
+
+	using ConTarget = con::Container<SafePtr<Listener>>;
 
 	class TargetList
 	{
 	public:
-		void AddTargetEntity(SimpleEntity* ent);
-		void AddTargetEntityAt(SimpleEntity* ent, int index);
-		void RemoveTargetEntity(SimpleEntity* ent);
+		TargetList();
+		~TargetList();
 
-		void FreeTargetList();
+		void AddListener(Listener& ent, const_str targetName);
+		void RemoveListener(Listener& ent, const_str targetName);
 
-		SimpleEntity* GetNextEntity(const rawchar_t* targetname, SimpleEntity* ent);
-		SimpleEntity* GetNextEntity(const_str targetname, SimpleEntity* ent);
-		SimpleEntity* GetScriptTarget(const rawchar_t* targetname);
-		SimpleEntity* GetScriptTarget(const_str targetname);
-		SimpleEntity* GetTarget(const rawchar_t* targetname, bool quiet);
-		SimpleEntity* GetTarget(const_str targetname, bool quiet);
-		uintptr_t GetTargetnameIndex(SimpleEntity* ent);
+		mfuse_EXPORTS void FreeTargetList();
 
-		ConSimple* GetExistingTargetList(const rawchar_t* targetname);
-		ConSimple* GetExistingTargetList(const_str targetname);
-		ConSimple* GetTargetList(const rawchar_t* targetname);
-		ConSimple* GetTargetList(const_str targetname);
+		mfuse_EXPORTS Listener* GetNextTarget(const Listener* ent, const_str targetname) const;
+		mfuse_EXPORTS Listener* GetTarget(const_str targetname) const;
+		mfuse_EXPORTS uintptr_t GetTargetnameIndex(Listener& ent, const_str targetname) const;
+
+		mfuse_EXPORTS ConTarget* GetExistingTargetList(const_str targetname);
+		mfuse_EXPORTS const ConTarget* GetExistingConstTargetList(const_str targetname) const;
+		mfuse_EXPORTS ConTarget* GetTargetList(const_str targetname);
 
 	private:
-		con::set<const_str, ConSimple> m_targetList;
+		uintptr_t FindTarget(const ConTarget& list, const Listener* target) const;
+
+	private:
+		con::set<const_str, ConTarget> m_targetList;
 	};
+
+	namespace TargetListErrors
+	{
+		class Base : public ScriptExceptionBase {};
+
+		class MultipleTargetsException : public Base, public Messageable
+		{
+		public:
+			MultipleTargetsException(size_t numTargetsValue, const_str targetNameValue);
+
+			size_t GetNumTargets() const noexcept;
+			const_str GetTargetName() const noexcept;
+			const char* what() const noexcept override;
+
+		private:
+			size_t numTargets;
+			const_str targetName;
+		};
+
+		class NoTargetException : public Base, public Messageable
+		{
+		public:
+			NoTargetException(const_str targetNameValue);
+
+			const_str GetTargetName() const noexcept;
+			const char* what() const noexcept override;
+
+		private:
+			const_str targetName;
+		};
+	}
 }

@@ -36,12 +36,12 @@ namespace mfuse
 		Entry(const KeyT& inKey);
 		Entry(const KeyT& inKey, const ValueT& inValue);
 
-		KeyT& Key() { return key; }
-		const KeyT& Key() const { return key; }
-		ValueT& Value() { return value; }
-		const ValueT& Value() const { return value; }
-		Entry* Next() const { return next; }
-		void SetNext(Entry* nextValue) { next = nextValue; }
+		KeyT& Key() noexcept { return key; }
+		const KeyT& Key() const noexcept { return key; }
+		ValueT& Value() noexcept { return value; }
+		const ValueT& Value() const noexcept { return value; }
+		Entry* Next() const noexcept { return next; }
+		void SetNext(Entry* nextValue) noexcept { next = nextValue; }
 
 	private:
 		KeyT key;
@@ -84,9 +84,9 @@ namespace mfuse
 		void clear();
 		void resize(size_t count = 0);
 		void shrink();
-		bool isEmpty();
-		size_t size();
-		size_t allocated();
+		bool isEmpty() noexcept;
+		size_t size() const noexcept;
+		size_t allocated() const noexcept;
 
 		ValueT* findKeyValue(const KeyT& key);
 		const ValueT* findKeyValue(const KeyT& key) const;
@@ -95,10 +95,10 @@ namespace mfuse
 
 		bool remove(const KeyT& key);
 
-		AllocatorT& getAllocator();
-		const AllocatorT& getAllocator() const;
+		AllocatorT& getAllocator() noexcept;
+		const AllocatorT& getAllocator() const noexcept;
 
-		static size_t countEntryBytes(size_t count);
+		static size_t countEntryBytes(size_t count) noexcept;
 
 	private:
 		Entry<KeyT, ValueT>* findKeyEntry(const KeyT& key);
@@ -156,13 +156,13 @@ namespace mfuse
 
 	public:
 
-		set_enum();
-		set_enum(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& set);
+		set_enum() noexcept;
+		set_enum(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& set) noexcept;
 
-		bool					operator=(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& set);
+		bool operator=(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& set) noexcept;
 
-		Entry<KeyT, ValueT>		*NextElement(void);
-		Entry<KeyT, ValueT>		*CurrentElement(void);
+		const Entry<KeyT, ValueT>* CurrentElement() const noexcept;
+		const Entry<KeyT, ValueT>* NextElement() noexcept;
 	};
 
 	/**
@@ -189,12 +189,13 @@ namespace mfuse
 		ValueT& operator[](const KeyT& index);
 
 		ValueT* find(const KeyT& index);
+		const ValueT* find(const KeyT& index) const;
 		bool remove(const KeyT& index);
 
-		uintptr_t size();
+		size_t size() const noexcept;
 
-		AllocatorT& getAllocator();
-		const AllocatorT& getAllocator() const;
+		AllocatorT& getAllocator() noexcept;
+		const AllocatorT& getAllocator() const noexcept;
 	};
 
 	template<
@@ -211,15 +212,15 @@ namespace mfuse
 
 	public:
 
-		map_enum();
-		map_enum(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map);
+		map_enum() noexcept;
+		map_enum(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map) noexcept;
 
-		bool	operator=(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map);
+		bool	operator=(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map) noexcept;
 
-		KeyT		*NextKey();
-		ValueT	*NextValue();
-		KeyT		*CurrentKey();
-		ValueT	*CurrentValue();
+		const KeyT		*NextKey() noexcept;
+		const ValueT	*NextValue() noexcept;
+		const KeyT		*CurrentKey() const noexcept;
+		const ValueT	*CurrentValue() const noexcept;
 	};
 
 	template<typename KeyT, typename ValueT>
@@ -257,7 +258,7 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	size_t set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::countEntryBytes(size_t count)
+	size_t set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::countEntryBytes(size_t count) noexcept
 	{
 		if (count > 1) {
 			return (sizeof(Entry<KeyT, ValueT>) + sizeof(Entry<KeyT, ValueT>*)) * count;
@@ -270,13 +271,13 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	AllocatorT& set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator()
+	AllocatorT& set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() noexcept
 	{
 		return Entry_allocator;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	const AllocatorT& set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() const
+	const AllocatorT& set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() const noexcept
 	{
 		return Entry_allocator;
 	}
@@ -375,19 +376,6 @@ namespace mfuse
 			resize(count);
 		} else {
 			clear();
-		}
-	}
-
-	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	const ValueT* set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::findKeyValue(const KeyT& key) const
-	{
-		const Entry<KeyT, ValueT>* entry = findKeyEntry(key);
-
-		if (entry) {
-			return &entry->Value();
-		}
-		else {
-			return nullptr;
 		}
 	}
 
@@ -502,7 +490,7 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	bool set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::isEmpty()
+	bool set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::isEmpty() noexcept
 	{
 		return count == 0;
 	}
@@ -560,6 +548,19 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
+	const ValueT* set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::findKeyValue(const KeyT& key) const
+	{
+		const Entry<KeyT, ValueT>* entry = findKeyEntry(key);
+
+		if (entry) {
+			return &entry->Value();
+		}
+		else {
+			return nullptr;
+		}
+	}
+
+	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
 	ValueT& set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::addKeyValue(const KeyT& key)
 	{
 		Entry<KeyT, ValueT> *entry = addKeyEntry(key);
@@ -576,19 +577,19 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	size_t set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::size()
+	size_t set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::size() const noexcept
 	{
 		return count;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	size_t set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::allocated()
+	size_t set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::allocated() const noexcept
 	{
 		return tableLength;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::set_enum()
+	set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::set_enum() noexcept
 	{
 		m_Set = nullptr;
 		m_Index = 0;
@@ -597,13 +598,13 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::set_enum(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT> &set)
+	set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::set_enum(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT> &set) noexcept
 	{
 		*this = set;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	bool set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::operator=(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT> &set)
+	bool set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::operator=(set<KeyT, ValueT, HashT, KeyEqT, AllocatorT> &set) noexcept
 	{
 		m_Set = &set;
 		m_Index = m_Set->tableLength;
@@ -614,13 +615,13 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	Entry<KeyT, ValueT>	*set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::CurrentElement()
+	const Entry<KeyT, ValueT>	*set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::CurrentElement() const noexcept
 	{
 		return m_CurrentEntry;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	Entry<KeyT, ValueT>	*set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::NextElement()
+	const Entry<KeyT, ValueT>	*set_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::NextElement() noexcept
 	{
 		if (!m_NextEntry)
 		{
@@ -652,13 +653,13 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	AllocatorT& map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator()
+	AllocatorT& map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() noexcept
 	{
 		return m_set.getAllocator();
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	const AllocatorT& map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() const
+	const AllocatorT& map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::getAllocator() const noexcept
 	{
 		return m_set.getAllocator();
 	}
@@ -688,19 +689,25 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
+	const ValueT* map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::find(const KeyT& index) const
+	{
+		return m_set.findKeyValue(index);
+	}
+
+	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
 	bool map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::remove(const KeyT& index)
 	{
 		return m_set.remove(index);
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	uintptr_t map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::size(void)
+	size_t map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::size() const noexcept
 	{
 		return m_set.size();
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::map_enum()
+	map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::map_enum() noexcept
 	{
 		m_Set_Enum.m_Set = nullptr;
 		m_Set_Enum.m_Index = 0;
@@ -709,13 +716,13 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::map_enum(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map)
+	map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::map_enum(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map) noexcept
 	{
 		*this = map;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	bool map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::operator=(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map)
+	bool map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::operator=(map<KeyT, ValueT, HashT, KeyEqT, AllocatorT>& map) noexcept
 	{
 		m_Set_Enum = map.m_set;
 
@@ -723,13 +730,13 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	KeyT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::CurrentKey(void)
+	const KeyT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::CurrentKey() const noexcept
 	{
-		Entry<KeyT, ValueT> *entry = m_Set_Enum.CurrentElement();
+		const Entry<KeyT, ValueT> *entry = m_Set_Enum.CurrentElement();
 
 		if (entry)
 		{
-			return &entry->KeyT;
+			return &entry->Key();
 		}
 		else
 		{
@@ -738,39 +745,9 @@ namespace mfuse
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	ValueT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::CurrentValue(void)
+	const ValueT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::CurrentValue() const noexcept
 	{
-		Entry<KeyT, ValueT> *entry = m_Set_Enum.CurrentElement();
-
-		if (entry)
-		{
-			return &entry->ValueT;
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
-
-	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	KeyT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::NextKey()
-	{
-		Entry<KeyT, ValueT> *entry = m_Set_Enum.NextElement();
-
-		if (entry)
-		{
-			return &entry->KeyT;
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
-
-	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
-	ValueT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::NextValue()
-	{
-		Entry<KeyT, ValueT> *entry = m_Set_Enum.NextElement();
+		const Entry<KeyT, ValueT> *entry = m_Set_Enum.CurrentElement();
 
 		if (entry)
 		{
@@ -778,6 +755,32 @@ namespace mfuse
 		}
 		else
 		{
+			return nullptr;
+		}
+	}
+
+	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
+	const KeyT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::NextKey() noexcept
+	{
+		const Entry<KeyT, ValueT> *entry = m_Set_Enum.NextElement();
+
+		if (entry) {
+			return &entry->Key();
+		}
+		else {
+			return nullptr;
+		}
+	}
+
+	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>
+	const ValueT *map_enum<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::NextValue() noexcept
+	{
+		const Entry<KeyT, ValueT> *entry = m_Set_Enum.NextElement();
+
+		if (entry) {
+			return &entry->Value();
+		}
+		else {
 			return nullptr;
 		}
 	}

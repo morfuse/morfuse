@@ -34,7 +34,7 @@ namespace mfuse
 
 	template <typename YYChar>
 	std::basic_ostream<YYChar>&
-		operator<< (std::basic_ostream<YYChar>& ostr, const location& loc)
+		operator<< (std::basic_ostream<YYChar>& ostr, const location&)
 	{
 		return ostr;
 	}

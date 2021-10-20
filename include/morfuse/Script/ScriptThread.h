@@ -3,6 +3,7 @@
 #include "Listener.h"
 #include "ScriptVM.h"
 #include "../Common/Time.h"
+#include "../Container/ContainerView.h"
 
 namespace mfuse
 {
@@ -32,21 +33,28 @@ namespace mfuse
 		void StoppedNotify() override;
 		void StoppedWaitFor(const_str name, bool bDeleting) override;
 
-		void Execute(Event &ev);
-		void Execute(Event *ev = NULL);
+		void Execute();
+		void Execute(Event& ev);
+		void DelayExecute();
 		void DelayExecute(Event& ev);
-		void DelayExecute(Event *ev = NULL);
 
 		ScriptClass *GetScriptClass() const;
 		ScriptVM *GetScriptVM() const;
 		threadState_e GetThreadState();
+		void SetThreadState(threadState_e newThreadState);
+
+		void StartTiming(uinttime_t time);
+		void StartTiming();
+		void StartWaiting();
 
 		void Pause();
-		void ScriptExecute(const ScriptVariable *data, size_t dataSize, ScriptVariable &returnValue);
+		void ScriptExecute(const VarListView& data, ScriptVariable &returnValue);
 		void Stop();
 		void Wait(uinttime_t time);
+		void Resume();
 
 		void CharToInt(Event *ev);
+		/*
 		void FileOpen(Event *ev);
 		void FileWrite(Event *ev);
 		void FileRead(Event *ev);
@@ -71,6 +79,7 @@ namespace mfuse
 		void FileList(Event *ev);
 		void FileNewDirectory(Event *ev);
 		void FileRemoveDirectory(Event *ev);
+		*/
 		void FlagClear(Event *ev);
 		void FlagInit(Event *ev);
 		void FlagSet(Event *ev);
@@ -178,10 +187,12 @@ namespace mfuse
 		void EventVectorWithin(Event* ev);
 
 	private:
-		void ScriptExecuteInternal(const ScriptVariable* data = nullptr, size_t dataSize = 0);
+		void ScriptExecuteInternal(const VarListView& data = VarListView());
 
 	private:
 		ScriptVM* m_ScriptVM;
+		/** The current state of the thread itself. */
+		threadState_e m_ThreadState;
 	};
 
 	typedef struct mutex_thread_list_s {
@@ -244,4 +255,21 @@ namespace mfuse
 
 		Flag *FindFlag(const rawchar_t* name);
 	};
+
+	namespace ScriptErrors
+	{
+		class Base : public ScriptExceptionBase {};
+
+		class InvalidClassName : public Base, public Messageable
+		{
+		public:
+			InvalidClassName(const xstr& classNameRef);
+
+			const xstr& getClassName() const;
+			const char* what() const noexcept override;
+
+		private:
+			xstr className;
+		};
+	}
 }

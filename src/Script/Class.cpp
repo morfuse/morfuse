@@ -8,7 +8,7 @@
 
 using namespace mfuse;
 
-LinkedList<ClassDef*, &ClassDef::next, &ClassDef::prev> ClassDef::classlist;
+ClassDef::List ClassDef::classlist = ClassDef::List();
 ClassDefExt* ClassDefExt::list = nullptr;
 
 size_t ClassDef::numclasses;
@@ -58,10 +58,7 @@ bool Class::inheritsFrom(const rawchar_t* name) const
 {
 	const ClassDef* c = ClassDef::GetClass(name);
 
-	if (c == nullptr)
-	{
-		// FIXME
-		//CLASS_DPrintf("Unknown class: %s\n", name);
+	if (!c) {
 		return false;
 	}
 
@@ -72,10 +69,7 @@ bool Class::isInheritedBy(const rawchar_t* name) const
 {
 	const ClassDef* c = ClassDef::GetClass(name);
 
-	if (c == nullptr)
-	{
-		// FIXME
-		//CLASS_DPrintf("Unknown class: %s\n", name);
+	if (!c) {
 		return false;
 	}
 
@@ -87,55 +81,13 @@ bool Class::isInheritedBy(ClassDef* c) const
 	return ClassDef::checkInheritance(classinfo(), c);
 }
 
-void Class::Archive(Archiver& arc)
+void Class::Archive(Archiver&)
 {
 
-}
-
-void Class::warning(const rawchar_t* function, const rawchar_t* format, ...)
-{
-	const rawchar_t* classname;
-	va_list va;
-
-	va_start(va, format);
-	int len = vsprintf(nullptr, format, va);
-	rawchar_t* buffer = new rawchar_t[len + 1];
-	vsprintf(buffer, format, va);
-	va_end(va);
-
-	classname = classinfo()->GetClassName();
-
-	printf("%s::%s : %s\n", classname, function, buffer);
-
-	delete[] buffer;
-}
-
-void Class::error(const rawchar_t* function, const rawchar_t* format, ...)
-{
-	va_list	va;
-
-	va_start(va, format);
-	int len = vsprintf(nullptr, format, va);
-	rawchar_t* buffer = new rawchar_t[len + 1];
-	vsprintf(buffer, format, va);
-	va_end(va);
-
-	if (GetClassID())
-	{
-		// FIXME
-		//CLASS_Error("%s::%s : %s\n", GetClassID(), function, buffer);
-	}
-	else
-	{
-		// FIXME
-		//CLASS_Error("%s::%s : %s\n", GetClassname(), function, buffer);
-	}
-
-	delete[] buffer;
 }
 
 ClassDef::ClassDef(ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseDefClass* responses,
-	void* (*newInstance)())
+	NewInstanceHandler newInstance)
 {
 	this->classname = classname;
 	this->classID = classID;
@@ -194,11 +146,6 @@ ClassDef::~ClassDef()
 	//ClearResponseList();
 }
 
-void ClassDef::AddWaitTill(const xstr& s)
-{
-	//return AddWaitTill(Director.AddString(s));
-}
-
 void ClassDef::AddWaitTill(const_str s)
 {
 	if (!waitTillSet)
@@ -209,22 +156,12 @@ void ClassDef::AddWaitTill(const_str s)
 	waitTillSet->addKeyIndex(s);
 }
 
-void ClassDef::RemoveWaitTill(const xstr& s)
-{
-	//return RemoveWaitTill(Director.AddString(s));
-}
-
 void ClassDef::RemoveWaitTill(const_str s)
 {
 	if (waitTillSet)
 	{
 		waitTillSet->remove(s);
 	}
-}
-
-bool ClassDef::WaitTillDefined(const xstr& s) const
-{
-	return false; // return WaitTillDefined(Director.AddString(s));
 }
 
 bool ClassDef::WaitTillDefined(const_str s) const
@@ -272,12 +209,12 @@ void ClassDef::BuildResponseList(MEM::PreAllocator& allocator)
 		// when a parent is present
 		// copy the parent's responseLookup first
 		super->BuildResponseList(allocator);
-		std::copy(super->responseLookup, super->responseLookup + num, responseLookup);
+		std::copy(super->responseLookup + 1, super->responseLookup + num + 1, responseLookup + 1);
 	}
 	else
 	{
 		// no parent so clear the response lookup
-		std::fill(responseLookup, responseLookup + num, nullptr);
+		std::fill(responseLookup + 1, responseLookup + num + 1, nullptr);
 	}
 
 	for (const ResponseDefClass* r = responses; r->event != nullptr; r++)
@@ -394,8 +331,6 @@ ClassDefExt::~ClassDefExt()
 
 void ClassDefExt::InitClassDef()
 {
-	const size_t numEvents = EventSystem::NumEventCommands();
-
 	for(const ClassDefExt* ext = list; list; list = list->next)
 	{
 		ResponseLookup lookup = ext->classDef->GetResponseLookupList();
@@ -412,32 +347,6 @@ void ClassDefExt::InitClassDef()
 			}
 		}
 	}
-}
-
-static void CLASS_Printf(const rawchar_t *format, ...)
-{
-	va_list va;
-	va_start(va, format);
-	vprintf(format, va);
-	va_end(va);
-}
-
-static void CLASS_DPrintf(const rawchar_t *format, ...)
-{
-#ifdef _DEBUG
-	va_list va;
-	va_start(va, format);
-	vprintf(format, va);
-	va_end(va);
-#endif
-}
-
-static void CLASS_Error(const rawchar_t *format, ...)
-{
-	va_list va;
-	va_start(va, format);
-	vprintf(format, va);
-	va_end(va);
 }
 
 ClassDef *ClassDef::GetClassForID(const rawchar_t *name)
@@ -487,9 +396,7 @@ bool ClassDef::checkInheritance(ClassDef *superclass, const rawchar_t *subclass)
 {
 	const ClassDef* c = ClassDef::GetClass(subclass);
 
-	if (c == nullptr)
-	{
-		CLASS_DPrintf("Unknown class: %s\n", subclass);
+	if (!c) {
 		return false;
 	}
 
@@ -501,60 +408,50 @@ bool ClassDef::checkInheritance(const rawchar_t *superclass, const rawchar_t *su
 	const ClassDef* c1 = GetClass(superclass);
 	const ClassDef* c2 = GetClass(subclass);
 
-	if (c1 == nullptr)
-	{
-		CLASS_DPrintf("Unknown class: %s\n", superclass);
-		return false;
-	}
-
-	if (c2 == nullptr)
-	{
-		CLASS_DPrintf("Unknown class: %s\n", subclass);
+	if (!c1 || !c2) {
 		return false;
 	}
 
 	return checkInheritance(c1, c2);
 }
 
-void CLASS_Print(FILE *class_file, const rawchar_t *fmt, ...)
+Class* ClassDef::createInstance() const
 {
-	va_list	argptr;
-	rawchar_t		text[1024];
-
-	va_start(argptr, fmt);
-	vsprintf(text, fmt, argptr);
-	va_end(argptr);
-
-	if (class_file)
-		fprintf(class_file, "%s", text);
-	else
-		CLASS_DPrintf(text);
+	return newInstance();
 }
 
-/*
-void listAllClasses(void)
+bool ClassDef::inheritsFrom(const rawchar_t* name) const
 {
-	ClassDef* c;
-	for (c = GetClassList(); c != nullptr; c = c->GetNext())
-	{
-		CLASS_DPrintf("%s\n", c->GetClassName());
-	}
+	const ClassDef* const other = GetClass(name);
+	return inheritsFrom(other);
 }
 
-void listInheritanceOrder(const rawchar_t* classname)
+bool ClassDef::inheritsFrom(const ClassDef* other) const
 {
-	ClassDef* cls;
-	ClassDef* c;
-
-	cls = GetClass(classname);
-	if (!cls)
+	for (const ClassDef* c = this; c; c = c->GetSuper())
 	{
-		CLASS_DPrintf("Unknown class: %s\n", classname);
-		return;
+		if (c == other)
+		{
+			return true;
+		}
 	}
-	for (c = cls; c != nullptr; c = c->GetSuper())
-	{
-		CLASS_DPrintf("%s\n", c->GetClassName());
-	}
+	return false;
 }
-*/
+
+bool ClassDef::isInheritedBy(const rawchar_t* name) const
+{
+	const ClassDef* const other = GetClass(name);
+	return isInheritedBy(other);
+}
+
+bool ClassDef::isInheritedBy(const ClassDef* other) const
+{
+	for (const ClassDef* c = other; c; c = c->GetSuper())
+	{
+		if (c == this)
+		{
+			return true;
+		}
+	}
+	return false;
+}

@@ -45,7 +45,7 @@ void con::Entry<const_str, script_label_t>::Archive(Archiver& arc)
 }
 #endif
 
-void StateScript::Archive(Archiver& arc)
+void StateScript::Archive(Archiver&)
 {
 	//label_list.Archive(arc);
 }
@@ -67,46 +67,18 @@ bool StateScript::AddLabel(const_str label, const opval_t *pos, bool private_sec
 	return true;
 }
 
-bool StateScript::AddLabel(const rawchar_t* label, const opval_t *pos, bool private_section)
-{
-	return AddLabel(ScriptContext::Get().GetDirector().AddString(label), pos, private_section);
-}
-
-const opval_t *StateScript::FindLabel(const_str label) const
+const script_label_t*StateScript::FindLabel(const_str label) const
 {
 	const script_label_t* s = label_list.findKeyValue(label);
 
 	if (s)
 	{
-		// check if the label is a private function
-		if (s->isprivate)
-		{
-			const ScriptClass* scriptClass = ScriptContext::Get().GetDirector().CurrentScriptClass();
-
-			if (scriptClass)
-			{
-				const ProgramScript* script = scriptClass->GetScript();
-
-				// now check if the label's statescript matches this statescript
-				if (&script->GetStateScript() != this)
-				{
-					ScriptError("Cannot call a private function.");
-					return NULL;
-				}
-			}
-		}
-
-		return s->codepos;
+		return s;
 	}
 	else
 	{
-		return NULL;
+		return nullptr;
 	}
-}
-
-const opval_t *StateScript::FindLabel(const rawchar_t* label) const
-{
-	return FindLabel(ScriptContext::Get().GetDirector().GetString(label));
 }
 
 ProgramScript* StateScript::GetParent() const
@@ -118,4 +90,33 @@ void StateScript::Reserve(size_t count)
 {
 	label_list.resize(count);
 	//reverse_label_list.Resize(count);
+}
+
+StateScriptErrors::LabelNotFound::LabelNotFound(const StringResolvable& labelValue, const StringResolvable& fileNameValue)
+	: fileName(fileNameValue)
+	, label(labelValue)
+{
+}
+
+StateScriptErrors::LabelNotFound::~LabelNotFound()
+{
+}
+
+const StringResolvable& StateScriptErrors::LabelNotFound::GetFileName() const noexcept
+{
+	return fileName;
+}
+
+const StringResolvable& StateScriptErrors::LabelNotFound::GetLabel() const noexcept
+{
+	return label;
+}
+
+const char* StateScriptErrors::LabelNotFound::what() const noexcept
+{
+	if (!filled()) {
+		fill("label '" + label.GetString() + "' does not exist in '" + fileName.GetString() + "'");
+	}
+
+	return Messageable::what();
 }
