@@ -66,19 +66,70 @@ namespace mfuse
 		SafePtr<Listener> m_Self;
 	};
 
+	/*
 	class ScriptStack
 	{
 	public:
 		ScriptVariable* m_Array;
 		uint32_t m_Count;
 	};
+	*/
+
+	class ScriptStack
+	{
+	public:
+		ScriptStack();
+		ScriptStack(size_t stackSize);
+		~ScriptStack();
+
+		ScriptStack(const ScriptStack& other) = delete;
+		ScriptStack& operator=(const ScriptStack& other) = delete;
+		ScriptStack(ScriptStack&& other);
+		ScriptStack& operator=(ScriptStack&& other);
+
+		void Archive(Archiver& arc);
+
+		size_t GetStackSize() const;
+		ScriptVariable& SetTop(ScriptVariable& newTop);
+		ScriptVariable& GetTop() const;
+		ScriptVariable& GetTop(size_t offset) const;
+		ScriptVariable* GetTopPtr() const;
+		ScriptVariable* GetTopPtr(size_t offset) const;
+		ScriptVariable* GetTopArray(size_t offset = 0) const;
+		uintptr_t GetIndex() const;
+		void MoveTop(ScriptVariable&& other);
+		ScriptVariable* GetListenerVar(uintptr_t index);
+		void SetListenerVar(uintptr_t index, ScriptVariable* newVar);
+
+		/** Pop and return the previous value. */
+		ScriptVariable& Pop();
+		ScriptVariable& Pop(size_t offset);
+		ScriptVariable& PopAndGet();
+		ScriptVariable& PopAndGet(size_t offset);
+		/** Push and return the previous value. */
+		ScriptVariable& Push();
+		ScriptVariable& Push(size_t offset);
+		ScriptVariable& PushAndGet();
+		ScriptVariable& PushAndGet(size_t offset);
+
+	private:
+		/** The VM's local stack. */
+		ScriptVariable* localStack;
+		/** The local stack size. */
+		ScriptVariable* stackBottom;
+		/** Variable from the top stack of the local stack. */
+		ScriptVariable* pTop;
+		ScriptVariable** listenerVarPtr;
+	};
 
 	class ScriptVM
 	{
+		friend class ScriptClass;
 		friend class ScriptThread;
 		friend class VMOperation;
 
 	public:
+		ScriptVM();
 		ScriptVM(ScriptClass *ScriptClass, const opval_t*pCodePos, ScriptThread *thread);
 		~ScriptVM();
 
@@ -116,7 +167,6 @@ namespace mfuse
 	private:
 		bool Process(ScriptContext& context, uinttime_t interruptTime);
 
-		size_t GetLocalStackSize() const;
 		void ReadOpcodeValue(void* outValue, size_t size);
 		void ReadGetOpcodeValue(void* outValue, size_t size);
 
@@ -140,7 +190,6 @@ namespace mfuse
 			//return *reinterpret_cast<const T*>(m_CodePos);
 		}
 
-		void error(const rawchar_t* format, ...);
 		template<bool bMethod = false, bool bReturn = false>
 		void executeCommand(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum);
 		void executeCommandInternal(Event& ev, Listener* listener, ScriptVariable* fromVar, op_parmNum_t iParamCount);
@@ -184,25 +233,17 @@ namespace mfuse
 
 	private:
 		/** This is the stack but it is unused, should consider removing it later. */
-		ScriptStack* m_Stack;
+		ScriptStack m_Stack;
 		/** The return value that is set when the VM is exiting. */
 		ScriptVariable m_ReturnValue;
-
-		/** Previous op codes for use with script exceptions. */
-		const opval_t* m_PrevCodePos;
 		/** Current code position. */
 		const opval_t* m_CodePos;
+		/** Previous op codes for use with script exceptions. */
+		const opval_t* m_PrevCodePos;
 
 	private:
 		/** The callstack. */
 		con::Container<ScriptCallStack*> callStack;
-		/** The VM's local stack. */
-		ScriptVariable* localStack;
-		/** The local stack size. */
-		ScriptVariable* stackBottom;
-		/** Variable from the top stack of the local stack. */
-		ScriptVariable* pTop;
-		ScriptVariable** listenerVarPtr;
 		/** The marked stack position. */
 		ScriptVariable* m_StackPos;
 

@@ -15,6 +15,8 @@
 #include <morfuse/Script/ScriptOpcodes.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/PredefinedString.h>
+#include <morfuse/Script/Archiver.h>
+
 #include <morfuse/Common/short3.h>
 #include "ScriptVMOperation.h"
 #include <cstdarg>
@@ -27,71 +29,228 @@ constexpr unsigned int MAX_STACK_DEPTH_DEFAULT = 20;
 thread_local size_t ScriptExecutionStack::stackDepth = 0;
 thread_local size_t ScriptExecutionStack::maxStackDepth = MAX_STACK_DEPTH_DEFAULT;
 
-ScriptVM::ScriptVM(ScriptClass *scriptClass, const opval_t *pCodePos, ScriptThread *thread)
+ScriptStack::ScriptStack()
+	: localStack(nullptr)
+	, stackBottom(nullptr)
+	, pTop(nullptr)
 {
-	next = NULL;
+}
+
+ScriptStack::ScriptStack(size_t stackSize)
+{
+	if (!stackSize) {
+		stackSize = 1;
+	}
+
+	// allocate at once
+	uint8_t* data = (uint8_t*)allocateMemory((sizeof(ScriptVariable) + sizeof(ScriptVariable*)) * stackSize);
+	localStack = new (data) ScriptVariable[stackSize];
+	data += sizeof(ScriptVariable) * stackSize;
+
+	listenerVarPtr = new (data) ScriptVariable * [stackSize]();
+
+	pTop = localStack;
+	stackBottom = localStack + stackSize;
+}
+
+ScriptStack::ScriptStack(ScriptStack&& other)
+	: localStack(other.localStack)
+	, stackBottom(other.stackBottom)
+	, pTop(other.pTop)
+	, listenerVarPtr(other.listenerVarPtr)
+{
+	other.localStack = other.stackBottom = nullptr;
+	other.pTop = nullptr;
+	other.listenerVarPtr = nullptr;
+}
+
+ScriptStack& ScriptStack::operator=(ScriptStack&& other)
+{
+	localStack = other.localStack;
+	stackBottom = other.stackBottom;
+	pTop = other.pTop;
+	listenerVarPtr = other.listenerVarPtr;
+	other.localStack = other.stackBottom = nullptr;
+	other.pTop = nullptr;
+	other.listenerVarPtr = nullptr;
+
+	return *this;
+}
+
+ScriptStack::~ScriptStack()
+{
+	const size_t localStackSize = GetStackSize();
+	for (uintptr_t i = 0; i < localStackSize; ++i) {
+		localStack[i].~ScriptVariable();
+	}
+
+	uint8_t* const data = (uint8_t*)localStack;
+	if (data) {
+		freeMemory(data);
+	}
+}
+
+size_t ScriptStack::GetStackSize() const
+{
+	return stackBottom - localStack;
+}
+
+ScriptVariable& ScriptStack::SetTop(ScriptVariable& newTop)
+{
+	return *(pTop = &newTop);
+}
+
+ScriptVariable& ScriptStack::GetTop() const
+{
+	return *pTop;
+}
+
+ScriptVariable& ScriptStack::GetTop(size_t offset) const
+{
+	return *(pTop + offset);
+}
+
+ScriptVariable* ScriptStack::GetTopPtr() const
+{
+	return pTop;
+}
+
+ScriptVariable* ScriptStack::GetTopPtr(size_t offset) const
+{
+	return pTop + offset;
+}
+
+ScriptVariable* ScriptStack::GetTopArray(size_t offset) const
+{
+	return pTop + offset;
+}
+
+uintptr_t ScriptStack::GetIndex() const
+{
+	return pTop - localStack;
+}
+
+ScriptVariable& ScriptStack::Pop()
+{
+	return *(pTop--);
+}
+
+ScriptVariable& ScriptStack::Pop(size_t offset)
+{
+	ScriptVariable& old = *pTop;
+	pTop -= offset;
+	return old;
+}
+
+ScriptVariable& ScriptStack::PopAndGet()
+{
+	return *--pTop;
+}
+
+ScriptVariable& ScriptStack::PopAndGet(size_t offset)
+{
+	pTop -= offset;
+	return *pTop;
+}
+
+ScriptVariable& ScriptStack::Push()
+{
+	return *(pTop++);
+}
+
+ScriptVariable& ScriptStack::Push(size_t offset)
+{
+	ScriptVariable& old = *pTop;
+	pTop += offset;
+	return old;
+}
+
+ScriptVariable& ScriptStack::PushAndGet()
+{
+	return *++pTop;
+}
+
+ScriptVariable& ScriptStack::PushAndGet(size_t offset)
+{
+	pTop += offset;
+	return *pTop;
+}
+
+void ScriptStack::MoveTop(ScriptVariable&& other)
+{
+	*pTop = std::move(other);
+}
+
+void ScriptStack::Archive(Archiver& arc)
+{
+	uint32_t stackSize = 0;
+
+	if (arc.Loading())
+	{
+		arc.ArchiveUInt32(stackSize);
+		*this = ScriptStack(stackSize);
+	}
+	else
+	{
+		stackSize = (uint32_t)GetStackSize();
+		arc.ArchiveUInt32(stackSize);
+	}
+
+	for (uint32_t i = 0; i < stackSize; i++) {
+		localStack[i].ArchiveInternal(arc);
+	}
+}
+
+ScriptVariable* ScriptStack::GetListenerVar(uintptr_t index)
+{
+	return listenerVarPtr[index];
+}
+
+void ScriptStack::SetListenerVar(uintptr_t index, ScriptVariable* newVar)
+{
+	listenerVarPtr[index] = newVar;
+}
+
+ScriptVM::ScriptVM()
+	: next(nullptr)
+	, m_Thread(nullptr)
+	, m_ScriptClass(nullptr)
+	, m_CodePos(nullptr)
+	, m_PrevCodePos(nullptr)
+	, m_StackPos(nullptr)
+	, fastIndex(0)
+	, state(vmState_e::Idling)
+	, m_bMarkStack(false)
+{
+}
+
+ScriptVM::ScriptVM(ScriptClass *scriptClass, const opval_t *pCodePos, ScriptThread *thread)
+	: m_Stack(scriptClass->GetScript()->GetRequiredStackSize())
+{
+	next = nullptr;
 
 	m_Thread = thread;
 	m_ScriptClass = scriptClass;
-
-	m_Stack = NULL;
 
 	m_PrevCodePos = NULL;
 	m_CodePos = pCodePos;
 
 	state = vmState_e::Running;
 
-	//m_pOldData = NULL;
-	//m_OldDataSize = 0;
-
 	m_bMarkStack = false;
 	m_StackPos = NULL;
 
-	size_t localStackSize = m_ScriptClass->GetScript()->GetRequiredStackSize();
-	if (!localStackSize) {
-		localStackSize = 1;
-	}
-
-	// allocate at once
-	uint8_t* data = (uint8_t*)allocateMemory((sizeof(ScriptVariable) + sizeof(ScriptVariable*)) * localStackSize);
-	localStack = new (data) ScriptVariable[localStackSize];
-	data += sizeof(ScriptVariable) * localStackSize;
-
-	pTop = localStack;
-	listenerVarPtr = new (data) ScriptVariable*[localStackSize]();
-	//fastEvent = new Event;
 	fastIndex = 0;
-
-	stackBottom = localStack + localStackSize;
 
 	m_ScriptClass->AddThread(this);
 }
 
-/*
-====================
-~ScriptVM
-====================
-*/
 ScriptVM::~ScriptVM()
 {
-	//fastEvent.data = m_pOldData;
-	//fastEvent.dataSize = m_OldDataSize;
-	//fastEvent.data = std::move(m_OldData);
-
 	// clean-up the call stack
 	while (callStack.NumObjects()) {
 		LeaveFunction();
 	}
-	
-	const size_t localStackSize = GetLocalStackSize();
-	for(uintptr_t i = 0; i < localStackSize; ++i) {
-		localStack[i].~ScriptVariable();
-	}
-	
-	uint8_t* data = (uint8_t*)localStack;
-	freeMemory(data);
-	// listenerVarPtr will also be deleted as it was allocated in the same chunk
-	//delete fastEvent;
 }
 
 void* ScriptVM::operator new(size_t)
@@ -104,71 +263,18 @@ void ScriptVM::operator delete(void* ptr)
 	ScriptContext::Get().GetAllocator().GetBlock<ScriptVM>().Free(ptr);
 }
 
-size_t ScriptVM::GetLocalStackSize() const
-{
-	return stackBottom - localStack;
-}
-
 /*
 ====================
 Archive
 ====================
 */
-void ScriptVM::Archive(Archiver&)
+void ScriptVM::Archive(Archiver& arc)
 {
-	/*
-	int stack = 0;
-
-	if (arc.Saving())
-	{
-		if (m_Stack)
-			stack = m_Stack->m_Count;
-
-		arc.ArchiveInteger(&stack);
-	}
-	else
-	{
-		arc.ArchiveInteger(&stack);
-
-		if (stack)
-		{
-			m_Stack = new ScriptStack;
-			m_Stack->m_Array = new ScriptVariable[stack];
-			m_Stack->m_Count = stack;
-		}
-	}
-
-	for (int i = 1; i <= stack; i++)
-	{
-		m_Stack->m_Array[i].ArchiveInternal(arc);
-	}
-
+	m_Stack.Archive(arc);
 	m_ReturnValue.ArchiveInternal(arc);
-	m_ScriptClass->ArchiveCodePos(arc, &m_PrevCodePos);
-	m_ScriptClass->ArchiveCodePos(arc, &m_CodePos);
-	arc.ArchiveByte(&state);
-	arc.ArchiveByte(&m_ThreadState);
-	*/
-}
-
-/*
-====================
-error
-
-Triggers an error
-====================
-*/
-void ScriptVM::error(const rawchar_t *format, ...)
-{
-	rawchar_t buffer[4000];
-	va_list va;
-
-	va_start(va, format);
-	vsprintf(buffer, format, va);
-	va_end(va);
-
-	//glbs.Printf("----------------------------------------------------------\n%s\n", buffer);
-	m_ReturnValue.setStringValue("$.INTERRUPTED");
+	m_ScriptClass->ArchiveCodePos(arc, m_PrevCodePos);
+	m_ScriptClass->ArchiveCodePos(arc, m_CodePos);
+	arc.ArchiveEnum(state);
 }
 
 const opval_t *ScriptVM::ProgBuffer()
@@ -176,8 +282,10 @@ const opval_t *ScriptVM::ProgBuffer()
 	return m_CodePos;
 }
 
-void ScriptVM::EnterFunction(ScriptVariableContainer&& data)
+void ScriptVM::EnterFunction(ScriptVariableContainer&&)
 {
+	// TODO: implement
+#if 0
 	ScriptCallStack *stack;
 	const const_str label = data[0].constStringValue();
 
@@ -208,10 +316,13 @@ void ScriptVM::EnterFunction(ScriptVariableContainer&& data)
 
 	pTop = localStack;
 	m_ReturnValue.Clear();
+#endif
 }
 
 void ScriptVM::LeaveFunction()
 {
+	// TODO: implement
+#if 0
 	size_t num = callStack.NumObjects();
 
 	if (num)
@@ -237,6 +348,9 @@ void ScriptVM::LeaveFunction()
 	{
 		delete m_Thread;
 	}
+#else
+	delete m_Thread;
+#endif
 }
 
 void ScriptVM::End(const ScriptVariable& returnValue)

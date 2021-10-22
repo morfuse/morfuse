@@ -35,28 +35,28 @@ template<>
 void ScriptVM::executeCommand<false, false>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
 {
 	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount) : ScriptEvent(eventnum);
-	return executeCommandInternal(ev, listener, pTop + 1, iParamCount);
+	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(1), iParamCount);
 }
 
 template<>
 void ScriptVM::executeCommand<true, false>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
 {
 	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount) : ScriptEvent(eventnum);
-	return executeCommandInternal(ev, listener, pTop + 1, iParamCount);
+	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(1), iParamCount);
 }
 
 template<>
 void ScriptVM::executeCommand<false, true>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
 {
 	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount + 1) : ScriptEvent(eventnum, 1);
-	return executeCommandInternal(ev, listener, pTop, iParamCount);
+	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(), iParamCount);
 }
 
 template<>
 void ScriptVM::executeCommand<true, true>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
 {
 	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount + 1) : ScriptEvent(eventnum, 1);
-	return executeCommandInternal(ev, listener, pTop, iParamCount);
+	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(), iParamCount);
 }
 
 void ScriptVM::executeCommandInternal(Event& ev, Listener* listener, ScriptVariable* fromVar, op_parmNum_t iParamCount)
@@ -68,11 +68,12 @@ void ScriptVM::executeCommandInternal(Event& ev, Listener* listener, ScriptVaria
 
 	listener->ProcessScriptEvent(ev);
 
+	ScriptVariable& pTop = m_Stack.GetTop();
 	if (ev.NumArgs() > iParamCount) {
-		*pTop = std::move(ev.GetValue(ev.NumArgs()));
+		pTop = std::move(ev.GetLastValue());
 	}
 	else {
-		pTop->Clear();
+		pTop.Clear();
 	}
 }
 
@@ -86,13 +87,12 @@ bool ScriptVM::executeGetter(EventSystem& eventSystem, Listener* listener, op_ev
 
 		listener->ProcessScriptEvent(ev);
 
-		if (ev.NumArgs() > 0)
-		{
-			*pTop = std::move(ev.GetValue(ev.NumArgs()));
+		ScriptVariable& pTop = m_Stack.GetTop();
+		if (ev.NumArgs() > 0) {
+			pTop = std::move(ev.GetValue(ev.NumArgs()));
 		}
-		else
-		{
-			pTop->Clear();
+		else {
+			pTop.Clear();
 		}
 
 		return true;
@@ -113,7 +113,8 @@ bool ScriptVM::executeSetter(EventSystem& eventSystem, Listener* listener, op_ev
 	{
 		ScriptEvent ev(eventInfo.setterNum, 1);
 
-		ev.AddValue(*pTop);
+		ScriptVariable& pTop = m_Stack.GetTop();
+		ev.AddValue(pTop);
 
 		listener->ProcessScriptEvent(ev);
 
@@ -154,7 +155,7 @@ bool ScriptVM::jumpVar(op_offset_t offset, bool booleanValue)
 	}
 	else
 	{
-		pTop--;
+		m_Stack.Pop();
 		return false;
 	}
 }
@@ -182,24 +183,25 @@ void ScriptVM::loadTop(EventSystem& eventSystem, Listener* listener)
 	if (!eventName || !executeSetter(eventSystem, listener, eventName))
 	{
 		// just set the variable
-		if (pTop >= localStack && pTop < stackBottom)
+		const uintptr_t varIndex = m_Stack.GetIndex();
+		ScriptVariable& pTop = m_Stack.GetTop();
+		if (varIndex < m_Stack.GetStackSize())
 		{
-			const uintptr_t varIndex = pTop - localStack;
-			ScriptVariable* const listenerVar = listenerVarPtr[varIndex];
+			ScriptVariable* const listenerVar = m_Stack.GetListenerVar(varIndex);
 			if (!listenerVar || listenerVar->GetKey() != variable) {
-				listener->Vars()->SetVariable(variable, std::move(*pTop));
+				listener->Vars()->SetVariable(variable, std::move(pTop));
 			}
 			else {
-				*listenerVar = std::move(*pTop);
+				*listenerVar = std::move(pTop);
 			}
 		}
 		else
 		{
-			listener->Vars()->SetVariable(variable, std::move(*pTop));
+			listener->Vars()->SetVariable(variable, std::move(pTop));
 		}
 	}
 
-	if constexpr (!noTop) pTop--;
+	if constexpr (!noTop) m_Stack.Pop();
 }
 
 template<bool noTop>
@@ -209,19 +211,20 @@ ScriptVariable* ScriptVM::storeTop(EventSystem& eventSystem, Listener* listener)
 	const op_evName_t eventName = ReadOpcodeValue<op_evName_t>();
 	ScriptVariable* listenerVar;
 
-	if constexpr (!noTop) pTop++;
+	if constexpr (!noTop) m_Stack.Push();
 
 	if (!eventName || !executeGetter(eventSystem, listener, eventName))
 	{
-		const uintptr_t varIndex = pTop - localStack;
-		listenerVar = listenerVarPtr[varIndex];
+		const uintptr_t varIndex = m_Stack.GetIndex();
+		ScriptVariable& pTop = m_Stack.GetTop();
+		listenerVar = m_Stack.GetListenerVar(varIndex);
 		if (!listenerVar || listenerVar->GetKey() != variable)
 		{
 			listenerVar = listener->Vars()->GetOrCreateVariable(variable);
-			listenerVarPtr[varIndex] = listenerVar;
+			m_Stack.SetListenerVar(varIndex, listenerVar);
 		}
 
-		*pTop = *listenerVar;
+		pTop = *listenerVar;
 	} else {
 		listenerVar = nullptr;
 	}
@@ -231,15 +234,16 @@ ScriptVariable* ScriptVM::storeTop(EventSystem& eventSystem, Listener* listener)
 
 void ScriptVM::storeField(op_name_t fieldName, Listener* listener)
 {
-	const uintptr_t varIndex = pTop - localStack;
-	ScriptVariable* listenerVar = listenerVarPtr[varIndex];
+	const uintptr_t varIndex = m_Stack.GetIndex();
+	ScriptVariable* listenerVar = m_Stack.GetListenerVar(varIndex);
 	if (!listenerVar || listenerVar->GetKey() != fieldName)
 	{
 		listenerVar = listener->Vars()->GetOrCreateVariable(fieldName);
-		listenerVarPtr[varIndex] = listenerVar;
+		m_Stack.SetListenerVar(varIndex, listenerVar);
 	}
 
-	*pTop = *listenerVar;
+	ScriptVariable& pTop = m_Stack.GetTop();
+	pTop = *listenerVar;
 }
 
 void ScriptVM::skipField()
@@ -251,19 +255,19 @@ void ScriptVM::ExecCmdCommon(op_parmNum_t param)
 {
 	const op_ev_t eventNum = ReadOpcodeValue<op_ev_t>();
 
-	pTop -= param;
+	m_Stack.Pop(param);
 
 	executeCommand(GetScriptThread(), param, eventNum);
 }
 
 void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 {
-	const ScriptVariable* const a = pTop--;
+	const ScriptVariable& a = m_Stack.Pop();
 	const op_ev_t eventNum = ReadOpcodeValue<op_ev_t>();
 
-	pTop -= param;
+	m_Stack.Pop(param);
 
-	const size_t arraysize = a->arraysize();
+	const size_t arraysize = a.arraysize();
 	if (arraysize == (size_t)-1)
 	{
 		throw ScriptVMErrors::NilListenerCommand(eventNum);
@@ -271,11 +275,11 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 
 	if (arraysize > 1)
 	{
-		if (a->IsConstArray())
+		if (a.IsConstArray())
 		{
 			for (uintptr_t i = arraysize; i > 0; i--)
 			{
-				Listener* const listener = a->listenerAt(i);
+				Listener* const listener = a.listenerAt(i);
 				// if the listener is NULL, don't throw an exception
 				// it would be unfair if the other listeners executed the command
 				if (listener) {
@@ -285,7 +289,7 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 		}
 		else
 		{
-			ScriptVariable array = *a;
+			ScriptVariable array = a;
 			// must cast into a const array value
 			array.CastConstArrayValue();
 
@@ -301,7 +305,7 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 	else
 	{
 		// avoid useless allocations of const array
-		Listener* const listener = a->listenerValue();
+		Listener* const listener = a.listenerValue();
 		if (!listener)
 		{
 			throw ScriptVMErrors::NullListenerCommand(eventNum);
@@ -313,14 +317,14 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 
 void ScriptVM::ExecMethodCommon(op_parmNum_t param)
 {
-	const ScriptVariable* const a = pTop--;
+	const ScriptVariable& a = m_Stack.Pop();
 	const op_ev_t eventNum = ReadOpcodeValue<op_ev_t>();
 
-	pTop -= param;
+	m_Stack.Pop(param);
 	// push the return value
-	pTop++;
+	m_Stack.Push();
 
-	Listener* const listener = a->listenerValue();
+	Listener* const listener = a.listenerValue();
 	if (!listener)
 	{
 		throw ScriptVMErrors::NullListenerCommand(eventNum);
@@ -340,7 +344,7 @@ void ScriptVM::ExecFunction(ScriptMaster& Director)
 
 		try
 		{
-			listener = pTop->listenerValue();
+			listener = m_Stack.GetTop().listenerValue();
 
 			if (!listener)
 			{
@@ -350,11 +354,11 @@ void ScriptVM::ExecFunction(ScriptMaster& Director)
 		}
 		catch (...)
 		{
-			pTop -= params;
+			m_Stack.Pop(params);
 			throw;
 		}
 
-		pTop--;
+		m_Stack.Pop();
 
 		ScriptVariableContainer data;
 		data.Resize(params + 1);
@@ -362,15 +366,14 @@ void ScriptVM::ExecFunction(ScriptMaster& Director)
 		ScriptVariable* labelVar = new (data) ScriptVariable;
 		labelVar->setConstStringValue(label);
 
-		const ScriptVariable* var = pTop;
-		pTop -= params;
+		const ScriptVariable* var = &m_Stack.Pop(params);
 
 		for (int i = 0; i < params; var++, i++)
 		{
 			data.AddObject(*var);
 		}
 
-		pTop++;
+		m_Stack.Push();
 		EnterFunction(std::move(data));
 
 		GetScriptClass()->SetSelf(listener);
@@ -384,7 +387,7 @@ void ScriptVM::ExecFunction(ScriptMaster& Director)
 		Listener* listener;
 		try
 		{
-			listener = pTop->listenerValue();
+			listener = m_Stack.GetTop().listenerValue();
 
 			if (!listener)
 			{
@@ -395,11 +398,11 @@ void ScriptVM::ExecFunction(ScriptMaster& Director)
 		}
 		catch (...)
 		{
-			pTop -= params;
+			m_Stack.Pop(params);
 			throw;
 		}
 
-		pTop--;
+		m_Stack.Pop();
 
 		ScriptVariable constarray;
 		ScriptVariable* pVar = new ScriptVariable[2];
@@ -413,15 +416,14 @@ void ScriptVM::ExecFunction(ScriptMaster& Director)
 
 		Event ev(EV_Listener_WaitCreateReturnThread, params);
 
-		const ScriptVariable* var = pTop;
-		pTop -= params;
+		const ScriptVariable* var = &m_Stack.Pop(params);
 
 		for (int i = 0; i < params; var++, i++) {
 			ev.AddValue(*var);
 		}
 
-		pTop++;
-		*pTop = listener->ProcessEventReturn(ev);
+		m_Stack.Push();
+		m_Stack.GetTop() = listener->ProcessEventReturn(ev);
 	}
 }
 
@@ -513,7 +515,7 @@ void ScriptVM::Execute(const VarListView& data, const StringResolvable& label)
 		m_Thread = nullptr;
 		// also destroy the VM
 	case vmState_e::Destroyed:
-		assert(pTop == localStack);
+		assert(m_Stack.GetIndex() == 0);
 		delete this;
 		break;
 	default:
@@ -536,12 +538,13 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 	{
 		if (!m_bMarkStack)
 		{
-			const bool stackOverrun = pTop < localStack || pTop >= stackBottom;
+			const uintptr_t index = m_Stack.GetIndex();
+			const bool stackOverrun = index >= m_Stack.GetStackSize();
 			assert(!stackOverrun);
 			if (stackOverrun)
 			{
 				state = vmState_e::Idling;
-				throw ScriptVMErrors::StackError(pTop - localStack);
+				throw ScriptVMErrors::StackError(index);
 			}
 		}
 
@@ -557,233 +560,228 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_BIN_BITWISE_AND:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b &= *a;
+			b &= a;
 			break;
 		}
 
 		case OP_BIN_BITWISE_OR:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b |= *a;
+			b |= a;
 			break;
 		}
 
 		case OP_BIN_BITWISE_EXCL_OR:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b ^= *a;
+			b ^= a;
 			break;
 		}
 
 		case OP_BIN_EQUALITY:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			b->setIntValue(*b == *a);
+			b.setIntValue(b == a);
 			break;
 		}
 
 		case OP_BIN_INEQUALITY:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			b->setIntValue(*b != *a);
+			b.setIntValue(b != a);
 			break;
 		}
 
 		case OP_BIN_GREATER_THAN:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			b->greaterthan(*a);
+			b.greaterthan(a);
 			break;
 		}
 
 		case OP_BIN_GREATER_THAN_OR_EQUAL:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			b->greaterthanorequal(*a);
+			b.greaterthanorequal(a);
 			break;
 		}
 
 		case OP_BIN_LESS_THAN:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			b->lessthan(*a);
+			b.lessthan(a);
 			break;
 		}
 
 		case OP_BIN_LESS_THAN_OR_EQUAL:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			b->lessthanorequal(*a);
+			b.lessthanorequal(a);
 			break;
 		}
 
 		case OP_BIN_PLUS:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b += *a;
+			b += a;
 			break;
 		}
 
 		case OP_BIN_MINUS:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b -= *a;
+			b -= a;
 			break;
 		}
 
 		case OP_BIN_MULTIPLY:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b *= *a;
+			b *= a;
 			break;
 		}
 
 		case OP_BIN_DIVIDE:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b /= *a;
+			b /= a;
 			break;
 		}
 
 		case OP_BIN_PERCENTAGE:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b %= *a;
+			b %= a;
 			break;
 		}
 
 		case OP_BIN_SHIFT_LEFT:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b <<= *a;
+			b <<= a;
 			break;
 		}
 
 		case OP_BIN_SHIFT_RIGHT:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.GetTop();
 
-			*b >>= *a;
+			b >>= a;
 			break;
 		}
 
 		case OP_BOOL_JUMP_FALSE4:
 		{
-			doJumpIf(!pTop->GetData().long64Value);
-			pTop--;
+			doJumpIf(!m_Stack.Pop().GetData().long64Value);
 			break;
 		}
 
 		case OP_BOOL_JUMP_TRUE4:
 		{
-			doJumpIf(pTop->GetData().long64Value ? true : false);
-			pTop--;
+			doJumpIf(m_Stack.Pop().GetData().long64Value ? true : false);
 			break;
 		}
 
 		case OP_VAR_JUMP_FALSE4:
 		{
-			doJumpIf(!pTop->booleanValue());
-			pTop--;
+			doJumpIf(!m_Stack.Pop().booleanValue());
 			break;
 		}
 
 		case OP_VAR_JUMP_TRUE4:
 		{
-			doJumpIf(pTop->booleanValue());
-			pTop--;
+			doJumpIf(m_Stack.Pop().booleanValue());
 			break;
 		}
 
 		case OP_BOOL_LOGICAL_AND:
 		{
-			doJumpVarIf(!pTop->GetData().long64Value);
+			doJumpVarIf(!m_Stack.GetTop().GetData().long64Value);
 			break;
 		}
 
 		case OP_BOOL_LOGICAL_OR:
 		{
-			doJumpVarIf(pTop->GetData().long64Value);
+			doJumpVarIf(m_Stack.GetTop().GetData().long64Value);
 			break;
 		}
 
 		case OP_VAR_LOGICAL_AND:
 		{
-			if (!doJumpVarIf(pTop->booleanValue()))
+			if (!doJumpVarIf(m_Stack.GetTop().booleanValue()))
 			{
-				pTop->SetFalse();
+				m_Stack.GetTop().SetFalse();
 			}
 			break;
 		}
 
 		case OP_VAR_LOGICAL_OR:
 		{
-			if (!doJumpVarIf(!pTop->booleanValue()))
+			if (!doJumpVarIf(!m_Stack.GetTop().booleanValue()))
 			{
-				pTop->SetTrue();
+				m_Stack.GetTop().SetTrue();
 			}
 			break;
 		}
 
 		case OP_BOOL_STORE_FALSE:
 		{
-			pTop++;
-			pTop->SetFalse();
+			m_Stack.PushAndGet().SetFalse();
 			break;
 		}
 
 		case OP_BOOL_STORE_TRUE:
 		{
-			pTop++;
-			pTop->SetTrue();
+			m_Stack.PushAndGet().SetTrue();
 			break;
 		}
 
 		case OP_BOOL_UN_NOT:
 		{
-			pTop->GetData().long64Value = (pTop->GetData().long64Value == 0);
+			ScriptVariable& pTop = m_Stack.GetTop();
+			pTop.GetData().long64Value = (pTop.GetData().long64Value == 0);
 			break;
 		}
 
 		case OP_CALC_VECTOR:
 		{
-			const ScriptVariable* const c = pTop--;
-			const ScriptVariable* const b = pTop--;
-			const ScriptVariable* const a = pTop;
+			const ScriptVariable& c = m_Stack.Pop();
+			const ScriptVariable& b = m_Stack.Pop();
+			ScriptVariable& a = m_Stack.GetTop();
 
-			pTop->setVectorValue(Vector(a->floatValue(), b->floatValue(), c->floatValue()));
+			a.setVectorValue(Vector(a.floatValue(), b.floatValue(), c.floatValue()));
 			break;
 		}
 
@@ -937,22 +935,22 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_LOAD_ARRAY_VAR:
 		{
-			const ScriptVariable* const a = pTop--;
-			ScriptVariable* const b = pTop--;
-			const ScriptVariable* const c = pTop--;
+			const ScriptVariable& a = m_Stack.Pop();
+			ScriptVariable& b = m_Stack.Pop();
+			const ScriptVariable& c = m_Stack.Pop();
 
-			b->setArrayAt(*a, *c);
+			b.setArrayAt(a, c);
 			break;
 		}
 
 		case OP_LOAD_FIELD_VAR:
 		{
-			ScriptVariable* const a = pTop--;
+			ScriptVariable& a = m_Stack.Pop();
 			bool eventCalled = false;
 
 			try
 			{
-				Listener* listener = a->listenerValue();
+				Listener* listener = a.listenerValue();
 
 				if (listener == nullptr)
 				{
@@ -966,7 +964,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 			}
 			catch (...)
 			{
-				pTop--;
+				m_Stack.Pop();
 
 				if (!eventCalled) {
 					skipField();
@@ -981,8 +979,8 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			op_arrayParmNum_t numParms = ReadOpcodeValue<op_arrayParmNum_t>();
 
-			pTop -= numParms - 1;
-			pTop->setConstArrayValue(pTop, numParms);
+			ScriptVariable& pTop = m_Stack.PopAndGet(numParms - 1);
+			pTop.setConstArrayValue(&pTop, numParms);
 			break;
 		}
 
@@ -1014,14 +1012,14 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			if (!GetScriptClass()->GetSelf())
 			{
-				pTop--;
+				m_Stack.Pop();
 				skipField();
 				throw ScriptException("self is NULL");
 			}
 
 			if (!GetScriptClass()->GetSelf()->GetScriptOwner())
 			{
-				pTop--;
+				m_Stack.Pop();
 				skipField();
 				throw ScriptException("self.owner is NULL");
 			}
@@ -1040,7 +1038,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			if (!GetScriptClass()->GetSelf())
 			{
-				pTop--;
+				m_Stack.Pop();
 				skipField();
 				throw ScriptException("self is NULL");
 			}
@@ -1110,7 +1108,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_MARK_STACK_POS:
 		{
-			m_StackPos = pTop;
+			m_StackPos = m_Stack.GetTopPtr();
 			m_bMarkStack = true;
 			break;
 		}
@@ -1119,19 +1117,18 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			if (fastIndex < fastEvent.NumArgs())
 			{
-				pTop = &fastEvent.GetValueChecked(++fastIndex);
+				m_Stack.SetTop(fastEvent.GetValueChecked(++fastIndex));
 			}
 			else
 			{
-				pTop = m_StackPos + 1;
-				pTop->Clear();
+				m_Stack.SetTop(*(m_StackPos + 1)).Clear();
 			}
 			break;
 		}
 
 		case OP_RESTORE_STACK_POS:
 		{
-			pTop = m_StackPos;
+			m_Stack.SetTop(*m_StackPos);
 			m_bMarkStack = false;
 			break;
 		}
@@ -1140,12 +1137,12 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			try
 			{
-				const ScriptVariable* const aVar = pTop--;
-				pTop->evalArrayAt(*aVar);
+				const ScriptVariable& aVar = m_Stack.Pop();
+				m_Stack.GetTop().evalArrayAt(aVar);
 			}
 			catch (...)
 			{
-				pTop->Clear();
+				m_Stack.GetTop().Clear();
 				throw;
 			}
 			break;
@@ -1153,8 +1150,8 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_STORE_ARRAY_REF:
 		{
-			ScriptVariable* const aVar = pTop--;
-			pTop->setArrayRefValue(*aVar);
+			ScriptVariable& aVar = m_Stack.Pop();
+			m_Stack.GetTop().setArrayRefValue(aVar);
 			break;
 		}
 
@@ -1162,7 +1159,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			try
 			{
-				Listener* listener = pTop->listenerValue();
+				Listener* listener = m_Stack.GetTop().listenerValue();
 
 				if (listener == nullptr)
 				{
@@ -1177,12 +1174,13 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 					if (listenerVar)
 					{
 						// having a listener variable means the variable was just created
-						pTop->setRefValue(listenerVar);
+						m_Stack.GetTop().setRefValue(listenerVar);
 					}
 				}
 			}
 			catch (...)
 			{
+				ScriptVariable* const pTop = m_Stack.GetTopPtr();
 				pTop->setRefValue(pTop);
 				throw;
 			}
@@ -1192,7 +1190,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		case OP_STORE_FIELD:
 			try
 			{
-				Listener* listener = pTop->listenerValue();
+				Listener* listener = m_Stack.GetTop().listenerValue();
 
 				if (listener == nullptr)
 				{
@@ -1212,50 +1210,43 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_STORE_FLOAT:
 		{
-			pTop++;
-			pTop->setFloatValue(ReadOpcodeValue<float>());
+			m_Stack.PushAndGet().setFloatValue(ReadOpcodeValue<float>());
 			break;
 		}
 
 		case OP_STORE_INT0:
 		{
-			pTop++;
-			pTop->setIntValue(0);
+			m_Stack.PushAndGet().setIntValue(0);
 			break;
 		}
 
 		case OP_STORE_INT1:
 		{
-			pTop++;
-			pTop->setIntValue(ReadOpcodeValue<uint8_t>());
+			m_Stack.PushAndGet().setIntValue(ReadOpcodeValue<uint8_t>());
 			break;
 		}
 
 		case OP_STORE_INT2:
 		{
-			pTop++;
-			pTop->setIntValue(ReadOpcodeValue<uint16_t>());
+			m_Stack.PushAndGet().setIntValue(ReadOpcodeValue<uint16_t>());
 			break;
 		}
 
 		case OP_STORE_INT3:
 		{
-			pTop++;
-			pTop->setIntValue(ReadOpcodeValue<short3>());
+			m_Stack.PushAndGet().setIntValue(ReadOpcodeValue<short3>());
 			break;
 		}
 
 		case OP_STORE_INT4:
 		{
-			pTop++;
-			pTop->setIntValue(ReadOpcodeValue<uint32_t>());
+			m_Stack.PushAndGet().setIntValue(ReadOpcodeValue<uint32_t>());
 			break;
 		}
 
 		case OP_STORE_INT8:
 		{
-			pTop++;
-			pTop->setLongValue(ReadOpcodeValue<uint64_t>());
+			m_Stack.PushAndGet().setLongValue(ReadOpcodeValue<uint64_t>());
 			break;
 		}
 
@@ -1287,14 +1278,14 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			if (!GetScriptClass()->GetSelf())
 			{
-				pTop++;
+				m_Stack.Push();
 				skipField();
 				throw ScriptException("self is NULL");
 			}
 
 			if (!GetScriptClass()->GetSelf()->GetScriptOwner())
 			{
-				pTop++;
+				m_Stack.Push();
 				skipField();
 				throw ScriptException("self.owner is NULL");
 			}
@@ -1313,7 +1304,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 		{
 			if (!GetScriptClass()->GetSelf())
 			{
-				pTop++;
+				m_Stack.Push();
 				skipField();
 				throw ScriptException("self is NULL");
 			}
@@ -1324,161 +1315,152 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_STORE_GAME:
 		{
-			pTop++;
-			pTop->setListenerValue(context.GetGame());
+			m_Stack.PushAndGet().setListenerValue(context.GetGame());
 			break;
 		}
 
 		case OP_STORE_GROUP:
 		{
-			pTop++;
-			pTop->setListenerValue(GetScriptClass());
+			m_Stack.PushAndGet().setListenerValue(GetScriptClass());
 			break;
 		}
 
 		case OP_STORE_LEVEL:
 		{
-			pTop++;
-			pTop->setListenerValue(context.GetLevel());
+			m_Stack.PushAndGet().setListenerValue(context.GetLevel());
 			break;
 		}
 
 		case OP_STORE_LOCAL:
 		{
-			pTop++;
-			pTop->setListenerValue(GetScriptThread());
+			m_Stack.PushAndGet().setListenerValue(GetScriptThread());
 			break;
 		}
 
 		case OP_STORE_OWNER:
 		{
-			pTop++;
+			m_Stack.Push();
 
 			if (!GetScriptClass()->GetSelf())
 			{
-				pTop++;
+				m_Stack.Push();
 				throw ScriptException("self is NULL");
 			}
 
-			pTop->setListenerValue(GetScriptClass()->GetSelf()->GetScriptOwner());
+			m_Stack.GetTop().setListenerValue(GetScriptClass()->GetSelf()->GetScriptOwner());
 			break;
 		}
 
 		case OP_STORE_PARM:
 		{
-			pTop++;
-			pTop->setListenerValue(&Director.GetParm());
+			m_Stack.PushAndGet().setListenerValue(&Director.GetParm());
 			break;
 		}
 
 		case OP_STORE_SELF:
 		{
-			pTop++;
-			pTop->setListenerValue(GetScriptClass()->GetSelf());
+			m_Stack.PushAndGet().setListenerValue(GetScriptClass()->GetSelf());
 			break;
 		}
 
 		case OP_STORE_NIL:
 		{
-			pTop++;
-			pTop->Clear();
+			m_Stack.PushAndGet().Clear();
 			break;
 		}
 
 		case OP_STORE_NULL:
 		{
-			pTop++;
-			pTop->setListenerValue(nullptr);
+			m_Stack.PushAndGet().setListenerValue(nullptr);
 			break;
 		}
 
 		case OP_STORE_STRING:
 		{
-			pTop++;
-			pTop->setConstStringValue(ReadOpcodeValue<op_name_t>());
+			m_Stack.PushAndGet().setConstStringValue(ReadOpcodeValue<op_name_t>());
 			break;
 		}
 
 		case OP_STORE_VECTOR:
 		{
-			pTop++;
-			pTop->setVectorValue(ReadOpcodeValue<Vector>());
+			m_Stack.PushAndGet().setVectorValue(ReadOpcodeValue<Vector>());
 			break;
 		}
 
 		case OP_SWITCH:
 		{
-			if (!Switch(ReadGetOpcodeValue<StateScript*>(), *pTop))
+			if (!Switch(ReadGetOpcodeValue<StateScript*>(), m_Stack.Pop()))
 			{
 				m_CodePos += sizeof(StateScript*);
 			}
-
-			pTop--;
 			break;
 		}
 
 		case OP_UN_CAST_BOOLEAN:
 		{
-			pTop->CastBoolean();
+			m_Stack.GetTop().CastBoolean();
 			break;
 		}
 
 		case OP_UN_COMPLEMENT:
 		{
-			pTop->complement();
+			m_Stack.GetTop().complement();
 			break;
 		}
 
 		case OP_UN_MINUS:
 		{
-			pTop->minus();
+			m_Stack.GetTop().minus();
 			break;
 		}
 
 		case OP_UN_DEC:
 		{
-			(*pTop)--;
+			m_Stack.GetTop()--;
 			break;
 		}
 
 		case OP_UN_INC:
 		{
-			(*pTop)++;
+			m_Stack.GetTop()++;
 			break;
 		}
 
 		case OP_UN_SIZE:
 		{
-			pTop->setLongValue((uintptr_t)pTop->size());
+			ScriptVariable& pTop = m_Stack.GetTop();
+			pTop.setLongValue((uintptr_t)pTop.size());
 			break;
 		}
 
 		case OP_UN_TARGETNAME:
 		{
-			const ConTarget* const foundTargetList = targetList.GetExistingConstTargetList(pTop->constStringValue());
+			ScriptVariable& pTop = m_Stack.GetTop();
+			const ConTarget* const foundTargetList = targetList.GetExistingConstTargetList(pTop.constStringValue());
 
 			if (!foundTargetList || !foundTargetList->NumObjects())
 			{
-				const_str targetName = pTop->constStringValue();
-				pTop->setListenerValue(nullptr);
+				const_str targetName = pTop.constStringValue();
+				pTop.setListenerValue(nullptr);
 
 				throw TargetListErrors::NoTargetException(targetName);
 			}
 			else if (foundTargetList->NumObjects() == 1)
 			{
 				Listener* const targetListener = foundTargetList->ObjectAt(1);
-				pTop->setListenerValue(targetListener);
+				pTop.setListenerValue(targetListener);
 			}
 			else if (foundTargetList->NumObjects() > 1)
 			{
-				pTop->setContainerValue(foundTargetList);
+				pTop.setContainerValue(foundTargetList);
 			}
 			break;
 		}
 
 		case OP_VAR_UN_NOT:
 		{
-			pTop->setIntValue(pTop->booleanValue());
+			ScriptVariable& pTop = m_Stack.GetTop();
+			pTop.setIntValue(pTop.booleanValue());
 			break;
 		}
 
