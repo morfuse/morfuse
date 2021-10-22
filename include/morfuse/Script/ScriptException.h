@@ -2,6 +2,7 @@
 
 #include "../Global.h"
 #include "../Common/str.h"
+#include "MessageableException.h"
 
 #include <exception>
 #include <utility>
@@ -14,19 +15,6 @@ namespace mfuse
 
 	class ScriptAbortExceptionBase : public std::exception
 	{
-	};
-
-	class Messageable
-	{
-	public:
-		void fill(const xstr& msg) const;
-		bool filled() const noexcept;
-
-	protected:
-		const char* what() const noexcept;
-
-	private:
-		xstr msg;
 	};
 
 	class ScriptException : public ScriptExceptionBase
