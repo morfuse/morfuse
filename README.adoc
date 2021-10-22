@@ -30,7 +30,7 @@ No documentation, yet but more has to come. Feel free to contribute if you're in
 == TODO
 
 * [ ] Documentation and more complete README
-* [ ] Ability to add events to existing classes, like ScriptThread
+* [ ] Implement a module system to bind events/classes into a module (plugins)
+* [ ] Ability to add events to, or override from existing classes, like ScriptThread
 * [ ] Ability to debug scripts
-* [ ] Use an std::istream instead of a char buffer, for reading script files
-* [ ] JIT compiler
+* [ ] JIT compiler (low priority)
