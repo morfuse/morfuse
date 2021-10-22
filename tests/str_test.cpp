@@ -4,10 +4,11 @@
 
 using namespace mfuse;
 
-void string_assert(const str& s, size_t expected_len, const char* expected_data)
+template<typename CharT>
+void string_assert(const base_str<CharT>& s, size_t expected_len, const CharT* expected_data)
 {
 	assert(s.length() == expected_len);
-	assert(!str::icmp(s, expected_data));
+	assert(!base_str<CharT>::icmp(s, expected_data));
 }
 
 /*
@@ -15,31 +16,38 @@ void string_assert(const str& s, size_t expected_len, const char* expected_data)
 TestStringClass
 
 This is a fairly rigorous test of the base_str class's functionality.
-Because of the fairly global and subtle ramifications of a bug occuring
+Because of the fairly global and subtle ramifications of a bug occurring
 in this class, it should be run after any changes to the class.
 Add more tests as functionality is changed.  Tests should include
 any possible bounds violation and nullptr data tests.
 =================
 */
-void TestStringClass(void)
+template<typename CharT>
+void TestStringClass()
 {
+	using StrT = base_str<CharT>;
+
+	constexpr CharT testStr[] = { 't', 'e', 's', 't', 0 };
+	constexpr CharT testTestStr[] = { 't', 'e', 's', 't', 't', 'e', 's', 't', 0 };
+	constexpr CharT emptyStr[] = { 0 };
+
 	// ch == ?
-	char ch;
+	CharT ch;
 	// t == ?
-	str* t;
+	base_str<CharT>* t;
 	// a.len == 0, a.data == "\0"
-	str a;
+	base_str<CharT> a;
 	// b.len == 0, b.data == "\0"
-	str b;
+	base_str<CharT> b;
 	// c.len == 4, c.data == "test\0"
-	str c("test");
+	base_str<CharT> c(testStr);
 	// d.len == 4, d.data == "test\0"
-	str d(c);
-	str e;
+	base_str<CharT> d(c);
+	base_str<CharT> e;
 	size_t i;
 
 	// e.len == 0, e.data == "\0"
-	string_assert(e, 0, "");
+	string_assert(e, 0, emptyStr);
 
 	// i == 0
 	i = a.length();
@@ -49,64 +57,75 @@ void TestStringClass(void)
 	assert(i == 4);
 
 	// s1 == "\0"
-	const char* s1 = a.c_str();
+	const CharT* s1 = a.c_str();
 	assert(*s1 == 0);
 	// s2 == "test\0"
-	const char* s2 = c.c_str();
-	assert(!str::cmp(s2, "test"));
+	const CharT* s2 = c.c_str();
+	assert(!base_str<CharT>::cmp(s2, testStr));
 
 	// t->len == 0, t->data == "\0"
-	t = new str();
-	string_assert(*t, 0, "");
+	t = new base_str<CharT>();
+	string_assert(*t, 0, emptyStr);
 	// t == ?
 	delete t;
 
 	// b.len == 4, b.data == "test\0"
-	b = "test";
-	string_assert(b, 4, "test");
+	b = testStr;
+	string_assert(b, 4, testStr);
 	// t->len == 4, t->data == "test\0"
-	t = new str("test");
-	string_assert(*t, 4, "test");
+	t = new base_str<CharT>(testStr);
+	string_assert(*t, 4, testStr);
 	// t == ?
 	delete t;
 
 	// a.len == 4, a.data == "test\0"
 	a = c;
-	string_assert(a, 4, "test");
-	a = "";
-	string_assert(a, 0, "");
+	string_assert(a, 4, testStr);
+	a = emptyStr;
+	string_assert(a, 0, emptyStr);
 	// a.len == 0, a.data == "\0"					ASSERT!
 //	a = nullptr;
 	// a.len == 8, a.data == "testtest\0"
 	a = c + d;
-	string_assert(a, 8, "testtest");
+
+	string_assert(a, 8, testTestStr);
 	// a.len == 7, a.data == "testwow\0"
-	a = c + "wow";
-	string_assert(a, 7, "testwow");
+	constexpr CharT wowStr[] = { 'w', 'o', 'w', 0 };
+	{
+		a = c + wowStr;
+		constexpr CharT expectedStr[] = { 't', 'e', 's', 't', 'w', 'o', 'w', 0};
+		string_assert(a, 7, expectedStr);
+	}
 	// a.len == 4, a.data == "test\0"			ASSERT!
 //	a = c + reinterpret_cast<const char*>(nullptr);
-	a = c + "";
+	a = c + emptyStr;
 	// a.len == 8, a.data == "thistest\0"
-	a = "this" + d;
-	string_assert(a, 8, "thistest");
+	{
+		constexpr CharT thisStr[] = { 't', 'h', 'i', 's', 0};
+		a = thisStr + d;
+		constexpr CharT expectedStr[] = { 't', 'h', 'i', 's', 't', 'e', 's', 't', 0};
+		string_assert(a, 8, expectedStr);
+	}
 	// a.len == 4, a.data == "test\0"			ASSERT!
 //	a = reinterpret_cast<const char*>(nullptr) + d;
-	a = "" + d;
+	a = emptyStr + d;
 	// a.len == 8, a.data == "testtest\0"
 	a += c;
-	string_assert(a, 8, "testtest");
+	string_assert(a, 8, testTestStr);
 	// a.len == 11, a.data == "testtestwow\0"
-	a += "wow";
-	string_assert(a, 11, "testtestwow");
+	a += wowStr;
+
+	constexpr CharT testTestWowStr[] = { 't', 'e', 's', 't', 't', 'e', 's', 't', 'w', 'o', 'w', 0};
+	string_assert(a, 11, testTestWowStr);
 
 	// a.len == 11, a.data == "testtestwow\0"	ASSERT!
 //	a += reinterpret_cast<const char*>(nullptr);
-	a += "";
+	a += emptyStr;
 
 	// a.len == 4, a.data == "test\0"
-	a = "test";
-	string_assert(a, 4, "test");
-	const str& ca = a;
+	a = testStr;
+	string_assert(a, 4, testStr);
+	const base_str<CharT>& ca = a;
 	// ch == 't'
 	ch = ca[0];
 	assert(ch == 't');
@@ -137,38 +156,44 @@ void TestStringClass(void)
 
 	// a.len == 4, a.data == "tbst\0"
 	a[1] = 'b';
-	string_assert(a, 4, "tbst");
+	constexpr CharT tbstStr[] = { 't', 'b', 's', 't', 0};
+	string_assert(a, 4, tbstStr);
 	// a.len == 4, a.data == "tbst\0"			ASSERT!
 	a[-1] = 'b';
-	string_assert(a, 4, "tbst");
+	string_assert(a, 4, tbstStr);
 	// a.len == 4, a.data == "0bst\0"
 	a[0] = '0';
-	string_assert(a, 4, "0bst");
+	constexpr CharT _0bstStr[] = { '0', 'b', 's', 't', 0 };
+	string_assert(a, 4, _0bstStr);
 	// a.len == 4, a.data == "01st\0"
 	a[1] = '1';
-	string_assert(a, 4, "01st");
+	constexpr CharT _01stStr[] = { '0', '1', 's', 't', 0 };
+	string_assert(a, 4, _01stStr);
 	// a.len == 4, a.data == "012t\0"
 	a[2] = '2';
-	string_assert(a, 4, "012t");
+	constexpr CharT _012tStr[] = { '0', '1', '2', 't', 0 };
+	string_assert(a, 4, _012tStr);
 	// a.len == 4, a.data == "0123\0"
 	a[3] = '3';
-	string_assert(a, 4, "0123");
+	constexpr CharT _0123Str[] = { '0', '1', '2', '3', 0 };
+	string_assert(a, 4, _0123Str);
 	// a.len == 4, a.data == "0123\0"			ASSERT!
 	a[4] = '4';
-	string_assert(a, 4, "0123");
+	string_assert(a, 4, _0123Str);
 	// a.len == 4, a.data == "0123\0"			ASSERT!
 	a[5] = '5';
-	string_assert(a, 4, "0123");
+	string_assert(a, 4, _0123Str);
 	// a.len == 4, a.data == "0123\0"			ASSERT!
 	a[7] = '7';
-	string_assert(a, 4, "0123");
+	string_assert(a, 4, _0123Str);
 
 	// a.len == 4, a.data == "test\0"
-	a = "test";
-	string_assert(a, 4, "test");
+	a = testStr;
+	string_assert(a, 4, testStr);
 	// b.len == 2, b.data == "no\0"
-	b = "no";
-	string_assert(b, 2, "no");
+	constexpr CharT noStr[] = { 'n', 'o', 0 };
+	b = noStr;
+	string_assert(b, 2, noStr);
 
 	// i == 0
 	i = (a == b);
@@ -178,20 +203,21 @@ void TestStringClass(void)
 	assert(i == 1);
 
 	// i == 0
-	i = (a == "blow");
+	constexpr CharT blowStr[] = { 'b', 'l', 'o', 'w', 0};
+	i = (a == blowStr);
 	assert(i == 0);
 	// i == 1
-	i = (a == "test");
+	i = (a == testStr);
 	assert(i == 1);
 	// i == 0											ASSERT!
 	i = (a == nullptr);
 	assert(i == 0);
 
 	// i == 0
-	i = ("test" == b);
+	i = (testStr == b);
 	assert(i == 0);
 	// i == 1
-	i = ("test" == a);
+	i = (testStr == a);
 	assert(i == 1);
 	// i == 0											ASSERT!
 	i = (nullptr == a);
@@ -205,73 +231,83 @@ void TestStringClass(void)
 	assert(i == 0);
 
 	// i == 1
-	i = (a != "blow");
+	i = (a != blowStr);
 	assert(i == 1);
 	// i == 0
-	i = (a != "test");
+	i = (a != testStr);
 	assert(i == 0);
 	// i == 1											ASSERT!
 	i = (a != nullptr);
 	assert(i == 1);
 
 	// i == 1
-	i = ("test" != b);
+	i = (testStr != b);
 	assert(i == 1);
 	// i == 0
-	i = ("test" != a);
+	i = (testStr != a);
 	assert(i == 0);
 	// i == 1											ASSERT!
 	i = (nullptr != a);
 	assert(i == 1);
 
-	// a.data == "test"
-	a = "test";
-	string_assert(a, 4, "test");
-	// b.data == "test"
+	// a.data == testStr
+	a = testStr;
+	string_assert(a, 4, testStr);
+	// b.data == testStr
 	b = a;
-	string_assert(b, 4, "test");
+	string_assert(b, 4, testStr);
 
-	// a.data == "not", b.data == "test"
-	a = "not";
-	string_assert(a, 3, "not");
+	// a.data == "not", b.data == testStr
+	constexpr CharT notStr[] = { 'n', 'o', 't', 0 };
+	a = notStr;
+	string_assert(a, 3, notStr);
 
-	// a.data == b.data == "test"
+	// a.data == b.data == testStr
 	a = b;
-	string_assert(a, 4, "test");
+	string_assert(a, 4, testStr);
 
-	// a.data == "testtest", b.data = "test"
+	// a.data == "testtest", b.data = testStr
 	a += b;
-	string_assert(a, 8, "testtest");
+	string_assert(a, 8, testTestStr);
 
 	a = b;
-	string_assert(a, 4, "test");
+	string_assert(a, 4, testStr);
 
-	// a.data = "t1st", b.data = "test"
+	// a.data = "t1st", b.data = testStr
 	a[1] = '1';
-	string_assert(a, 4, "t1st");
-	string_assert(b, 4, "test");
+	constexpr CharT t1stStr[] = { 't', '1', 's', 't', 0};
+	string_assert(a, 4, t1stStr);
+	string_assert(b, 4, testStr);
 
-	a = "TeST";
-	string_assert(a, 4, "TeST");
+	a = testStr;
+	string_assert(a, 4, testStr);
 	a.tolower();
-	string_assert(a, 4, "test");
+	string_assert(a, 4, testStr);
 
-	a = "";
+	a = emptyStr;
 	a.append('a');
 	a.append('b');
 	a.append('c');
-	string_assert(a, 3, "abc");
+	constexpr CharT abcStr[] = { 'a', 'b', 'c', 0};
+	string_assert(a, 3, abcStr);
 
-	e = str(1);
-	string_assert(e, 1, "1");
-	e = str(10);
-	string_assert(e, 2, "10");
-	e = str(1.5f);
-	string_assert(e, 5, "1.500");
+	e = base_str<CharT>(1);
+	constexpr CharT _1str[] = { '1', 0 };
+	string_assert(e, 1, _1str);
+	e = base_str<CharT>(10);
+	constexpr CharT _10str[] = { '1', '0', 0};
+	string_assert(e, 2, _10str);
+	e = base_str<CharT>(1.5f);
+	constexpr CharT _1500str[] = { '1', '.', '5', '0', '0', 0};
+	string_assert(e, 5, _1500str);
 }
 
 int main(int argc, const char* argv[])
 {
-	TestStringClass();
+	TestStringClass<char>();
+	TestStringClass<wchar_t>();
+	TestStringClass<char16_t>();
+	TestStringClass<char32_t>();
+
 	return 0;
 }
