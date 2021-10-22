@@ -53,10 +53,7 @@ target_compile_features(morfuse PUBLIC cxx_std_17)
 target_compile_definitions(morfuse PRIVATE mfuse_DLL=1)
 target_include_directories(morfuse PRIVATE ${FLEX_INCLUDE_DIRS})
 target_include_directories(morfuse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(morfuse PRIVATE ${PROJECT_SOURCE_DIR}/../thirdparty/utfcpp)
 target_include_directories(morfuse PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated/)
-
-target_link_libraries(morfuse PRIVATE 3pt)
 
 install(
 	TARGETS morfuse
