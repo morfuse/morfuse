@@ -24,7 +24,7 @@ inline void testAll(const handler_t (&handlers)[N])
 template<size_t N>
 inline const mfuse::ProgramScript* compile(mfuse::ScriptMaster& director, const char* name, const char(&buf)[N])
 {
-	mfuse::memstream stream(buf, sizeof(buf));
+	mfuse::imemstream stream(buf, sizeof(buf));
 	const mfuse::ProgramScript* const script = director.GetProgramScript(name, stream);
 	assert(script);
 

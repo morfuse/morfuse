@@ -51,7 +51,7 @@ void exception2(ScriptMaster& director)
 
 void exception3(ScriptMaster& director)
 {
-	memstream stream(scriptContent_exception3, sizeof(scriptContent_exception3));
+	imemstream stream(scriptContent_exception3, sizeof(scriptContent_exception3));
 
 	bool gotException = false;
 	try

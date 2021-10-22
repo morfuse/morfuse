@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 
 	// Get the script master
 	ScriptMaster& director = context.GetDirector();
-	memstream stream[] =
+	imemstream stream[] =
 	{
 		{ script1, sizeof(script1) },
 		{ script2, sizeof(script2) }

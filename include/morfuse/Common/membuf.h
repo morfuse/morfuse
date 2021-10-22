@@ -7,9 +7,9 @@
 
 namespace mfuse
 {
-	struct membuf : std::streambuf
+	struct imembuf : std::streambuf
 	{
-		membuf(const rawchar_t* begin, const rawchar_t* end) {
+		imembuf(const rawchar_t* begin, const rawchar_t* end) {
 			this->setg((rawchar_t*)begin, (rawchar_t*)begin, (rawchar_t*)end);
 		}
 
@@ -39,10 +39,10 @@ namespace mfuse
 		}
 	};
 
-	class memstream : public std::istream
+	class imemstream : public std::istream
 	{
 	public:
-		memstream(const rawchar_t* buf, size_t length)
+		imemstream(const rawchar_t* buf, size_t length)
 			: std::istream(&mem)
 			, mem(buf, buf + length)
 		{
@@ -50,6 +50,56 @@ namespace mfuse
 		}
 
 	private:
-		membuf mem;
+		imembuf mem;
+	};
+	struct omembuf : std::streambuf
+	{
+		omembuf(rawchar_t* begin, rawchar_t* end)
+			: buf(begin)
+		{
+			this->setp((rawchar_t*)begin, (rawchar_t*)end);
+		}
+
+		pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode) override
+		{
+			switch (dir)
+			{
+			default:
+			case std::ios_base::beg:
+				this->setp(buf + off, this->epptr());
+				break;
+			case std::ios_base::cur:
+				this->setp(this->pptr() + off, this->epptr());
+				break;
+			case std::ios_base::end:
+				this->setp(this->epptr() - off, this->epptr());
+				break;
+			}
+
+			return this->pptr() - buf;
+		}
+
+		pos_type seekpos(pos_type off, std::ios_base::openmode) override
+		{
+			this->setp(buf + off, this->epptr());
+			return this->pptr() - buf;
+		}
+
+	private:
+		rawchar_t* buf;
+	};
+
+	class omemstream : public std::ostream
+	{
+	public:
+		omemstream(rawchar_t* buf, size_t length)
+			: std::ostream(&mem)
+			, mem(buf, buf + length)
+		{
+			rdbuf(&mem);
+		}
+
+	private:
+		omembuf mem;
 	};
 }
