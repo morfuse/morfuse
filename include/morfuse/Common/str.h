@@ -159,17 +159,8 @@ namespace mfuse
 		void SkipFile();
 		void SkipPath();
 
-		template<typename... Args>
-		static base_str printf(const CharT* fmt, Args&&... args)
-		{
-			return printfImpl(fmt, std::forward<Args>(args)...);
-		}
-
 	public:
 		static const base_str& getEmpty();
-
-	private:
-		static base_str printfImpl(const CharT* fmt, ...);
 
 	private:
 		strdata<CharT> *m_data;

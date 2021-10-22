@@ -1564,48 +1564,6 @@ void base_str<CharT>::clear()
 	}
 }
 
-template<>
-base_str<char> base_str<char>::printfImpl(const char* fmt, ...)
-{
-	size_t len;
-	va_list va;
-
-	va_start(va, fmt);
-	// Calculate the length
-	len = vsnprintf(nullptr, 0, fmt, va);
-	va_end(va);
-
-	base_str<char> string;
-	string.resize(len);
-
-	va_start(va, fmt);
-	vsnprintf(string.m_data->data(), string.m_data->alloced, fmt, va);
-	va_end(va);
-
-	return string;
-}
-
-template<>
-base_str<wchar_t> base_str<wchar_t>::printfImpl(const wchar_t* fmt, ...)
-{
-	size_t len;
-	va_list va;
-
-	va_start(va, fmt);
-	// Calculate the length
-	len = vswprintf(nullptr, -1, fmt, va);
-	va_end(va);
-
-	base_str<wchar_t> string;
-	string.resize(len);
-
-	va_start(va, fmt);
-	vswprintf(string.m_data->data(), string.m_data->alloced, fmt, va);
-	va_end(va);
-
-	return string;
-}
-
 template<typename CharT>
 base_strview<CharT>::base_strview()
 	: charArray(emptyStr<CharT>)
@@ -1734,17 +1692,16 @@ namespace mfuse
 {
 template mfuse_EXPORTS void mfuse::Archive(Archiver& arc, base_str<char>& s);
 
-template class mfuse_EXPORTS base_str<char>;
-//template mfuse_EXPORTS class base_str<char16_t>;
-template class mfuse_EXPORTS base_str<wchar_t>;
-template mfuse_EXPORTS base_str<char> mfuse::operator+(const char* a, const base_str<char>& b);
-template mfuse_EXPORTS base_str<wchar_t> mfuse::operator+(const wchar_t* a, const base_str<wchar_t>& b);
-template mfuse_EXPORTS bool mfuse::operator==(const char* a, const base_str<char>& b);
-template mfuse_EXPORTS bool mfuse::operator==(const wchar_t* a, const base_str<wchar_t>& b);
-template mfuse_EXPORTS bool mfuse::operator!=(const char* a, const base_str<char>& b);
-template mfuse_EXPORTS bool mfuse::operator!=(const wchar_t* a, const base_str<wchar_t>& b);
-template class mfuse_EXPORTS base_strview<char>;
-template class mfuse_EXPORTS base_strview<wchar_t>;
-template class mfuse_EXPORTS base_const_str_static<char>;
-template class mfuse_EXPORTS base_const_str_static<wchar_t>;
+#define TEMPLATIZE_CHAR_TYPE(CharT) \
+	template class mfuse_EXPORTS base_str<CharT>; \
+	template mfuse_EXPORTS base_str<CharT> mfuse::operator+(const CharT* a, const base_str<CharT>& b); \
+	template mfuse_EXPORTS bool mfuse::operator==(const CharT* a, const base_str<CharT>& b); \
+	template mfuse_EXPORTS bool mfuse::operator!=(const CharT* a, const base_str<CharT>& b); \
+	template class mfuse_EXPORTS base_strview<CharT>; \
+	template class mfuse_EXPORTS base_const_str_static<CharT>
+
+TEMPLATIZE_CHAR_TYPE(char);
+TEMPLATIZE_CHAR_TYPE(wchar_t);
+TEMPLATIZE_CHAR_TYPE(char16_t);
+TEMPLATIZE_CHAR_TYPE(char32_t);
 }
