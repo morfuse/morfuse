@@ -2,7 +2,7 @@
 
 using namespace mfuse;
 
-ParseException::ParseError::ParseError(const xstr& textValue, const xstr& msgValue, sourceLocation_t sourceLocValue)
+ParseException::ParseError::ParseError(const str& textValue, const str& msgValue, sourceLocation_t sourceLocValue)
 	: text(textValue)
 	, msg(msgValue)
 	, sourceLoc(sourceLocValue)
@@ -65,7 +65,7 @@ const char* CompileException::UnknownCommand::getCommandName() const
 	return cmdName.c_str();
 }
 
-const mfuse::xstr& CompileException::UnknownCommand::getPrivateCommandName() const
+const mfuse::str& CompileException::UnknownCommand::getPrivateCommandName() const
 {
 	return cmdName;
 }

@@ -348,7 +348,7 @@ void ProgramScript::Archive(Archiver& arc, const ProgramScript*& scr)
 {
 	ScriptMaster& director = ScriptContext::Get().GetDirector();
 
-	xstr filename;
+	str filename;
 
 	if (arc.Loading())
 	{
@@ -383,7 +383,7 @@ void ProgramScript::ArchiveCodePos(Archiver& arc, const opval_t*& codePos) const
 	StringDictionary& dict = director.GetDictionary();
 
 	uint32_t pos = 0;
-	xstr filename;
+	str filename;
 
 	if (!arc.Loading())
 	{
@@ -457,7 +457,7 @@ void ProgramScript::Load(std::istream& stream)
 		}
 	}
 
-	const xstr& fileName = context.GetDirector().GetDictionary().Get(Filename());
+	const str& fileName = context.GetDirector().GetDictionary().Get(Filename());
 
 	try
 	{

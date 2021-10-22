@@ -181,7 +181,8 @@ namespace mfuse
 
 	using str = base_str<char>;
 	using wstr = base_str<wchar_t>;
-	using xstr = base_str<rawchar_t>;
+	using u16str = base_str<char16_t>;
+	using u32str = base_str<char32_t>;
 
 	template<typename CharT>
 	class mfuse_EXPORTS base_strview
@@ -206,7 +207,8 @@ namespace mfuse
 	};
 	using strview = base_strview<char>;
 	using wstrview = base_strview<wchar_t>;
-	using xstrview = base_strview<rawchar_t>;
+	using u16strview = base_strview<char16_t>;
+	using u32strview = base_strview<char32_t>;
 
 	template<typename CharT>
 	class mfuse_EXPORTS base_const_str_static
@@ -226,10 +228,8 @@ namespace mfuse
 	};
 	using const_str_static = base_const_str_static<char>;
 	using const_wstr_static = base_const_str_static<wchar_t>;
-	using const_xstr_static = base_const_str_static<rawchar_t>;
-
-	template<typename FromT, typename ToT>
-	void StringConvert(base_str<ToT>& dest, const FromT* from);
+	using const_u16strview = base_const_str_static<char16_t>;
+	using const_u32strview = base_const_str_static<char32_t>;
 
 	template<typename T>
 	void Archive(Archiver& arc, base_str<T>& s);

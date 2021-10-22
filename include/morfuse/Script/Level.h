@@ -15,10 +15,10 @@ namespace mfuse
 	public:
 		Level();
 
-		const xstr& GetCurrentScript() const;
+		const str& GetCurrentScript() const;
 		void SetCurrentScript(const rawchar_t* name);
 
 	private:
-		xstr currentScript;
+		str currentScript;
 	};
 };

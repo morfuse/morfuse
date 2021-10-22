@@ -196,7 +196,7 @@ namespace mfuse
 		mfuse_EXPORTS void AddListener(Listener* listener);
 		mfuse_EXPORTS void AddNil();
 		mfuse_EXPORTS void AddConstString(const_str string);
-		mfuse_EXPORTS void AddString(const xstr& string);
+		mfuse_EXPORTS void AddString(const str& string);
 		mfuse_EXPORTS void AddString(const rawchar_t* string);
 		mfuse_EXPORTS void AddTokens(size_t argc, const rawchar_t** argv);
 		mfuse_EXPORTS void AddValue(const ScriptVariable& value);
@@ -209,7 +209,7 @@ namespace mfuse
 		mfuse_EXPORTS int GetInteger(uintptr_t pos);
 		mfuse_EXPORTS Listener* GetListener(uintptr_t pos);
 
-		mfuse_EXPORTS xstr GetString(uintptr_t pos);
+		mfuse_EXPORTS str GetString(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValue(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValueChecked(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValue();

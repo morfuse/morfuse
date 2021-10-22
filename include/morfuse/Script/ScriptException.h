@@ -20,23 +20,23 @@ namespace mfuse
 	class ScriptException : public ScriptExceptionBase
 	{
 	public:
-		ScriptException(const xstr& text);
+		ScriptException(const str& text);
 
 		const char* what() const noexcept override;
 
 	public:
-		xstr string;
+		str string;
 	};
 
 	class ScriptAbortException : public ScriptAbortExceptionBase
 	{
 	public:
-		ScriptAbortException(const xstr& text);
+		ScriptAbortException(const str& text);
 
 		const char* what() const noexcept override;
 
 	public:
-		xstr string;
+		str string;
 	};
 
 	/*

@@ -16,9 +16,9 @@ namespace mfuse
 		StringDictionary();
 		~StringDictionary();
 
-		mfuse_EXPORTS const_str Add(xstrview s);
+		mfuse_EXPORTS const_str Add(strview s);
 		mfuse_EXPORTS const_str Get(const rawchar_t* s) const;
-		mfuse_EXPORTS const xstr& Get(const_str s) const;
+		mfuse_EXPORTS const str& Get(const_str s) const;
 		mfuse_EXPORTS void AllocateMoreString(size_t count);
 		mfuse_EXPORTS void Reset();
 
@@ -26,6 +26,6 @@ namespace mfuse
 
 	private:
 		/** The string dictionary, used to cache strings into a number. */
-		con::arrayset<xstr, xstr, Hash<xstr>, EqualTo<xstr>, MEM::DefaultAlloc_set> stringDict;
+		con::arrayset<str, str, Hash<str>, EqualTo<str>, MEM::DefaultAlloc_set> stringDict;
 	};
 }

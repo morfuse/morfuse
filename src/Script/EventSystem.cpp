@@ -22,7 +22,7 @@ eventInfo_t::eventInfo_t()
 {
 }
 
-intptr_t EventNameHash::operator()(const const_xstr_static& key) const
+intptr_t EventNameHash::operator()(const const_str_static& key) const
 {
 	intptr_t hash = 0;
 
@@ -34,7 +34,7 @@ intptr_t EventNameHash::operator()(const const_xstr_static& key) const
 	return hash;
 }
 
-bool EventNameCompare::operator()(const const_xstr_static& lhs, const const_xstr_static& rhs) const
+bool EventNameCompare::operator()(const const_str_static& lhs, const const_str_static& rhs) const
 {
 	return !str::icmp(lhs.c_str(), rhs.c_str());
 }

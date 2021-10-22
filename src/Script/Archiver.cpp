@@ -649,8 +649,8 @@ uint32_t ArchiveErrors::WrongVersion::GetExpectedVersion() const
 const char* ArchiveErrors::WrongVersion::what() const noexcept
 {
 	if (!filled()) {
-		fill("Wrong archive version. Got engine version " + xstr(engineVersion) + " and program version " + xstr(version) + ". "
-			"(expected " + xstr(expectedEngineVersion) + " and " + xstr(expectedVersion));
+		fill("Wrong archive version. Got engine version " + str(engineVersion) + " and program version " + str(version) + ". "
+			"(expected " + str(expectedEngineVersion) + " and " + str(expectedVersion));
 	}
 
 	return Messageable::what();
@@ -678,11 +678,11 @@ const char* ArchiveErrors::TypeError::what() const noexcept
 	{
 		if (type < dataType_e::Max)
 		{
-			fill("Expecting " + xstr(typeNames[expectedType]) + ", found " + typeNames[type]);
+			fill("Expecting " + str(typeNames[expectedType]) + ", found " + typeNames[type]);
 		}
 		else
 		{
-			fill("Expecting " + xstr(typeNames[expectedType]) + ", found " + xstr(type) + " (unknown type)");
+			fill("Expecting " + str(typeNames[expectedType]) + ", found " + str(type) + " (unknown type)");
 		}
 	}
 

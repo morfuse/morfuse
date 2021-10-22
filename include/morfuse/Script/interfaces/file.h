@@ -43,8 +43,8 @@ namespace mfuse
 			mfuse_EXPORTS const char* getFileName() const noexcept;
 
 		private:
-			xstr fname;
-			xstr msg;
+			str fname;
+			str msg;
 		};
 	}
 }

@@ -618,10 +618,10 @@ const char* ScriptVMErrors::StackError::what() const noexcept
 	if (!filled())
 	{
 		if (stack < 0) {
-			fill("VM stack error. Negative stack value " + xstr(stack));
+			fill("VM stack error. Negative stack value " + str(stack));
 		}
 		else {
-			fill("VM stack error. Exceeded the maximum stack size " + xstr(stack));
+			fill("VM stack error. Exceeded the maximum stack size " + str(stack));
 		}
 	}
 
@@ -709,7 +709,7 @@ const char* ScriptVMErrors::NilListenerCommand::what() const noexcept
 	if (!filled())
 	{
 		const EventSystem& eventSystem = EventSystem::Get();
-		fill("command '" + xstr(eventSystem.GetEventName(eventNum)) + "' applied to NIL");
+		fill("command '" + str(eventSystem.GetEventName(eventNum)) + "' applied to NIL");
 	}
 
 	return Messageable::what();
@@ -731,7 +731,7 @@ const char* ScriptVMErrors::NullListenerCommand::what() const noexcept
 	if (!filled())
 	{
 		const EventSystem& eventSystem = EventSystem::Get();
-		fill("command '" + xstr(eventSystem.GetEventName(eventNum)) + "' applied to NULL listener");
+		fill("command '" + str(eventSystem.GetEventName(eventNum)) + "' applied to NULL listener");
 	}
 
 	return Messageable::what();

@@ -1161,7 +1161,7 @@ void ScriptThread::EventCreateListener(Event* ev)
 
 void ScriptThread::CharToInt(Event* ev)
 {
-	xstr c = ev->GetString(1);
+	str c = ev->GetString(1);
 
 	ev->AddInteger(c[0u]);
 }
@@ -1169,8 +1169,8 @@ void ScriptThread::CharToInt(Event* ev)
 /*
 void ScriptThread::FileOpen(Event* ev)
 {
-	xstr filename;
-	xstr accesstype;
+	str filename;
+	str accesstype;
 	FILE *f = NULL;
 	rawchar_t buf[16] = { 0 };
 
@@ -1373,7 +1373,7 @@ void ScriptThread::FilePuts(Event* ev)
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
-	xstr c;
+	str c;
 
 	size_t numArgs = ev->NumArgs();
 
@@ -1505,7 +1505,7 @@ void ScriptThread::FileExists(Event* ev)
 {
 	int id = 0;
 	FILE *f = 0;
-	xstr filename;
+	str filename;
 
 	size_t numArgs = ev->NumArgs();
 
@@ -1580,7 +1580,7 @@ void ScriptThread::FileSaveAll(Event* ev)
 	int id = 0;
 	FILE *f = NULL;
 	size_t sizeWrite = 0;
-	xstr text;
+	str text;
 
 	size_t numArgs = ev->NumArgs();
 
@@ -1609,7 +1609,7 @@ void ScriptThread::FileRemove(Event* ev)
 {
 	int id = 0;
 	int ret = 0;
-	xstr filename;
+	str filename;
 
 	size_t numArgs = ev->NumArgs();
 
@@ -1635,7 +1635,7 @@ void ScriptThread::FileRename(Event* ev)
 {
 	int id = 0;
 	int ret = 0;
-	xstr oldfilename, newfilename;
+	str oldfilename, newfilename;
 
 	size_t numArgs = ev->NumArgs();
 
@@ -1667,7 +1667,7 @@ void ScriptThread::FileCopy(Event* ev)
 {
 	size_t n = 0;
 	unsigned int ret = 0;
-	xstr filename, copyfilename;
+	str filename, copyfilename;
 	FILE *f = NULL, *fCopy = NULL;
 	char buffer[4096];
 
@@ -1735,7 +1735,7 @@ void ScriptThread::FileCopy(Event* ev)
 #if 0
 void ScriptThread::FileReadPak(Event* ev)
 {
-	xstr filename;
+	str filename;
 	const char *content = NULL;
 	int ret = 0;
 
@@ -1774,7 +1774,7 @@ void ScriptThread::FileReadPak(Event* ev)
 void ScriptThread::FileList(Event* ev)
 {
 	const char *path = NULL;
-	xstr extension;
+	str extension;
 	bool wantSubs = 0;
 	size_t numFiles = 0;
 	FileEntryList list;
@@ -1824,7 +1824,7 @@ void ScriptThread::FileList(Event* ev)
 #endif
 void ScriptThread::FileNewDirectory(Event* ev)
 {
-	xstr path;
+	str path;
 	int ret = 0;
 
 	size_t numArgs = ev->NumArgs();
@@ -1855,7 +1855,7 @@ void ScriptThread::FileNewDirectory(Event* ev)
 
 void ScriptThread::FileRemoveDirectory(Event* ev)
 {
-	xstr path;
+	str path;
 	int ret = 0;
 
 	size_t numArgs = ev->NumArgs();
@@ -1974,7 +1974,7 @@ void ScriptThread::PregMatch(Event*)
 	size_t iMaxLength;
 	size_t iLength;
 	size_t iFoundLength = 0;
-	xstr pattern, subject;
+	str pattern, subject;
 	ScriptVariable index, value, subindex, subvalue;
 	ScriptVariable array, subarray;
 
@@ -2042,7 +2042,7 @@ void ScriptThread::EventIsDefined(Event* ev)
 
 void ScriptThread::FlagClear(Event* ev)
 {
-	xstr name;
+	str name;
 	Flag *flag;
 
 	name = ev->GetString(1);
@@ -2058,7 +2058,7 @@ void ScriptThread::FlagClear(Event* ev)
 
 void ScriptThread::FlagInit(Event* ev)
 {
-	xstr name;
+	str name;
 	Flag *flag;
 
 	name = ev->GetString(1);
@@ -2078,7 +2078,7 @@ void ScriptThread::FlagInit(Event* ev)
 
 void ScriptThread::FlagSet(Event* ev)
 {
-	xstr name;
+	str name;
 	Flag *flag;
 
 	name = ev->GetString(1);
@@ -2094,7 +2094,7 @@ void ScriptThread::FlagSet(Event* ev)
 
 void ScriptThread::FlagWait(Event* ev)
 {
-	xstr name;
+	str name;
 	Flag *flag;
 
 	name = ev->GetString(1);
@@ -2650,7 +2650,7 @@ void ScriptThread::Md5File(Event*)
 {
 	/*
 	char hash[64];
-	xstr filename = NULL;
+	str filename = NULL;
 	int ret = 0;
 
 	if (ev->NumArgs() != 1)
@@ -2677,7 +2677,7 @@ void ScriptThread::Md5String(Event*)
 {
 	/*
 	char hash[64];
-	xstr text = NULL;
+	str text = NULL;
 	int ret = 0;
 
 	if (ev->NumArgs() != 1)
@@ -3082,8 +3082,8 @@ Listener *ScriptThread::SpawnInternal(Event* ev)
 			{
 				const Vector& org = ent->getOrigin();
 				const Vector& ang = ent->getAngles();
-				args.setArg("origin", xstr(org[0]) + " " + xstr(org[1]) + " " + xstr(org[2]));
-				args.setArg("angle", xstr(ang[1]));
+				args.setArg("origin", str(org[0]) + " " + str(org[1]) + " " + str(org[2]));
+				args.setArg("angle", str(ang[1]));
 			}
 		}
 	}
@@ -3096,7 +3096,7 @@ Listener *ScriptThread::SpawnInternal(Event* ev)
 
 	/*
 	SpawnArgs args;
-	xstr classname;
+	str classname;
 	Listener *l;
 
 	if (ev->NumArgs() <= 0)
@@ -3792,12 +3792,12 @@ void Flag::Wait(ScriptThread *Thread)
 	m_WaitList.AddObject(Thread->GetScriptVM());
 }
 
-ScriptErrors::InvalidClassName::InvalidClassName(const xstr& classNameRef)
+ScriptErrors::InvalidClassName::InvalidClassName(const str& classNameRef)
 	: className(classNameRef)
 {
 }
 
-const xstr& ScriptErrors::InvalidClassName::getClassName() const
+const str& ScriptErrors::InvalidClassName::getClassName() const
 {
 	return className;
 }

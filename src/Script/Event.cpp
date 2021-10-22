@@ -22,7 +22,7 @@ intptr_t Hash<EventDefAttributes>::operator()(const EventDefAttributes& key) con
 
 	for (const rawchar_t* p = key.GetString(); *p != 0; p++)
 	{
-		hash = xstr::tolower(*p) + 31 * hash;
+		hash = str::tolower(*p) + 31 * hash;
 	}
 
 	return hash;
@@ -94,12 +94,12 @@ evType_e EventDefAttributes::GetType() const
 
 bool EventDefAttributes::operator==(const rawchar_t* inName) const
 {
-	return !xstr::icmp(inName, name);
+	return !str::icmp(inName, name);
 }
 
 bool EventDefAttributes::operator!=(const rawchar_t* inName) const
 {
-	return xstr::icmp(inName, name) != 0;
+	return str::icmp(inName, name) != 0;
 }
 
 bool EventDefAttributes::operator==(const EventDefAttributes& other) const
@@ -197,7 +197,7 @@ EventDefAttributes EventDef::GetNewAttributes(const rawchar_t* command, evType_e
 	for (const EventDef* e = GetHead(); e; e = e->GetNext())
 	{
 		const EventDefAttributes& eAttr = e->GetAttributes();
-		if (!xstr::icmp(eAttr.GetString(), command) && eAttr.GetType() == type)
+		if (!str::icmp(eAttr.GetString(), command) && eAttr.GetType() == type)
 		{
 			next = prev = nullptr;
 			//head.AddFirst(this);
@@ -499,7 +499,7 @@ void Event::AddConstString(const_str string)
 	ConstructValue(string);
 }
 
-void Event::AddString(const xstr& string)
+void Event::AddString(const str& string)
 {
 	ConstructValue(string);
 }
@@ -566,7 +566,7 @@ Listener* Event::GetListener(uintptr_t pos)
 	return variable.listenerValue();
 }
 
-xstr Event::GetString(uintptr_t pos)
+str Event::GetString(uintptr_t pos)
 {
 	ScriptVariable& variable = GetValue(pos);
 	return variable.stringValue();

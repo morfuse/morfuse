@@ -11,13 +11,13 @@ StringDictionary::~StringDictionary()
 {
 }
 
-const_str StringDictionary::Add(xstrview s)
+const_str StringDictionary::Add(strview s)
 {
 	if (s.isDynamic()) {
 		return (const_str)stringDict.addKeyIndex(s.getDynamicString());
 	}
 	else {
-		return stringDict.addKeyIndex(xstr(s.c_str(), s.len()));
+		return stringDict.addKeyIndex(str(s.c_str(), s.len()));
 	}
 }
 
@@ -27,7 +27,7 @@ const_str StringDictionary::Get(const rawchar_t* s) const
 	return cs ? cs : STRING_EMPTY;
 }
 
-const xstr& StringDictionary::Get(const_str s) const
+const str& StringDictionary::Get(const_str s) const
 {
 	return stringDict[s];
 }
@@ -53,7 +53,7 @@ void StringDictionary::ArchiveString(Archiver& arc, const_str& constStringValue)
 
 		if (hasString)
 		{
-			xstr value;
+			str value;
 			::Archive(arc, value);
 
 			constStringValue = Add(value);

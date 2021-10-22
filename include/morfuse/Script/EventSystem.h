@@ -25,7 +25,7 @@ namespace mfuse
 	 */
 	struct EventNameHash
 	{
-		intptr_t operator()(const const_xstr_static& key) const;
+		intptr_t operator()(const const_str_static& key) const;
 	};
 
 	/**
@@ -33,7 +33,7 @@ namespace mfuse
 	 */
 	struct EventNameCompare
 	{
-		bool operator()(const const_xstr_static& lhs, const const_xstr_static& rhs) const;
+		bool operator()(const const_str_static& lhs, const const_str_static& rhs) const;
 	};
 
 	/** Index to the event name table. */
@@ -42,8 +42,8 @@ namespace mfuse
 	using eventDefMap = const EventDef**;
 	/** The event name table. */
 	using eventNameSet = con::arrayset<
-		const_xstr_static,
-		const_xstr_static,
+		const_str_static,
+		const_str_static,
 		EventNameHash,
 		EventNameCompare,
 		MEM::ChildPreAllocator_set

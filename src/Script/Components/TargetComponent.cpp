@@ -51,8 +51,8 @@ void TargetComponent::Archive(Archiver& arc)
 {
 	if (arc.Loading())
 	{
-		xstr targetNameStr;
-		xstr targetStr;
+		str targetNameStr;
+		str targetStr;
 		::Archive(arc, targetNameStr);
 		::Archive(arc, targetStr);
 
@@ -61,8 +61,8 @@ void TargetComponent::Archive(Archiver& arc)
 	}
 	else
 	{
-		xstr targetNameStr = targetName.GetString();
-		xstr targetStr = target.GetString();
+		str targetNameStr = targetName.GetString();
+		str targetStr = target.GetString();
 		::Archive(arc, targetNameStr);
 		::Archive(arc, targetStr);
 	}

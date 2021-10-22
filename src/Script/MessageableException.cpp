@@ -2,7 +2,7 @@
 
 using namespace mfuse;
 
-void Messageable::fill(const xstr& msg) const
+void Messageable::fill(const str& msg) const
 {
 	// fill the message for the first time
 	Messageable* This = const_cast<Messageable*>(this);

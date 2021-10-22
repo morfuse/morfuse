@@ -141,7 +141,7 @@ namespace mfuse
 		int64_t long64Value;
 		SafePtr<Listener>* listenerValue;
 		const_str constStringValue;
-		xstr* stringValue;
+		str* stringValue;
 		float* vectorValue;
 		ScriptVariable* refValue;
 		ScriptArrayHolder* arrayValue;
@@ -175,7 +175,7 @@ namespace mfuse
 		explicit ScriptVariable(char initialValue);
 		explicit ScriptVariable(Listener* initialValue);
 		explicit ScriptVariable(const rawchar_t* initialValue);
-		explicit ScriptVariable(const xstr& initialValue);
+		explicit ScriptVariable(const str& initialValue);
 		explicit ScriptVariable(const con::Container<SafePtr<Listener>>* initialValue);
 		explicit ScriptVariable(const Vector& initialValue);
 
@@ -260,8 +260,8 @@ namespace mfuse
 
 		void setRefValue(ScriptVariable* ref);
 
-		xstr stringValue() const;
-		void setStringValue(const xstr& newvalue);
+		str stringValue() const;
+		void setStringValue(const str& newvalue);
 		void setStringValue(const rawchar_t* newvalue);
 
 		Vector vectorValue() const;
@@ -356,11 +356,11 @@ namespace mfuse
 
 		void ClearList();
 
-		ScriptVariable* GetOrCreateVariable(const xstr& name);
+		ScriptVariable* GetOrCreateVariable(const str& name);
 		ScriptVariable* GetOrCreateVariable(const_str name);
 
-		const ScriptVariable* GetVariable(const xstr& name) const;
-		ScriptVariable* GetVariable(const xstr& name);
+		const ScriptVariable* GetVariable(const str& name) const;
+		ScriptVariable* GetVariable(const str& name);
 		const ScriptVariable* GetVariable(const_str name) const;
 		ScriptVariable* GetVariable(const_str name);
 
@@ -459,13 +459,13 @@ namespace mfuse
 		class BadHashCodeValue : public Base, public Messageable
 		{
 		public:
-			BadHashCodeValue(xstr&& hashCode);
+			BadHashCodeValue(str&& hashCode);
 
-			const xstr& getHashCode();
+			const str& getHashCode();
 			const char* what() const noexcept override;
 
 		private:
-			xstr hashCode;
+			str hashCode;
 		};
 	}
 };

@@ -229,7 +229,7 @@ namespace mfuse
 	class Flag : public Class
 	{
 	public:
-		xstr flagName;
+		str flagName;
 		bool bSignaled;
 
 	private:
@@ -265,13 +265,13 @@ namespace mfuse
 		class InvalidClassName : public Base, public Messageable
 		{
 		public:
-			InvalidClassName(const xstr& classNameRef);
+			InvalidClassName(const str& classNameRef);
 
-			const xstr& getClassName() const;
+			const str& getClassName() const;
 			const char* what() const noexcept override;
 
 		private:
-			xstr className;
+			str className;
 		};
 	}
 }

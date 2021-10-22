@@ -65,7 +65,7 @@ namespace mfuse
 
 		// Used by scripts
 		TargetComponent targetComp;
-		xstr target;
+		str target;
 
 		// Centered origin based on mins/maxs
 		Vector centroid;

@@ -25,9 +25,9 @@ namespace mfuse
 		void CreateProgToSource(size_t startLength = 0);
 
 		mfuse_EXPORTS const_str Filename() const;
-		//bool GetSourceAt(size_t sourcePos, xstr& sourceLine, uint32_t& column, uint32_t& line) const;
-		bool GetSourceAt(size_t pos, xstr& sourceLine, uint32_t& column, uint32_t& line) const;
-		bool GetSourceAt(const sourceLocation_t& sourceLoc, xstr& sourceLine) const;
+		//bool GetSourceAt(size_t sourcePos, str& sourceLine, uint32_t& column, uint32_t& line) const;
+		bool GetSourceAt(size_t pos, str& sourceLine, uint32_t& column, uint32_t& line) const;
+		bool GetSourceAt(const sourceLocation_t& sourceLoc, str& sourceLine) const;
 		void AddSourcePos(uintptr_t pos, sourceLocation_t sourcePos);
 		void PrintSourcePos(std::ostream& out, const sourceLocation_t& sourcePos) const;
 		//void PrintSourcePos(size_t sourcePos) const;

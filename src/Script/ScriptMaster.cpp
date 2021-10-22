@@ -263,7 +263,7 @@ const ProgramScript* ScriptMaster::GetProgramScript(const StringResolvable& scri
 	if (!file)
 	{
 		throw ScriptException(
-			"Can't find '" + xstr(fname) + "'"
+			"Can't find '" + str(fname) + "'"
 		);
 	}
 

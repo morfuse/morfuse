@@ -16,7 +16,7 @@ namespace mfuse
 		class ParseError : public Base
 		{
 		public:
-			ParseError(const xstr& textValue, const xstr& msgValue, sourceLocation_t sourceLocValue);
+			ParseError(const str& textValue, const str& msgValue, sourceLocation_t sourceLocValue);
 
 			const char* getText() const;
 			const char* getMessage() const;
@@ -24,8 +24,8 @@ namespace mfuse
 			const char* what() const noexcept override;
 
 		private:
-			xstr text;
-			xstr msg;
+			str text;
+			str msg;
 			sourceLocation_t sourceLoc;
 		};
 	}
@@ -95,10 +95,10 @@ namespace mfuse
 			mfuse_EXPORTS const char* what() const noexcept override;
 
 		protected:
-			const xstr& getPrivateCommandName() const;
+			const str& getPrivateCommandName() const;
 
 		private:
-			xstr cmdName;
+			str cmdName;
 		};
 
 		class mfuse_PUBLIC UnknownCommandRet : public UnknownCommand
@@ -152,7 +152,7 @@ namespace mfuse
 			mfuse_EXPORTS const char* what() const noexcept override;
 
 		private:
-			xstr fieldName;
+			str fieldName;
 		};
 
 		class mfuse_PUBLIC WriteOnly : public FieldBase
@@ -186,7 +186,7 @@ namespace mfuse
 			mfuse_EXPORTS const char* what() const noexcept override;
 
 		private:
-			xstr labelName;
+			str labelName;
 		};
 	}
 }

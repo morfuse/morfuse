@@ -61,7 +61,7 @@ void ScriptThreadLabel::Execute(Listener *listener, Event &ev)
 
 void ScriptThreadLabel::Set(const rawchar_t *label)
 {
-	xstr script;
+	str script;
 	rawchar_t buffer[1023];
 	rawchar_t *p = buffer;
 	bool foundLabel = false;
@@ -104,7 +104,7 @@ void ScriptThreadLabel::Set(const rawchar_t *label)
 
 	if (!m_Script->GetStateScript().FindLabel(m_Label))
 	{
-		const xstr& l = director.GetDictionary().Get(m_Label);
+		const str& l = director.GetDictionary().Get(m_Label);
 
 		m_Script = NULL;
 		m_Label = STRING_EMPTY;
@@ -138,7 +138,7 @@ void ScriptThreadLabel::SetScript(const ScriptVariable& label)
 	}
 	else
 	{
-		throw ScriptException("bad label type '" + xstr(label.GetTypeName()) + "'");
+		throw ScriptException("bad label type '" + str(label.GetTypeName()) + "'");
 	}
 }
 
@@ -172,7 +172,7 @@ void ScriptThreadLabel::SetThread(const ScriptVariable& label)
 	}
 	else
 	{
-		throw ScriptException("bad label type '" + xstr(label.GetTypeName()) + "'");
+		throw ScriptException("bad label type '" + str(label.GetTypeName()) + "'");
 	}
 }
 

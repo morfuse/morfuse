@@ -23,7 +23,7 @@ namespace mfuse
 		mfuse::ClassDef::GetClass<parentclass>(),				\
 		#classname, classid,									\
 		(mfuse::ResponseDefClass *)classname::Responses,		\
-		(NewInstanceHandler)&classname::_newInstance			\
+		(mfuse::NewInstanceHandler)&classname::_newInstance		\
 	);															\
 	classname *classname::_newInstance()						\
 	{															\

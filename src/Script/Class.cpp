@@ -103,8 +103,8 @@ ClassDef::ClassDef(ClassDef* superclass, const rawchar_t* classname, const rawch
 	/*
 	for (node = classlist; node != nullptr; node = node->next)
 	{
-		if ((node->super == nullptr) && (!xstr::icmp(node->superclass, this->classname)) &&
-			(xstr::icmp(node->classname, "Class")))
+		if ((node->super == nullptr) && (!str::icmp(node->superclass, this->classname)) &&
+			(str::icmp(node->classname, "Class")))
 		{
 			node->super = this;
 		}
@@ -353,7 +353,7 @@ ClassDef *ClassDef::GetClassForID(const rawchar_t *name)
 {
 	for (auto c = ClassDef::GetList(); c; c = c.Next())
 	{
-		if (c->GetClassID() && !xstr::icmp(c->GetClassID(), name))
+		if (c->GetClassID() && !str::icmp(c->GetClassID(), name))
 		{
 			return c;
 		}
@@ -370,7 +370,7 @@ const ClassDef *ClassDef::GetClass(const rawchar_t *name)
 
 	for (auto c = ClassDef::GetList(); c; c = c.Next())
 	{
-		if (xstr::icmp(c->GetClassName(), name) == 0) {
+		if (str::icmp(c->GetClassName(), name) == 0) {
 			return c.Node();
 		}
 	}

@@ -11,7 +11,7 @@ MFUS_CLASS_DECLARATION(Listener, Level, NULL)
 	{ NULL, NULL }
 };
 
-const mfuse::xstr& Level::GetCurrentScript() const
+const mfuse::str& Level::GetCurrentScript() const
 {
 	return currentScript;
 }

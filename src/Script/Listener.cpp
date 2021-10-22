@@ -1501,7 +1501,7 @@ const mfuse::rawchar_t* ListenerErrors::BadLabelType::GetTypeName() const
 const char* ListenerErrors::BadLabelType::what() const noexcept
 {
 	if (!filled()) {
-		fill("Listener::CreateScriptInternal: bad label type '" + xstr(GetTypeName()) + "'");
+		fill("Listener::CreateScriptInternal: bad label type '" + str(GetTypeName()) + "'");
 	}
 
 	return Messageable::what();
@@ -1525,7 +1525,7 @@ ListenerErrors::EventNotFound::EventNotFound(const Listener& lPtr)
 const char* ListenerErrors::EventNotFound::what() const noexcept
 {
 	if (!filled()) {
-		fill("Failed execution of event for class '" + xstr(GetListener().classinfo()->GetClassName()) + "'");
+		fill("Failed execution of event for class '" + str(GetListener().classinfo()->GetClassName()) + "'");
 	}
 
 	return Messageable::what();
@@ -1547,8 +1547,8 @@ const char* ListenerErrors::EventListenerFailed::what() const noexcept
 	if (!filled())
 	{
 		const EventSystem& evt = EventSystem::Get();
-		const xstr eventName = evt.GetEventName(eventNum);
-		fill("Failed execution of event '" + eventName + "' for class '" + xstr(GetListener().classinfo()->GetClassName()) + "'");
+		const str eventName = evt.GetEventName(eventNum);
+		fill("Failed execution of event '" + eventName + "' for class '" + str(GetListener().classinfo()->GetClassName()) + "'");
 	}
 
 	return Messageable::what();

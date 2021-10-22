@@ -47,7 +47,7 @@ void AbstractScript::AddSourcePos(uintptr_t pos, sourceLocation_t sourcePos)
 	}
 }
 /*
-bool AbstractScript::GetSourceAt(size_t sourcePos, xstr &sourceLine, uint32_t& column, uint32_t& line) const
+bool AbstractScript::GetSourceAt(size_t sourcePos, str &sourceLine, uint32_t& column, uint32_t& line) const
 {
 	line = 1;
 	column = 1;
@@ -86,7 +86,7 @@ bool AbstractScript::GetSourceAt(size_t sourcePos, xstr &sourceLine, uint32_t& c
 
 	const rawchar_t* lineStr = m_SourceBuffer + posLine;
 
-	sourceLine = xstr(lineStr, p - lineStr);
+	sourceLine = str(lineStr, p - lineStr);
 	rawchar_t* stringValue = const_cast<rawchar_t*>(sourceLine.c_str());
 	while(*stringValue)
 	{
@@ -102,7 +102,7 @@ bool AbstractScript::GetSourceAt(size_t sourcePos, xstr &sourceLine, uint32_t& c
 }
 */
 
-bool AbstractScript::GetSourceAt(size_t pos, xstr& sourceLine, uint32_t& column, uint32_t& line) const
+bool AbstractScript::GetSourceAt(size_t pos, str& sourceLine, uint32_t& column, uint32_t& line) const
 {
 	line = 1;
 	column = 1;
@@ -123,7 +123,7 @@ bool AbstractScript::GetSourceAt(size_t pos, xstr& sourceLine, uint32_t& column,
 	return false;
 }
 
-bool AbstractScript::GetSourceAt(const sourceLocation_t& sourceLoc, xstr& sourceLine) const
+bool AbstractScript::GetSourceAt(const sourceLocation_t& sourceLoc, str& sourceLine) const
 {
 	if (m_SourceBuffer) {
 		return sourceLoc.getLine(m_SourceBuffer, m_SourceLength, sourceLine);
@@ -134,7 +134,7 @@ bool AbstractScript::GetSourceAt(const sourceLocation_t& sourceLoc, xstr& source
 
 void AbstractScript::PrintSourcePos(std::ostream& out, const sourceLocation_t& sourceLoc) const
 {
-	xstr sourceLine;
+	str sourceLine;
 
 	if (GetSourceAt(sourceLoc, sourceLine))
 	{
@@ -143,7 +143,7 @@ void AbstractScript::PrintSourcePos(std::ostream& out, const sourceLocation_t& s
 	else
 	{
 		const ScriptContext& context = ScriptContext::Get();
-		const xstr& fileName = context.GetDirector().GetDictionary().Get(Filename());
+		const str& fileName = context.GetDirector().GetDictionary().Get(Filename());
 		out << "file '" << fileName.c_str() << "', source pos " << sourceLoc.sourcePos << " line " << sourceLoc.line << " column " << sourceLoc.column << ":" << std::endl;
 	}
 }
@@ -153,7 +153,7 @@ void AbstractScript::PrintSourcePos(size_t sourcePos) const
 {
 	uint32_t line;
 	uint32_t column;
-	xstr sourceLine;
+	str sourceLine;
 
 	if (GetSourceAt(sourcePos, sourceLine, column, line))
 	{
@@ -185,7 +185,7 @@ void AbstractScript::PrintSourcePos(std::ostream& out, size_t pos) const
 void AbstractScript::PrintSourcePos(std::ostream& out, const rawchar_t* sourceLine, uint32_t column, uint32_t line) const
 {
 	const ScriptContext& context = ScriptContext::Get();
-	const xstr& fileName = context.GetDirector().GetDictionary().Get(Filename());
+	const str& fileName = context.GetDirector().GetDictionary().Get(Filename());
 
 	out << "(" << fileName << ", " << line << "):" << std::endl << sourceLine << std::endl;
 	if (column >= 1) {

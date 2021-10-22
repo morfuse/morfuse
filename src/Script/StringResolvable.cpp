@@ -17,7 +17,7 @@ StringResolvable::StringResolvable(const rawchar_t* stringValue)
 {
 }
 
-StringResolvable::StringResolvable(const xstr& stringValue)
+StringResolvable::StringResolvable(const str& stringValue)
 	: string(stringValue)
 	, constString(0)
 {
@@ -58,7 +58,7 @@ StringResolvable::~StringResolvable()
 {
 }
 
-const xstr& StringResolvable::GetString()
+const str& StringResolvable::GetString()
 {
 	if (!string.isEmpty()) {
 		return string;
@@ -67,7 +67,7 @@ const xstr& StringResolvable::GetString()
 	return GetStringInternal(ScriptContext::Get().GetDirector().GetDictionary());
 }
 
-const xstr& StringResolvable::GetString() const
+const str& StringResolvable::GetString() const
 {
 	if (!string.isEmpty()) {
 		return string;
@@ -76,7 +76,7 @@ const xstr& StringResolvable::GetString() const
 	return GetStringInternal(ScriptContext::Get().GetDirector().GetDictionary());
 }
 
-const xstr& StringResolvable::GetString(const StringDictionary& dict)
+const str& StringResolvable::GetString(const StringDictionary& dict)
 {
 	if (!string.isEmpty()) {
 		return string;
@@ -85,7 +85,7 @@ const xstr& StringResolvable::GetString(const StringDictionary& dict)
 	return GetStringInternal(dict);
 }
 
-const xstr& StringResolvable::GetString(const StringDictionary& dict) const
+const str& StringResolvable::GetString(const StringDictionary& dict) const
 {
 	if (!string.isEmpty()) {
 		return string;
@@ -154,7 +154,7 @@ const_str StringResolvable::GetConstString(StringDictionary& dict) const
 	return GetConstStringInternal(dict);
 }
 
-const xstr& StringResolvable::GetStringInternal(const StringDictionary& dict)
+const str& StringResolvable::GetStringInternal(const StringDictionary& dict)
 {
 	// cache the string
 	if (constString) {
@@ -164,7 +164,7 @@ const xstr& StringResolvable::GetStringInternal(const StringDictionary& dict)
 	return string;
 }
 
-const xstr& StringResolvable::GetStringInternal(const StringDictionary& dict) const
+const str& StringResolvable::GetStringInternal(const StringDictionary& dict) const
 {
 	if (constString) {
 		return dict.Get(constString);
@@ -215,7 +215,7 @@ bool StringResolvable::IsEmpty() const
 	return !constString && string.isEmpty();
 }
 
-StringResolvable::operator const xstr& () const
+StringResolvable::operator const str& () const
 {
 	return GetString();
 }

@@ -176,7 +176,7 @@ const char* TargetListErrors::MultipleTargetsException::what() const noexcept
 		const ScriptMaster& director = ScriptContext::Get().GetDirector();
 
 		fill(
-			"There are " + xstr(numTargets) + " entities with targetname '" + director.GetDictionary().Get(targetName)
+			"There are " + str(numTargets) + " entities with targetname '" + director.GetDictionary().Get(targetName)
 			+ ". You are using a command that requires exactly one."
 		);
 	}

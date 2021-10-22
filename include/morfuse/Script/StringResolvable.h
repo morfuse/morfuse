@@ -14,7 +14,7 @@ namespace mfuse
 	public:
 		StringResolvable();
 		StringResolvable(const rawchar_t* labelName);
-		StringResolvable(const xstr& labelName);
+		StringResolvable(const str& labelName);
 		StringResolvable(const_str labelName);
 		StringResolvable(const StringResolvable& other);
 		StringResolvable& operator=(const StringResolvable& other);
@@ -22,10 +22,10 @@ namespace mfuse
 		StringResolvable& operator=(StringResolvable&& other);
 		~StringResolvable();
 
-		const xstr& GetString();
-		const xstr& GetString() const;
-		const xstr& GetString(const StringDictionary& dict);
-		const xstr& GetString(const StringDictionary& dict) const;
+		const str& GetString();
+		const str& GetString() const;
+		const str& GetString(const StringDictionary& dict);
+		const str& GetString(const StringDictionary& dict) const;
 		const rawchar_t* GetRawString();
 		const rawchar_t* GetRawString() const;
 		const rawchar_t* GetRawString(const StringDictionary& dict);
@@ -36,7 +36,7 @@ namespace mfuse
 		const_str GetConstString(StringDictionary& dict) const;
 		bool IsEmpty() const;
 
-		operator const xstr& () const;
+		operator const str& () const;
 		operator const rawchar_t* () const;
 		operator const_str () const;
 
@@ -52,15 +52,15 @@ namespace mfuse
 		mfuse_EXPORTS friend bool operator!=(const rawchar_t* left, const StringResolvable& right);
 
 	private:
-		const xstr& GetStringInternal(const StringDictionary& dict);
-		const xstr& GetStringInternal(const StringDictionary& dict) const;
+		const str& GetStringInternal(const StringDictionary& dict);
+		const str& GetStringInternal(const StringDictionary& dict) const;
 		const rawchar_t* GetRawStringInternal(const StringDictionary& dict);
 		const rawchar_t* GetRawStringInternal(const StringDictionary& dict) const;
 		const_str GetConstStringInternal(StringDictionary& dict);
 		const_str GetConstStringInternal(StringDictionary& dict) const;
 
 	private:
-		xstr string;
+		str string;
 		const_str constString;
 	};
 }

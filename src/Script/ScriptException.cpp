@@ -3,7 +3,7 @@
 
 using namespace mfuse;
 
-ScriptException::ScriptException(const xstr& text)
+ScriptException::ScriptException(const str& text)
 	: string(text)
 {
 }
@@ -13,7 +13,7 @@ const char* ScriptException::what() const noexcept
 	return string.c_str();
 }
 
-ScriptAbortException::ScriptAbortException(const xstr& text)
+ScriptAbortException::ScriptAbortException(const str& text)
 	: string(text)
 {
 }

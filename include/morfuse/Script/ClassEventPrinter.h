@@ -47,7 +47,7 @@ namespace mfuse
 	{
 	private:
 		vartype type;
-		xstr name;
+		str name;
 		float minRange[3];
 		bool minRangeDefault[3];
 		float maxRange[3];

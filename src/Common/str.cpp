@@ -9,10 +9,6 @@
 #include <cstdio>
 #include <cstdarg>
 #include <codecvt>
-#include <utf8.h>
-
-// VC compiler...
-#include <utf8/cpp11.h>
 
 using namespace mfuse;
 
@@ -1732,84 +1728,6 @@ template<typename CharT>
 base_const_str_static<CharT>::operator const CharT* () const
 {
 	return string;
-}
-
-template<>
-void mfuse::StringConvert(base_str<char>& to, const char* from)
-{
-	to = from;
-}
-
-template<>
-void mfuse::StringConvert(base_str<char16_t>& to, const char* from)
-{
-	//std::wstring wcstr = std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.from_bytes(from);
-	//to = wcstr.c_str();
-	std::u16string u16str = utf8::utf8to16(from);
-	to = u16str.c_str();
-}
-
-template<>
-void mfuse::StringConvert(base_str<char>& to, const char16_t* from)
-{
-	//std::string cstr = std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.to_bytes(from);
-	//to = cstr.c_str();
-	std::string str8 = utf8::utf16to8(from);
-	to = str8.c_str();
-}
-
-template<>
-void mfuse::StringConvert(base_str<char32_t>& to, const char* from)
-{
-	//std::u32string u32cstr = std::wstring_convert<std::codecvt_utf8_utf16<char32_t>, char32_t>{}.from_bytes(from);
-	//to = u32cstr.c_str();
-	std::u32string u32str = utf8::utf8to32(from);
-	to = u32str.c_str();
-}
-
-template<>
-void mfuse::StringConvert(base_str<char>& to, const char32_t* from)
-{
-	//std::string cstr = std::wstring_convert<std::codecvt_utf8_utf16<char32_t>, char32_t>{}.to_bytes(from);
-	//to = cstr.c_str();
-	std::string str8 = utf8::utf32to8(from);
-	to = str8.c_str();
-}
-
-template<>
-void mfuse::StringConvert(base_str<wchar_t>& to, const char* from)
-{
-	switch (sizeof(wchar_t))
-	{
-	default:
-	case 8:
-		StringConvert(reinterpret_cast<base_str<char>&>(to), from);
-		break;
-	case 16:
-		StringConvert(reinterpret_cast<base_str<char16_t>&>(to), from);
-		break;
-	case 32:
-		StringConvert(reinterpret_cast<base_str<char32_t>&>(to), from);
-		break;
-	}
-}
-
-template<>
-void mfuse::StringConvert(base_str<char>& to, const wchar_t* from)
-{
-	switch (sizeof(wchar_t))
-	{
-	default:
-	case 8:
-		StringConvert(to, reinterpret_cast<const char*>(from));
-		break;
-	case 16:
-		StringConvert(to, reinterpret_cast<const char16_t*>(from));
-		break;
-	case 32:
-		StringConvert(to, reinterpret_cast<const char32_t*>(from));
-		break;
-	}
 }
 
 namespace mfuse

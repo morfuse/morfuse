@@ -59,7 +59,7 @@ intptr_t Hash<ScriptVariable>::operator()(const ScriptVariable& key) const
 	{
 	case variableType_e::String:
 	case variableType_e::ConstString:
-		return Hash<xstr>()(key.stringValue());
+		return Hash<str>()(key.stringValue());
 
 	case variableType_e::Integer:
 		return key.GetData().long64Value;
@@ -387,14 +387,14 @@ ScriptVariable::ScriptVariable(const rawchar_t* initialValue)
 	: key(0)
 	, type(variableType_e::String)
 {
-	m_data.stringValue = new xstr(initialValue);
+	m_data.stringValue = new str(initialValue);
 }
 
-ScriptVariable::ScriptVariable(const xstr& initialValue)
+ScriptVariable::ScriptVariable(const str& initialValue)
 	: key(0)
 	, type(variableType_e::String)
 {
-	m_data.stringValue = new xstr(initialValue);
+	m_data.stringValue = new str(initialValue);
 }
 
 ScriptVariable::ScriptVariable(const con::Container<ListenerPtr>* initialValue)
@@ -509,7 +509,7 @@ void ScriptVariable::ArchiveInternal(Archiver& arc)
 	case variableType_e::String:
 		if (arc.Loading())
 		{
-			m_data.stringValue = new xstr(4);
+			m_data.stringValue = new str(4);
 		}
 
 		::Archive(arc, *m_data.stringValue);
@@ -1011,7 +1011,7 @@ size_t ScriptVariable::size() const
 
 bool ScriptVariable::booleanNumericValue()
 {
-	xstr value;
+	str value;
 
 	switch (type)
 	{
@@ -1071,7 +1071,7 @@ bool ScriptVariable::booleanValue() const
 
 rawchar_t ScriptVariable::charValue() const
 {
-	xstr value;
+	str value;
 
 	switch (type)
 	{
@@ -1114,7 +1114,7 @@ void ScriptVariable::SetKey(const_str key)
 void ScriptVariable::evalArrayAt(const ScriptVariable &var)
 {
 	size_t index;
-	xstr string;
+	str string;
 	ScriptVariable *array;
 
 	switch (type)
@@ -1248,7 +1248,7 @@ uint32_t ScriptVariable::intValue() const
 	case variableType_e::String:
 	case variableType_e::ConstString:
 	{
-		xstr string = stringValue();
+		str string = stringValue();
 		uint32_t val = atoi(string);
 
 		return val;
@@ -1272,7 +1272,7 @@ uint64_t ScriptVariable::longValue() const
 	case variableType_e::String:
 	case variableType_e::ConstString:
 	{
-		xstr string = stringValue();
+		str string = stringValue();
 		uint64_t val = atoll(string);
 
 		return val;
@@ -1334,9 +1334,9 @@ void ScriptVariable::newPointer()
 	m_data.pointerValue->add(this);
 }
 
-xstr ScriptVariable::stringValue() const
+str ScriptVariable::stringValue() const
 {
-	xstr string;
+	str string;
 
 	switch (type)
 	{
@@ -1350,13 +1350,13 @@ xstr ScriptVariable::stringValue() const
 		return *m_data.stringValue;
 
 	case variableType_e::Integer:
-		return xstr(m_data.long64Value);
+		return str(m_data.long64Value);
 
 	case variableType_e::Float:
-		return xstr(m_data.floatValue);
+		return str(m_data.floatValue);
 
 	case variableType_e::Char:
-		return xstr(m_data.charValue);
+		return str(m_data.charValue);
 
 	case variableType_e::Listener:
 		if (m_data.listenerValue->Pointer())
@@ -1370,7 +1370,7 @@ xstr ScriptVariable::stringValue() const
 			else
 			*/
 			{
-				string = "class '" + xstr(m_data.listenerValue->Pointer()->Class::GetClassname()) + "'";
+				string = "class '" + str(m_data.listenerValue->Pointer()->Class::GetClassname()) + "'";
 				return string;
 			}
 		}
@@ -1380,10 +1380,10 @@ xstr ScriptVariable::stringValue() const
 		}
 
 	case variableType_e::Vector:
-		return xstr("( ") + xstr(m_data.vectorValue[0]) + xstr(" ") + xstr(m_data.vectorValue[1]) + xstr(" ") + xstr(m_data.vectorValue[2]) + xstr(" )");
+		return str("( ") + str(m_data.vectorValue[0]) + str(" ") + str(m_data.vectorValue[1]) + str(" ") + str(m_data.vectorValue[2]) + str(" )");
 
 	default:
-		return "Type: '" + xstr(GetTypeName()) + "'";
+		return "Type: '" + str(GetTypeName()) + "'";
 	}
 
 	return "";
@@ -1412,7 +1412,7 @@ Vector ScriptVariable::vectorValue() const
 			if (sscanf(string, "(%f %f %f)", &x, &y, &z) != 3)
 			{
 				if (sscanf(string, "(%f, %f, %f)", &x, &y, &z) != 3) {
-					throw ScriptException("Couldn't convert string to vector - malformed string '" + xstr(string) + "'");
+					throw ScriptException("Couldn't convert string to vector - malformed string '" + str(string) + "'");
 				}
 			}
 		}
@@ -1421,7 +1421,7 @@ Vector ScriptVariable::vectorValue() const
 			if (sscanf(string, "%f %f %f", &x, &y, &z) != 3)
 			{
 				if (sscanf(string, "%f, %f, %f", &x, &y, &z) != 3) {
-					throw ScriptException("Couldn't convert string to vector - malformed string '" + xstr(string) + "'");
+					throw ScriptException("Couldn't convert string to vector - malformed string '" + str(string) + "'");
 				}
 			}
 		}
@@ -1458,7 +1458,7 @@ void ScriptVariable::setArrayAtRef(const ScriptVariable& index, const ScriptVari
 {
 	int intValue;
 	unsigned int uintValue;
-	xstr string;
+	str string;
 
 	switch (type)
 	{
@@ -1659,20 +1659,18 @@ void ScriptVariable::setRefValue(ScriptVariable* ref)
 	m_data.refValue = ref;
 }
 
-void ScriptVariable::setStringValue(const xstr& newvalue)
+void ScriptVariable::setStringValue(const str& newvalue)
 {
 	ClearInternal();
 	type = variableType_e::String;
-	m_data.stringValue = new xstr(newvalue);
-	StringConvert(*m_data.stringValue, newvalue.c_str());
+	m_data.stringValue = new str(newvalue);
 }
 
 void ScriptVariable::setStringValue(const rawchar_t* newvalue)
 {
 	ClearInternal();
 	type = variableType_e::String;
-	m_data.stringValue = new xstr(newvalue);
-	StringConvert(*m_data.stringValue, newvalue);
+	m_data.stringValue = new str(newvalue);
 }
 
 void ScriptVariable::setVectorValue(const Vector &newvector)
@@ -2183,8 +2181,8 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 	case uint32_t(variableType_e::String + variableType_e::Vector * variableType_e::Max):				// ( string )			==		( vector )
 	case uint32_t(variableType_e::ConstString + variableType_e::Vector * variableType_e::Max):			// ( const string )		==		( vector )
 	{
-		xstr lval = stringValue();
-		xstr rval = value.stringValue();
+		str lval = stringValue();
+		str rval = value.stringValue();
 
 		return (!lval.length() && !rval.length()) || (lval == rval);
 	}
@@ -2487,7 +2485,7 @@ void ScriptVariable::setDataInternal(const ScriptVariable& variable)
 		break;
 
 	case variableType_e::String:
-		m_data.stringValue = new xstr(*variable.m_data.stringValue);
+		m_data.stringValue = new str(*variable.m_data.stringValue);
 		break;
 
 	case variableType_e::Listener:
@@ -2541,7 +2539,7 @@ void ScriptVariableList::ClearList()
 	list.clear();
 }
 
-ScriptVariable* ScriptVariableList::GetOrCreateVariable(const xstr& name)
+ScriptVariable* ScriptVariableList::GetOrCreateVariable(const str& name)
 {
 	return GetOrCreateVariable(ScriptContext::Get().GetDirector().GetDictionary().Add(name));
 }
@@ -2553,12 +2551,12 @@ ScriptVariable* ScriptVariableList::GetOrCreateVariable(const_str name)
 	return &var;
 }
 
-const ScriptVariable *ScriptVariableList::GetVariable(const xstr& name) const
+const ScriptVariable *ScriptVariableList::GetVariable(const str& name) const
 {
 	return GetVariable(ScriptContext::Get().GetDirector().GetDictionary().Add(name));
 }
 
-ScriptVariable* ScriptVariableList::GetVariable(const xstr& name)
+ScriptVariable* ScriptVariableList::GetVariable(const str& name)
 {
 	return GetVariable(ScriptContext::Get().GetDirector().GetDictionary().Add(name));
 }
@@ -2679,7 +2677,7 @@ const rawchar_t* ScriptVariableErrors::CastError::getTarget() const noexcept
 const char* ScriptVariableErrors::CastError::what() const noexcept
 {
 	if (!filled()) {
-		fill("Cannot cast '" + xstr(source) + "' to '" + target + "'");
+		fill("Cannot cast '" + str(source) + "' to '" + target + "'");
 	}
 	
 	return Messageable::what();
@@ -2711,7 +2709,7 @@ const rawchar_t* ScriptVariableErrors::IncompatibleOperator::getRightType() cons
 const char* ScriptVariableErrors::IncompatibleOperator::what() const noexcept
 {
 	if (!filled()) {
-		fill("binary '" + xstr(op) + "' applied to incompatible types '" + xstr(leftType) + "' and '" + xstr(rightType) + "'");
+		fill("binary '" + str(op) + "' applied to incompatible types '" + str(leftType) + "' and '" + str(rightType) + "'");
 	}
 
 	return Messageable::what();
@@ -2741,7 +2739,7 @@ const rawchar_t* ScriptVariableErrors::InvalidAppliedType::getTypeName() const n
 const char* ScriptVariableErrors::InvalidAppliedType::what() const noexcept
 {
 	if (filled()) {
-		fill(xstr(op) + " applied to invalid type: '" + xstr(typeName) + "'");
+		fill(str(op) + " applied to invalid type: '" + str(typeName) + "'");
 	}
 
 	return Messageable::what();
@@ -2760,7 +2758,7 @@ uintptr_t ScriptVariableErrors::IndexOutOfRange::getIndex() const noexcept
 const char* ScriptVariableErrors::IndexOutOfRange::what() const noexcept
 {
 	if (!filled()) {
-		fill("Index '" + xstr(index) + "' out of range");
+		fill("Index '" + str(index) + "' out of range");
 	}
 
 	return Messageable::what();
@@ -2780,18 +2778,18 @@ const rawchar_t* ScriptVariableErrors::TypeIndexOutOfRange::getType() const noex
 const char* ScriptVariableErrors::TypeIndexOutOfRange::what() const noexcept
 {
 	if (!filled()) {
-		fill(xstr(typeName) + " index '" + xstr(getIndex()) + "' out of range");
+		fill(str(typeName) + " index '" + str(getIndex()) + "' out of range");
 	}
 
 	return Messageable::what();
 }
 
-ScriptVariableErrors::BadHashCodeValue::BadHashCodeValue(xstr&& hashCodeRef)
+ScriptVariableErrors::BadHashCodeValue::BadHashCodeValue(str&& hashCodeRef)
 	: hashCode(hashCodeRef)
 {
 }
 
-const mfuse::xstr& ScriptVariableErrors::BadHashCodeValue::getHashCode()
+const mfuse::str& ScriptVariableErrors::BadHashCodeValue::getHashCode()
 {
 	return hashCode;
 }

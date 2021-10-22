@@ -11,7 +11,7 @@ struct EventCompare
 {
 	bool operator()(const EventDef* d1, const EventDef* d2)
 	{
-		return xstr::icmp(d1->GetAttributes().GetString(), d2->GetAttributes().GetString()) < 0;
+		return str::icmp(d1->GetAttributes().GetString(), d2->GetAttributes().GetString()) < 0;
 	}
 };
 
@@ -19,7 +19,7 @@ struct ClassCompare
 {
 	bool operator()(const ClassDef* c1, const ClassDef* c2)
 	{
-		return xstr::icmp(c1->GetClassName(), c2->GetClassName()) < 0;
+		return str::icmp(c1->GetClassName(), c2->GetClassName()) < 0;
 	}
 };
 
@@ -252,7 +252,7 @@ con::Container<EventArgDef> ClassEventPrinter::SetupDocumentation(EventDef& def)
 	{
 		if (argument_names)
 		{
-			con::Container<xstr> argNames;
+			con::Container<str> argNames;
 
 			const rawchar_t* specPtr = formatspec;
 			//
@@ -267,7 +267,7 @@ con::Container<EventArgDef> ClassEventPrinter::SetupDocumentation(EventDef& def)
 				{
 					if (*p == ' ')
 					{
-						argNames.AddObject(xstr(argStart, p - argStart));
+						argNames.AddObject(str(argStart, p - argStart));
 						while (*p == ' ') ++p;
 						argStart = p;
 					}
@@ -277,11 +277,11 @@ con::Container<EventArgDef> ClassEventPrinter::SetupDocumentation(EventDef& def)
 				}
 
 				// add the last argument
-				argNames.AddObject(xstr(argStart, p - argStart));
+				argNames.AddObject(str(argStart, p - argStart));
 			}
 
 			size_t index = 0;
-			size_t specLength = xstr::len(formatspec);
+			size_t specLength = str::len(formatspec);
 
 			//
 			// create the definition container
@@ -292,9 +292,9 @@ con::Container<EventArgDef> ClassEventPrinter::SetupDocumentation(EventDef& def)
 			while (specLength)
 			{
 				// clear the rangeSpec
-				xstr rangeSpec = "";
+				str rangeSpec = "";
 				// get the argSpec
-				xstr argSpec = "";
+				str argSpec = "";
 				argSpec += *specPtr;
 				specPtr++;
 				specLength--;
@@ -317,7 +317,7 @@ con::Container<EventArgDef> ClassEventPrinter::SetupDocumentation(EventDef& def)
 				}
 				if (index < argNames.NumObjects())
 				{
-					xstr argName = argNames.ObjectAt(index + 1);
+					str argName = argNames.ObjectAt(index + 1);
 					EventArgDef* argDef = new (definition) EventArgDef;
 					argDef->Setup(name, argName, argSpec, rangeSpec);
 				}
