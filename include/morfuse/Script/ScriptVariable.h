@@ -88,7 +88,7 @@ namespace mfuse
 		~ScriptArrayHolder();
 
 		void			Archive(Archiver& arc);
-		static void		Archive(Archiver& arc, ScriptArrayHolder*& arrayValue);
+		static void		Archive(Archiver& arc, ScriptArrayHolder*& arrayHolder);
 
 	public:
 		con::map<ScriptVariable, ScriptVariable> arrayValue;
@@ -98,13 +98,13 @@ namespace mfuse
 	class ScriptConstArrayHolder
 	{
 	public:
-		ScriptVariable*  constArrayValue;
-		unsigned int refCount;
+		ScriptVariable* constArrayValue;
 		size_t size;
+		uint32_t refCount;
 
 	public:
 		void			Archive(Archiver& arc);
-		static void		Archive(Archiver& arc, ScriptConstArrayHolder *& constArrayValue);
+		static void		Archive(Archiver& arc, ScriptConstArrayHolder *& arrayHolder);
 
 		ScriptConstArrayHolder(ScriptVariable* pVar, size_t size);
 		ScriptConstArrayHolder(size_t size);
@@ -121,14 +121,14 @@ namespace mfuse
 		con::Container<ScriptVariable*> list;
 
 	public:
-		void			Archive(Archiver& arc);
-		static void		Archive(Archiver& arc, ScriptPointer *& pointerValue);
+		void Archive(Archiver& arc);
+		static void Archive(Archiver& arc, ScriptPointer *& pointerHolder);
 
-		void		Clear();
+		void Clear();
 
-		void		add(ScriptVariable* var);
-		void		remove(ScriptVariable* var);
-		void		setValue(const ScriptVariable& var);
+		void add(ScriptVariable* var);
+		void remove(ScriptVariable* var);
+		void setValue(const ScriptVariable& var);
 	};
 	using ConList = con::ContainerClass<SafePtr<Listener>>;
 	using ConListPtr = SafePtr<ConList>;
@@ -147,7 +147,7 @@ namespace mfuse
 		ScriptArrayHolder* arrayValue;
 		ScriptConstArrayHolder* constArrayValue;
 		const con::Container<SafePtr<Listener>>* containerValue;
-		const ConListPtr* safeContainerValue;
+		ConListPtr* safeContainerValue;
 		ScriptPointer* pointerValue;
 		ScriptVariable* otherVarValue;
 
@@ -312,15 +312,16 @@ namespace mfuse
 	class ScriptVariableIterator
 	{
 	public:
-		ScriptVariableIterator(const ScriptVariable& var);
+		mfuse_EXPORTS ScriptVariableIterator(const ScriptVariable& var);
+		mfuse_EXPORTS ~ScriptVariableIterator();
 
-		operator bool() const;
-		ScriptVariableIterator operator++(int);
-		ScriptVariableIterator& operator++();
+		mfuse_EXPORTS operator bool() const;
+		mfuse_EXPORTS ScriptVariableIterator operator++(int);
+		mfuse_EXPORTS ScriptVariableIterator& operator++();
 
-		ScriptVariable GetKey() const;
-		ScriptVariable GetValue() const;
-		uintptr_t Count() const;
+		mfuse_EXPORTS ScriptVariable GetKey() const;
+		mfuse_EXPORTS ScriptVariable GetValue() const;
+		mfuse_EXPORTS uintptr_t Count() const;
 
 	private:
 		union u {

@@ -1,6 +1,6 @@
 #include <morfuse/Script/timer.h>
 #include <morfuse/Script/Archiver.h>
-#include <morfuse/Script/Archiver.h>
+#include <morfuse/Container/Container_archive.h>
 
 using namespace mfuse;
 
@@ -41,35 +41,32 @@ void con::timer::RemoveElement(Class*e)
 
 Class* con::timer::GetNextElement(uint64_t& foundtime)
 {
-	uint64_t best_time;
-	intptr_t foundIndex;
-	Class* result;
-
-	foundIndex = 0;
-	best_time = m_time;
+	uintptr_t foundIndex = 0;
+	const Element* foundElement = nullptr;
+	uinttime_t best_time = m_time;
 
 	for (intptr_t i = m_Elements.NumObjects(); i > 0; i--)
 	{
-		if (m_Elements.ObjectAt(i).time <= best_time)
+		const Element& e = m_Elements.ObjectAt(i);
+		if (e.time <= best_time)
 		{
-			best_time = m_Elements.ObjectAt(i).time;
+			best_time = e.time;
 			foundIndex = i;
+			foundElement = &e;
 		}
 	}
 
 	if (foundIndex)
 	{
-		result = m_Elements.ObjectAt(foundIndex).obj;
 		m_Elements.RemoveObjectAt(foundIndex);
 		foundtime = best_time;
+		return foundElement->obj;
 	}
 	else
 	{
-		result = nullptr;
 		m_bDirty = false;
+		return nullptr;
 	}
-
-	return result;
 }
 
 void con::timer::SetDirty()
@@ -87,23 +84,22 @@ bool con::timer::HasAnyElement() const
 	return m_Elements.NumObjects() > 0;
 }
 
-void con::timer::SetTime(uint64_t time)
+void con::timer::SetTime(uinttime_t time)
 {
 	m_time = time;
+	m_bDirty = true;
 }
 
-void con::timer::ArchiveElement(Archiver& arc, Element *e)
+void con::timer::ArchiveElement(Archiver& arc, Element& e)
 {
-	arc.ArchiveObjectPointer((const void*&)e->obj);
-	arc.ArchiveUInt64(e->time);
+	arc.ArchiveObjectPointer(e.obj);
+	arc.ArchiveUInt64(e.time);
 }
 
-void con::timer::Archive(Archiver&)
+void con::timer::Archive(Archiver& arc)
 {
-	/*
-	arc.ArchiveBool(m_bDirty);
+	arc.ArchiveBoolean(m_bDirty);
 	arc.ArchiveUInt64(m_time);
 
-	m_Elements.Archive(arc, con::timer::ArchiveElement);
-	*/
+	con::Archive(arc, m_Elements, con::timer::ArchiveElement);
 }

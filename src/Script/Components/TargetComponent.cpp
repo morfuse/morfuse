@@ -1,6 +1,7 @@
 #include <morfuse/Script/Components/TargetComponent.h>
 #include <morfuse/Script/TargetList.h>
 #include <morfuse/Script/Context.h>
+#include <morfuse/Script/Archiver.h>
 
 using namespace mfuse;
 
@@ -44,4 +45,25 @@ Listener* TargetComponent::Next() const
 {
 	const TargetList& targetList = ScriptContext::Get().GetTargetList();
 	return targetList.GetTarget(target);
+}
+
+void TargetComponent::Archive(Archiver& arc)
+{
+	if (arc.Loading())
+	{
+		xstr targetNameStr;
+		xstr targetStr;
+		::Archive(arc, targetNameStr);
+		::Archive(arc, targetStr);
+
+		targetName = targetNameStr;
+		target = targetStr;
+	}
+	else
+	{
+		xstr targetNameStr = targetName.GetString();
+		xstr targetStr = target.GetString();
+		::Archive(arc, targetNameStr);
+		::Archive(arc, targetStr);
+	}
 }

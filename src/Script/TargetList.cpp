@@ -2,12 +2,28 @@
 #include <morfuse/Script/Listener.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptException.h>
+#include <morfuse/Container/Container_archive.h>
+#include <morfuse/Container/set_archive.h>
 
 using namespace mfuse;
 
+template<>
+void con::Archive(Archiver& arc, con::Entry<const_str, ConTarget>& entry)
+{
+	StringDictionary& dict = ScriptContext::Get().GetDirector().GetDictionary();
+	dict.ArchiveString(arc, entry.Key());
+
+	// archive all listener entries
+	con::Archive(arc, entry.Value(), &TargetList::ArchiveTarget);
+}
+
+void TargetList::ArchiveTarget(Archiver& arc, SafePtr<Listener>& target)
+{
+	arc.ArchiveSafePointer(target);
+}
+
 TargetList::TargetList()
 {
-
 }
 
 TargetList::~TargetList()
@@ -48,20 +64,6 @@ void TargetList::RemoveListener(Listener& ent, const_str targetName)
 
 void TargetList::FreeTargetList()
 {
-	/*
-	con::set_enum it = m_targetList;
-	for (it.NextElement(); it.CurrentElement(); it.NextElement())
-	{
-		const ConTarget& targets = it.CurrentElement()->Value();
-		// clear all targets
-		const size_t numElements = targets.NumObjects();
-		for (size_t i = 0; i < numElements; i++)
-		{
-			targets[i]->Clear();
-		}
-	}
-	*/
-
 	m_targetList.clear();
 }
 
@@ -144,6 +146,11 @@ const mfuse::ConTarget* TargetList::GetExistingConstTargetList(const_str targetn
 ConTarget* TargetList::GetTargetList(const_str targetname)
 {
 	return &m_targetList.addKeyValue(targetname);
+}
+
+void TargetList::Archive(Archiver& arc)
+{
+	m_targetList.Archive(arc);
 }
 
 TargetListErrors::MultipleTargetsException::MultipleTargetsException(size_t numTargetsValue, const_str targetNameValue)

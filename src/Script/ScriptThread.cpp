@@ -2734,6 +2734,7 @@ void ScriptThread::ArchiveInternal(Archiver& arc)
 
 	arc.ArchiveObjectPosition(this);
 	m_ScriptVM->Archive(arc);
+	arc.ArchiveEnum(m_ThreadState);
 }
 
 void ScriptThread::Abs(Event* ev)
@@ -2790,6 +2791,7 @@ void ScriptThread::Angles_ToUp(Event* ev)
 
 void ScriptThread::Assert(Event* ev)
 {
+	(void)ev;
 	assert(ev->GetFloat(1));
 }
 

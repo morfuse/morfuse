@@ -1,6 +1,7 @@
 #include <morfuse/Script/SimpleEntity.h>
 #include <morfuse/Script/Level.h>
 #include <morfuse/Script/Context.h>
+#include <morfuse/Script/Archiver.h>
 
 using namespace mfuse;
 
@@ -219,7 +220,7 @@ SimpleEntity::~SimpleEntity()
 {
 }
 
-void SimpleEntity::SimpleArchive(Archiver&)
+void SimpleEntity::SimpleArchive(Archiver& arc)
 {
 	/*
 	int index;
@@ -245,16 +246,17 @@ void SimpleEntity::SimpleArchive(Archiver&)
 		}
 	}
 	*/
+
+	arc.ArchiveElements((float*)angles, 3);
+	targetComp.Archive(arc);
 }
 
-void SimpleEntity::Archive(Archiver&)
+void SimpleEntity::Archive(Archiver& arc)
 {
-	/*
 	SimpleEntity::SimpleArchive(arc);
 
-	arc.ArchiveVector(&origin);
-	arc.ArchiveVector(&centroid);
-	*/
+	arc.ArchiveElements((float*)origin, 3);
+	arc.ArchiveElements((float*)centroid, 3);
 }
 
 void SimpleEntity::setOrigin( Vector origin )

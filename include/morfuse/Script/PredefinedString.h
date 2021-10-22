@@ -11,8 +11,8 @@ namespace mfuse
 	class PredefinedString
 	{
 	public:
-		PredefinedString(const rawchar_t* value);
-		~PredefinedString();
+		mfuse_EXPORTS PredefinedString(const rawchar_t* value);
+		mfuse_EXPORTS ~PredefinedString();
 
 		/** Return the string value for this predefined string. */
 		mfuse_EXPORTS const rawchar_t* GetString() const;

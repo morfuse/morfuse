@@ -7,6 +7,7 @@
 namespace mfuse
 {
 	class ProgramScript;
+	class ScriptMaster;
 	class ScriptThread;
 	class ScriptVM;
 	class StateScript;
@@ -16,8 +17,11 @@ namespace mfuse
 	{
 		MFUS_CLASS_PROTOTYPE(ScriptClass);
 
+		friend class ScriptMaster;
+
 	public:
 		ScriptClass(const ProgramScript *gameScript, Listener *self);
+		ScriptClass(ScriptMaster& director);
 		ScriptClass();
 		virtual ~ScriptClass();
 
@@ -31,8 +35,8 @@ namespace mfuse
 
 		void Archive(Archiver& arc) override;
 		void ArchiveInternal(Archiver& arc);
-		static void ArchiveScript(Archiver& arc, ScriptClass **obj);
-		void ArchiveCodePos(Archiver& arc, opval_t **codePos);
+		static void ArchiveScript(ScriptMaster& director, Archiver& arc, ScriptClass*& classRef);
+		void ArchiveCodePos(Archiver& arc, const opval_t*& codePos);
 
 		ScriptClass* GetNext() const;
 		ScriptClass* GetPrev() const;
@@ -43,6 +47,9 @@ namespace mfuse
 		void AddThread(ScriptVM * m_ScriptVM);
 		void KillThreads();
 		void RemoveThread(ScriptVM * m_ScriptVM);
+		ScriptVM* FirstThread() const;
+		ScriptVM* NextThread(ScriptVM* vm) const;
+		const ScriptVM* NextThread(const ScriptVM* vm) const;
 
 		StateScript* GetCatchStateScript(const opval_t *in, const opval_t *&out) const;
 
@@ -60,5 +67,6 @@ namespace mfuse
 
 		ScriptClass* Next;
 		ScriptClass* Prev;
+		ScriptClass*& headScript;
 	};
 }

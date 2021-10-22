@@ -3,6 +3,8 @@
 #include <morfuse/Script/ScriptMaster.h>
 #include <morfuse/Script/SourceException.h>
 #include <morfuse/Script/Context.h>
+#include <morfuse/Script/Archiver.h>
+
 #include "Compiler.h"
 
 #include <iostream>
@@ -342,61 +344,66 @@ void ProgramScript::Archive(Archiver&)
 	*/
 }
 
-void ProgramScript::Archive(Archiver&, ProgramScript *&)
+void ProgramScript::Archive(Archiver& arc, const ProgramScript*& scr)
 {
-	// FIXME
-	/*
+	ScriptMaster& director = ScriptContext::Get().GetDirector();
+
 	xstr filename;
 
-	if (!arc.Saving())
+	if (arc.Loading())
 	{
-		arc.ArchiveString(&filename);
+		::Archive(arc, filename);
 
-		if (filename != "")
+		try
 		{
-			scr = GetScriptManager()->GetScript(filename);
+			if (!filename.isEmpty()) {
+				scr = director.GetProgramScript(filename);
+			}
+			else {
+				scr = nullptr;
+			}
 		}
-		else
+		catch (ScriptExceptionBase&)
 		{
 			scr = nullptr;
 		}
 	}
 	else
 	{
-		filename = scr->Filename();
+		StringDictionary& dict = director.GetDictionary();
+		filename = dict.Get(scr->Filename());
 
-		arc.ArchiveString(&filename);
+		::Archive(arc, filename);
 	}
-	*/
 }
 
-void ProgramScript::ArchiveCodePos(Archiver&, opval_t **) const
+void ProgramScript::ArchiveCodePos(Archiver& arc, const opval_t*& codePos) const
 {
-	// FIXME
-	/*
-	int pos = 0;
+	ScriptMaster& director = ScriptContext::Get().GetDirector();
+	StringDictionary& dict = director.GetDictionary();
+
+	uint32_t pos = 0;
 	xstr filename;
 
-	if (!arc.Saving())
+	if (!arc.Loading())
 	{
-		pos = *codePos - m_ProgBuffer;
+		pos = uint32_t(codePos - m_ProgBuffer);
 		if (pos >= 0 && pos < m_ProgLength)
 		{
-			filename = Filename();
+			filename = dict.Get(Filename());
 		}
 	}
 
-	arc.ArchiveInteger(&pos);
-	arc.ArchiveString(&filename);
+	arc.ArchiveUInt32(pos);
+	::Archive(arc, filename);
 
 	if (arc.Loading())
 	{
-		if (Filename() == filename)
+		if (dict.Get(Filename()) == filename)
 		{
-			*codePos = m_ProgBuffer + pos;
+			codePos = m_ProgBuffer + pos;
 		}
 	}
-	*/
 }
 
 void ProgramScript::Close()

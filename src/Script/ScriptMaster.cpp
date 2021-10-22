@@ -11,11 +11,12 @@
 #include <morfuse/Script/ScriptVM.h>
 #include <morfuse/Script/ProgramScript.h>
 #include <morfuse/Script/PredefinedString.h>
+#include <morfuse/Script/Archiver.h>
 
 using namespace mfuse;
 
 ScriptMaster::ScriptMaster()
-	: ContainerHead(nullptr)
+	: headScript(nullptr)
 {
 	InitConstStrings();
 }
@@ -32,6 +33,7 @@ void ScriptMaster::InitConstStrings()
 	for (PredefinedString::List::iterator it = PredefinedString::GetList(); it; it = it.Next())
 	{
 		const const_str value = dict.Add(it->GetString());
+		(void)value;
 		assert(value == it->GetIndex());
 	}
 }
@@ -49,7 +51,7 @@ void ScriptMaster::RemoveTiming(ScriptThread* Thread)
 
 ScriptClass* ScriptMaster::GetHeadContainer() const
 {
-	return ContainerHead;
+	return headScript;
 }
 
 ScriptThread* ScriptMaster::CreateScriptThread(const ProgramScript *scr, Listener *self, const StringResolvable& label)
@@ -334,7 +336,6 @@ Parm& ScriptMaster::GetParm()
 void ScriptMaster::SetTime(uinttime_t time)
 {
 	timerList.SetTime(time);
-	timerList.SetDirty();
 }
 
 ThreadExecutionProtection& ScriptMaster::GetThreadExecutionProtection()
@@ -370,6 +371,53 @@ StringDictionary& ScriptMaster::GetDictionary()
 const StringDictionary& ScriptMaster::GetDictionary() const
 {
 	return dict;
+}
+
+void ScriptMaster::Archive(Archiver& arc)
+{
+	if (arc.Loading())
+	{
+		// make sure to kill other script classes before continuing
+		KillScripts();
+
+		uint32_t count;
+		arc.ArchiveUInt32(count);
+
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			ScriptClass* s;
+			ScriptClass::ArchiveScript(*this, arc, s);
+		}
+	}
+	else
+	{
+		uint32_t count = 0;
+		// count the number of script class in this script master
+		for (const ScriptClass* s = headScript; s; s = s->GetNext()) {
+			++count;
+		}
+
+		arc.ArchiveUInt32(count);
+		// now archive all script classes individually
+		for (ScriptClass* s = headScript; s; s = s->GetNext())
+		{
+			ScriptClass::ArchiveScript(*this, arc, s);
+		}
+	}
+
+	timerList.Archive(arc);
+}
+
+void ScriptMaster::KillScripts()
+{
+	ScriptClass* next;
+	for (ScriptClass* s = headScript; s; s = next)
+	{
+		next = s->GetNext();
+		delete s;
+	}
+
+	headScript = nullptr;
 }
 
 ThreadExecutionProtection::ThreadExecutionProtection()

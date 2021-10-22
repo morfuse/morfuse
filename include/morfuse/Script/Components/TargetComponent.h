@@ -25,6 +25,8 @@ namespace mfuse
 
 		mfuse_EXPORTS Listener* Next() const;
 
+		void Archive(Archiver& arc) override;
+
 	private:
 		StringResolvable target;
 		StringResolvable targetName;

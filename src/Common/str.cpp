@@ -1,6 +1,7 @@
 #include <morfuse/Common/str.h>
 #include <morfuse/Common/MEM/Memory.h>
 #include <morfuse/Container/set_generic_hash.h>
+#include <morfuse/Script/Archiver.h>
 
 #include <cmath>
 #include <cstdlib>
@@ -322,6 +323,30 @@ base_str<CharT>::base_str(const unsigned long long num)
 	EnsureAlloced(len + 1);
 	copy(m_data->data(), text);
 	m_data->len = len;
+}
+
+template<typename CharT>
+void mfuse::Archive(Archiver& arc, base_str<CharT>& s)
+{
+	if (arc.IsReading())
+	{
+		size_t length;
+		arc.ArchiveSize(length);
+
+		if (length)
+		{
+			s.resize(length);
+			arc.ArchiveRaw(const_cast<CharT*>(s.c_str()), length);
+		}
+	}
+	else
+	{
+		size_t length = s.length();
+		arc.ArchiveSize(length);
+		if (length) {
+			arc.ArchiveRaw(const_cast<void*>(static_cast<const void*>(s.c_str())), s.length());
+		}
+	}
 }
 
 template<typename CharT>
@@ -1789,6 +1814,8 @@ void mfuse::StringConvert(base_str<char>& to, const wchar_t* from)
 
 namespace mfuse
 {
+template mfuse_EXPORTS void mfuse::Archive(Archiver& arc, base_str<char>& s);
+
 template class mfuse_EXPORTS base_str<char>;
 //template mfuse_EXPORTS class base_str<char16_t>;
 template class mfuse_EXPORTS base_str<wchar_t>;

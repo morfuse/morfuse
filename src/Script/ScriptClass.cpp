@@ -16,23 +16,24 @@ MFUS_CLASS_DECLARATION(Listener, ScriptClass, NULL)
 };
 
 ScriptClass::ScriptClass(const ProgramScript *gameScript, Listener *self)
+	: ScriptClass(ScriptContext::Get().GetDirector())
 {
 	m_Self = self;
 	m_Script = gameScript;
-	m_Threads = NULL;
-
-	ScriptMaster& Director = ScriptContext::Get().GetDirector();
-	LL::SafeAddFront<ScriptClass*, &ScriptClass::Next, &ScriptClass::Prev>(Director.ContainerHead, this);
 }
 
 ScriptClass::ScriptClass()
+	: ScriptClass(ScriptContext::Get().GetDirector())
 {
-	m_Self = NULL;
-	m_Script = NULL;
-	m_Threads = NULL;
+}
 
-	ScriptMaster& Director = ScriptContext::Get().GetDirector();
-	LL::SafeAddFront<ScriptClass*, &ScriptClass::Next, &ScriptClass::Prev>(Director.ContainerHead, this);
+ScriptClass::ScriptClass(ScriptMaster& director)
+	: m_Self(nullptr)
+	, m_Script(nullptr)
+	, m_Threads(nullptr)
+	, headScript(director.headScript)
+{
+	LL::SafeAddFront<ScriptClass*, &ScriptClass::Next, &ScriptClass::Prev>(headScript, this);
 }
 
 ScriptClass::~ScriptClass()
@@ -43,8 +44,7 @@ ScriptClass::~ScriptClass()
 		return;
 	}
 
-	ScriptMaster& Director = ScriptContext::Get().GetDirector();
-	LL::SafeRemoveRoot<ScriptClass*, &ScriptClass::Next, &ScriptClass::Prev>(Director.ContainerHead, this);
+	LL::SafeRemoveRoot<ScriptClass*, &ScriptClass::Next, &ScriptClass::Prev>(headScript, this);
 
 	KillThreads();
 
@@ -69,59 +69,69 @@ void ScriptClass::Archive(Archiver&)
 {
 }
 
-void ScriptClass::ArchiveInternal(Archiver&)
+void ScriptClass::ArchiveInternal(Archiver& arc)
 {
-	/*
 	Listener::Archive(arc);
 
 	arc.ArchiveObjectPosition(this);
 	arc.ArchiveSafePointer(m_Self);
 	ProgramScript::Archive(arc, m_Script);
-	*/
 }
 
-void ScriptClass::ArchiveScript(Archiver&, ScriptClass **)
+void ScriptClass::ArchiveScript(ScriptMaster& director, Archiver& arc, ScriptClass*& classRef)
 {
-	/*
-	ScriptClass *scr;
-	ScriptVM *m_current;
-	ScriptThread *m_thread;
-	int num;
-	int i;
-
-	if (arc.Saving())
+	if (arc.Loading())
 	{
-		scr = *obj;
-		scr->ArchiveInternal(arc);
+		ScriptClass* const s = new ScriptClass(director);
+		s->ArchiveInternal(arc);
 
-		num = 0;
-		for (m_current = scr->m_Threads; m_current != NULL; m_current = m_current->next)
-			num++;
+		uint32_t threadCount;
+		arc.ArchiveUInt32(threadCount);
 
-		arc.ArchiveInteger(&num);
+		ScriptVM* prevVM = nullptr;
+		for (uint32_t j = 0; j < threadCount; ++j)
+		{
+			ScriptVM* vm = new ScriptVM();
+			ScriptThread* thread = new ScriptThread();
 
-		for (m_current = scr->m_Threads; m_current != NULL; m_current = m_current->next)
-			m_current->m_Thread->ArchiveInternal(arc);
+			vm->m_Thread = thread;
+			thread->m_ScriptVM = vm;
+			vm->m_ScriptClass = s;
+
+			if (prevVM) {
+				prevVM->next = vm;
+			}
+			else {
+				s->m_Threads = vm;
+			}
+
+			thread->ArchiveInternal(arc);
+		}
+
+		classRef = s;
 	}
 	else
 	{
-		scr = new ScriptClass();
-		scr->ArchiveInternal(arc);
+		ScriptClass* const s = classRef;
+		s->ArchiveInternal(arc);
 
-		arc.ArchiveInteger(&num);
-
-		for (i = 0; i < num; i++)
-		{
-			m_thread = new ScriptThread(scr, NULL);
-			m_thread->ArchiveInternal(arc);
+		// count the number of threads
+		uint32_t threadCount = 0;
+		for (const ScriptVM* vm = s->FirstThread(); vm; vm = s->NextThread(vm)) {
+			++threadCount;
 		}
+		arc.ArchiveUInt32(threadCount);
 
-		*obj = scr;
+		// now archive threads individually
+		for (ScriptVM* vm = s->FirstThread(); vm; vm = s->NextThread(vm))
+		{
+			ScriptThread* const thread = vm->GetScriptThread();
+			thread->ArchiveInternal(arc);
+		}
 	}
-	*/
 }
 
-void ScriptClass::ArchiveCodePos(Archiver& arc, opval_t **codePos)
+void ScriptClass::ArchiveCodePos(Archiver& arc, const opval_t*& codePos)
 {
 	m_Script->ArchiveCodePos(arc, codePos);
 }
@@ -264,4 +274,19 @@ ScriptClass* ScriptClass::GetNext() const
 ScriptClass* ScriptClass::GetPrev() const
 {
 	return Prev;
+}
+
+ScriptVM* ScriptClass::FirstThread() const
+{
+	return m_Threads;
+}
+
+ScriptVM* ScriptClass::NextThread(ScriptVM* vm) const
+{
+	return vm->GetNext();
+}
+
+const ScriptVM* ScriptClass::NextThread(const ScriptVM* vm) const
+{
+	return vm->GetNext();
 }

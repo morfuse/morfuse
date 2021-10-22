@@ -5,11 +5,12 @@
 #include <morfuse/Script/ScriptThread.h>
 #include <morfuse/Script/ScriptVariable.h>
 #include <morfuse/Script/ScriptException.h>
-#include <morfuse/Script/Archiver.h>
 #include <morfuse/Script/EventSystem.h>
 #include <morfuse/Script/EventQueue.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/PredefinedString.h>
+#include <morfuse/Script/Archiver.h>
+#include <morfuse/Container/set_archive.h>
 
 namespace mfuse
 {
@@ -129,7 +130,7 @@ EventDef EV_Listener_EndOn
 	EV_DEFAULT,
 	"s",
 	"name",
-	"Ends the function when the specified EventDef is triggered.",
+	"Ends the thread when the specified event is triggered.",
 	evType_e::Normal
 );
 
@@ -159,7 +160,7 @@ EventDef EV_Listener_Notify
 	EV_DEFAULT,
 	"s",
 	"name",
-	"Triggers an EventDef. An undefined EventDef will be automatically created by calling waittill or endon.",
+	"Triggers an event. Threads waiting on those events will resume their execution.",
 	evType_e::Normal
 );
 
@@ -341,56 +342,65 @@ Listener::~Listener()
 	}
 }
 
-#define L_ARCHIVE_NOTIFYLIST		1
-#define L_ARCHIVE_WAITFORLIST		2
-#define L_ARCHIVE_VARLIST			4
-#define L_ARCHIVE_ENDLIST			8
+template<>
+void con::Archive(Archiver& arc, con::Entry<const_str, ConList>& entry)
+{
+	StringDictionary& dict = ScriptContext::Get().GetDirector().GetDictionary();
+	dict.ArchiveString(arc, entry.Key());
+
+	// archive all listener entries
+	entry.Value().Archive(arc);
+}
 
 void Listener::Archive(Archiver &arc)
 {
+	constexpr unsigned int LF_NotifyList = 1;
+	constexpr unsigned int LF_WaitForList = 2;
+	constexpr unsigned int LF_VarList = 4;
+	constexpr unsigned int LF_EndList = 8;
+
 	Class::Archive(arc);
 
-	/*
-	byte flag = 0;
+	uint8_t flag = 0;
 
 	if (!arc.Loading())
 	{
 		if (m_NotifyList)
-			flag |= L_ARCHIVE_NOTIFYLIST;
+			flag |= LF_NotifyList;
 		if (m_WaitForList)
-			flag |= L_ARCHIVE_WAITFORLIST;
+			flag |= LF_WaitForList;
 		if (vars)
-			flag |= L_ARCHIVE_VARLIST;
+			flag |= LF_VarList;
 		if (m_EndList)
-			flag |= L_ARCHIVE_ENDLIST;
+			flag |= LF_EndList;
 	}
 
-	arc.ArchiveByte(&flag);
+	arc.ArchiveUInt8(flag);
 
 	// archive the notify list
-	if (flag & L_ARCHIVE_NOTIFYLIST)
+	if (flag & LF_NotifyList)
 	{
 		if (arc.Loading())
 		{
-			m_NotifyList = new con_set < const_str, ConList >;
+			m_NotifyList = new con::set<const_str, ConList>;
 		}
 
 		m_NotifyList->Archive(arc);
 	}
 
 	// archive the waiting thread list
-	if (flag & L_ARCHIVE_WAITFORLIST)
+	if (flag & LF_WaitForList)
 	{
 		if (arc.Loading())
 		{
-			m_WaitForList = new con_set < const_str, ConList >;
+			m_WaitForList = new con::set<const_str, ConList>;
 		}
 
 		m_WaitForList->Archive(arc);
 	}
 
 	// archive the variable list
-	if (flag & L_ARCHIVE_VARLIST)
+	if (flag & LF_VarList)
 	{
 		if (arc.Loading())
 		{
@@ -401,16 +411,15 @@ void Listener::Archive(Archiver &arc)
 	}
 
 	// archive the end on event list
-	if (flag & L_ARCHIVE_ENDLIST)
+	if (flag & LF_EndList)
 	{
 		if (arc.Loading())
 		{
-			m_EndList = new con_set < const_str, ConList >;
+			m_EndList = new con::set<const_str, ConList>;
 		}
 
 		m_EndList->Archive(arc);
 	}
-	*/
 }
 
 void Listener::CancelEventsOfType(const EventDef& ev)

@@ -118,7 +118,12 @@ namespace mfuse
 		mfuse_EXPORTS void ExecuteRunning();
 		mfuse_EXPORTS size_t GetNumScripts() const;
 		mfuse_EXPORTS size_t GetNumRunningScripts() const;
+		/** Reset the script master data, will kill all threads and remove game scripts. */
+		mfuse_EXPORTS void Reset();
+
 		void SetTime(uinttime_t time);
+
+		mfuse_EXPORTS void Archive(Archiver& arc);
 
 	public:
 		FlagList flags;
@@ -129,16 +134,16 @@ namespace mfuse
 		void DeleteProgramScript(ProgramScript* script);
 		ProgramScript* FindScript(const_str scriptName) const;
 
+		void KillScripts();
 		void CloseProgramScript();
 		void ClearAll();
-		void Reset();
 
 	private:
 		SafePtr<ScriptThread> m_PreviousThread;
 		SafePtr<ScriptThread> m_CurrentThread;
 		con::map<const_str, ProgramScript*> m_ProgramScripts;
 		con::timer timerList;
-		ScriptClass* ContainerHead;
+		ScriptClass* headScript;
 		StringDictionary dict;
 		Parm parm;
 		ThreadExecutionProtection execProtection;

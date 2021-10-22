@@ -37,8 +37,8 @@ namespace mfuse
 		~ProgramScript();
 
 		void Archive(Archiver& arc);
-		static void Archive(Archiver& arc, ProgramScript *&scr);
-		void ArchiveCodePos(Archiver& arc, opval_t **codePos) const;
+		static void Archive(Archiver& arc, const ProgramScript *&scr);
+		void ArchiveCodePos(Archiver& arc, const opval_t*& codePos) const;
 
 		void Close();
 		void Load(std::istream& stream);

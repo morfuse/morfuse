@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Container/Container.h"
+#include "../Container/Container_archive.h"
 
 namespace mfuse
 {
@@ -18,12 +19,9 @@ namespace mfuse
 	};
 
 	template<class Type>
-	void ContainerClass<Type>::Archive(Archiver& arc, void(*ArchiveFunc)(Archiver& arc, Type& obj))
+	void ContainerClass<Type>::Archive(Archiver& arc, ContainerArchiveFunc<Type> ArchiveFunc)
 	{
-		for(size_t i = 0; i < this->numobjects; ++i)
-		{
-			ArchiveFunc(arc, this->objlist[i]);
-		}
+		con::Archive(arc, *this, ArchiveFunc);
 	}
 	}
 };

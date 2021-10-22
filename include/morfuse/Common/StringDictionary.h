@@ -22,6 +22,8 @@ namespace mfuse
 		mfuse_EXPORTS void AllocateMoreString(size_t count);
 		mfuse_EXPORTS void Reset();
 
+		mfuse_EXPORTS void ArchiveString(Archiver& arc, const_str& constStringValue);
+
 	private:
 		/** The string dictionary, used to cache strings into a number. */
 		con::arrayset<xstr, xstr, Hash<xstr>, EqualTo<xstr>, MEM::DefaultAlloc_set> stringDict;

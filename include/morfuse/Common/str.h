@@ -11,6 +11,8 @@
 
 namespace mfuse
 {
+	class Archiver;
+
 	template<typename CharT>
 	class strdata
 	{
@@ -228,4 +230,7 @@ namespace mfuse
 
 	template<typename FromT, typename ToT>
 	void StringConvert(base_str<ToT>& dest, const FromT* from);
+
+	template<typename T>
+	void Archive(Archiver& arc, base_str<T>& s);
 };

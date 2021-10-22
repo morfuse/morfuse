@@ -639,6 +639,8 @@ namespace mfuse
 template<typename T, typename Allocator>
 void* operator new(size_t count, mfuse::con::Container<T, Allocator>& container)
 {
+	(void)count;
+
 	assert(count == sizeof(T));
 	return &container.ObjectAt(
 		container.AddObjectUninitialized()

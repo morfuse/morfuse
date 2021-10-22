@@ -36,9 +36,9 @@ namespace mfuse
 		void SetDirty();
 		bool IsDirty() const;
 		bool HasAnyElement() const;
-		void SetTime(uint64_t time);
+		void SetTime(uinttime_t time);
 
-		static void ArchiveElement(Archiver& arc, Element *e);
+		static void ArchiveElement(Archiver& arc, Element& e);
 		virtual void Archive(Archiver& arc);
 	};
 	}

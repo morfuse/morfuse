@@ -1,19 +1,23 @@
 #pragma once
 
 #include "../Global.h"
+#include "Class.h"
 
 namespace mfuse
 {
 	class Listener;
+	class Archiver;
 
 	/** Base component. */
-	class mfuse_EXPORTS Component
+	class Component : public Class
 	{
 	public:
-		Component(Listener& parentRef);
+		mfuse_EXPORTS Component(Listener& parentRef);
 		virtual ~Component();
 
-		Listener& Parent() const;
+		virtual void Archive(Archiver& arc);
+
+		mfuse_EXPORTS Listener& Parent() const;
 
 	private:
 		Listener& parent;

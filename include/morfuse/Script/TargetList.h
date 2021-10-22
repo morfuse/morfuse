@@ -12,6 +12,8 @@
 namespace mfuse
 {
 	class Listener;
+	class Archiver;
+
 	template<class T>
 	class SafePtr;
 
@@ -20,11 +22,11 @@ namespace mfuse
 	class TargetList
 	{
 	public:
-		TargetList();
-		~TargetList();
+		mfuse_EXPORTS TargetList();
+		mfuse_EXPORTS ~TargetList();
 
-		void AddListener(Listener& ent, const_str targetName);
-		void RemoveListener(Listener& ent, const_str targetName);
+		mfuse_EXPORTS void AddListener(Listener& ent, const_str targetName);
+		mfuse_EXPORTS void RemoveListener(Listener& ent, const_str targetName);
 
 		mfuse_EXPORTS void FreeTargetList();
 
@@ -35,6 +37,9 @@ namespace mfuse
 		mfuse_EXPORTS ConTarget* GetExistingTargetList(const_str targetname);
 		mfuse_EXPORTS const ConTarget* GetExistingConstTargetList(const_str targetname) const;
 		mfuse_EXPORTS ConTarget* GetTargetList(const_str targetname);
+
+		mfuse_EXPORTS void Archive(Archiver& arc);
+		mfuse_EXPORTS static void ArchiveTarget(Archiver& arc, SafePtr<Listener>& target);
 
 	private:
 		uintptr_t FindTarget(const ConTarget& list, const Listener* target) const;

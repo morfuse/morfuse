@@ -15,3 +15,7 @@ Listener& Component::Parent() const
 {
 	return parent;
 }
+
+void Component::Archive(Archiver& arc)
+{
+}

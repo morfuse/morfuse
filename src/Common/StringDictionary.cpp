@@ -1,4 +1,5 @@
 #include <morfuse/Common/StringDictionary.h>
+#include <morfuse/Script/Archiver.h>
 
 using namespace mfuse;
 
@@ -41,4 +42,35 @@ void StringDictionary::AllocateMoreString(size_t count)
 void StringDictionary::Reset()
 {
 	stringDict.clear();
+}
+
+void StringDictionary::ArchiveString(Archiver& arc, const_str& constStringValue)
+{
+	if (arc.Loading())
+	{
+		uint8_t hasString;
+		arc.ArchiveByte(hasString);
+
+		if (hasString)
+		{
+			xstr value;
+			::Archive(arc, value);
+
+			constStringValue = Add(value);
+		}
+		else
+		{
+			constStringValue = const_str(0);
+		}
+	}
+	else
+	{
+		uint8_t hasString = constStringValue != 0u;
+		arc.ArchiveByte(hasString);
+
+		if (hasString)
+		{
+			::Archive(arc, stringDict[constStringValue]);
+		}
+	}
 }

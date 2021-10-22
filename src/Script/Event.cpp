@@ -579,6 +579,11 @@ ScriptVariable&	Event::GetValue(uintptr_t pos)
 	return data[pos - 1];
 }
 
+ScriptVariable& Event::GetLastValue()
+{
+	return GetValue(NumArgs());
+}
+
 ScriptVariable& Event::GetValueChecked(uintptr_t pos)
 {
 	assert(pos <= data.NumObjects());

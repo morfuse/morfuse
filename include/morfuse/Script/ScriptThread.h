@@ -19,6 +19,8 @@ namespace mfuse
 	{
 		MFUS_CLASS_PROTOTYPE(ScriptThread);
 
+		friend class ScriptClass;
+
 	public:
 		ScriptThread();
 		ScriptThread(ScriptClass* scriptClass, const opval_t* pCodePos);

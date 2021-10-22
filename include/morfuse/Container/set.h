@@ -30,9 +30,24 @@ namespace mfuse
 	struct set_is_pointer<T*> { static const bool value = true; };
 
 	template<typename KeyT, typename ValueT>
-	class Entry
+	class Entry;
+
+	template<typename KeyT, typename ValueT>
+	class EntryBase
 	{
 	public:
+		Entry<KeyT, ValueT>* Next() const noexcept { return next; }
+		void SetNext(Entry<KeyT, ValueT>* nextValue) noexcept { next = nextValue; }
+
+	private:
+		Entry<KeyT, ValueT>* next;
+	};
+
+	template<typename KeyT, typename ValueT>
+	class Entry : public EntryBase<KeyT, ValueT>
+	{
+	public:
+		Entry();
 		Entry(const KeyT& inKey);
 		Entry(const KeyT& inKey, const ValueT& inValue);
 
@@ -40,13 +55,10 @@ namespace mfuse
 		const KeyT& Key() const noexcept { return key; }
 		ValueT& Value() noexcept { return value; }
 		const ValueT& Value() const noexcept { return value; }
-		Entry* Next() const noexcept { return next; }
-		void SetNext(Entry* nextValue) noexcept { next = nextValue; }
 
 	private:
 		KeyT key;
 		ValueT value;
-		Entry* next;
 	};
 
 	template<typename KeyT, typename ValueT>
@@ -99,6 +111,8 @@ namespace mfuse
 		const AllocatorT& getAllocator() const noexcept;
 
 		static size_t countEntryBytes(size_t count) noexcept;
+
+		void Archive(Archiver& arc);
 
 	private:
 		Entry<KeyT, ValueT>* findKeyEntry(const KeyT& key);
@@ -196,6 +210,8 @@ namespace mfuse
 
 		AllocatorT& getAllocator() noexcept;
 		const AllocatorT& getAllocator() const noexcept;
+
+		void Archive(Archiver& arc);
 	};
 
 	template<
@@ -224,10 +240,14 @@ namespace mfuse
 	};
 
 	template<typename KeyT, typename ValueT>
+	Entry<KeyT, ValueT>::Entry()
+	{
+	}
+
+	template<typename KeyT, typename ValueT>
 	Entry<KeyT, ValueT>::Entry(const KeyT& inKey)
 		: key(inKey)
 	{
-		next = nullptr;
 	}
 
 	template<typename KeyT, typename ValueT>
@@ -235,7 +255,6 @@ namespace mfuse
 		: key(inKey)
 		, value(inValue)
 	{
-		next = nullptr;
 	}
 
 	template<typename KeyT, typename ValueT, typename HashT, typename KeyEqT, typename AllocatorT>

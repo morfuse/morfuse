@@ -6,13 +6,19 @@
 #include <morfuse/Script/Archiver.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptMaster.h>
+#include <morfuse/Container/set_archive.h>
+#include <morfuse/Container/Container_archive.h>
 
 using namespace mfuse;
 
 template<>
-class con::Entry<const_str, ScriptVariable>
+class con::Entry<const_str, ScriptVariable> : public con::EntryBase<const_str, ScriptVariable>
 {
 public:
+	Entry()
+	{
+	}
+
 	Entry(const_str key)
 		: value(key, nullptr)
 	{
@@ -26,13 +32,23 @@ public:
 	const_str Key() const noexcept { return value.GetKey(); }
 	ScriptVariable& Value() noexcept { return value; }
 	const ScriptVariable& Value() const noexcept { return value; }
-	Entry* Next() const noexcept { return next; }
-	void SetNext(Entry* nextValue) noexcept { next = nextValue; }
 
 private:
 	ScriptVariable value;
-	Entry* next;
 };
+
+template<>
+void con::Archive(Archiver& arc, con::Entry<const_str, ScriptVariable>& entry)
+{
+	entry.Value().Archive(arc);
+}
+
+template<>
+void con::Archive(Archiver& arc, con::Entry<ScriptVariable, ScriptVariable>& entry)
+{
+	entry.Key().ArchiveInternal(arc);
+	entry.Value().ArchiveInternal(arc);
+}
 
 template<>
 intptr_t Hash<ScriptVariable>::operator()(const ScriptVariable& key) const
@@ -70,96 +86,98 @@ ScriptArrayHolder::~ScriptArrayHolder()
 
 }
 
-void ScriptArrayHolder::Archive(Archiver&)
+void ScriptArrayHolder::Archive(Archiver& arc)
 {
-	/*
 	arc.ArchiveUInt32(refCount);
 	arrayValue.Archive(arc);
-	*/
 }
 
-void ScriptArrayHolder::Archive(Archiver&, ScriptArrayHolder *&)
+void ScriptArrayHolder::Archive(Archiver& arc, ScriptArrayHolder*& arrayHolder)
 {
-	/*
 	bool newRef;
 
 	if (arc.Loading())
 	{
-		arc.ArchiveBoolean(&newRef);
+		arc.ArchiveBoolean(newRef);
 	}
 	else
 	{
-		newRef = !arc.ObjectPositionExists(arrayValue);
-		arc.ArchiveBoolean(&newRef);
+		newRef = !arc.ObjectPositionExists(arrayHolder);
+		arc.ArchiveBoolean(newRef);
 	}
 
 	if (newRef)
 	{
 		if (arc.Loading())
 		{
-			arrayValue = GetAssetManager()->NewObject<ScriptArrayHolder>();
+			arrayHolder = new ScriptArrayHolder();
 		}
 
-		arc.ArchiveObjectPosition(arrayValue);
-		arrayValue->Archive(arc);
+		arc.ArchiveObjectPosition(arrayHolder);
+		arrayHolder->Archive(arc);
 		return;
 	}
 	else
 	{
-		arc.ArchiveObjectPointer((Class **)&arrayValue);
+		arc.ArchiveObjectPointer(arrayHolder);
 	}
-	*/
 }
 
-void ScriptConstArrayHolder::Archive(Archiver&)
+void ScriptConstArrayHolder::Archive(Archiver& arc)
 {
-	/*
-	arc.ArchiveUnsigned(&refCount);
-	arc.ArchiveUnsigned(&size);
+	arc.ArchiveUInt32(refCount);
+	if (arc.Loading())
+	{
+		uint32_t sz32;
+		arc.ArchiveUInt32(sz32);
+		size = sz32;
+	}
+	else
+	{
+		uint32_t sz32 = (uint32_t)size;
+		arc.ArchiveUInt32(sz32);
+	}
 
 	if (arc.Loading())
 	{
 		constArrayValue = new ScriptVariable[size + 1] - 1;
 	}
 
-	for (int i = 1; i <= size; i++)
+	for (uintptr_t i = 1; i <= size; i++)
 	{
 		constArrayValue[i].ArchiveInternal(arc);
 	}
-	*/
 }
 
-void ScriptConstArrayHolder::Archive(Archiver&, ScriptConstArrayHolder *&)
+void ScriptConstArrayHolder::Archive(Archiver& arc, ScriptConstArrayHolder *& arrayHolder)
 {
-	/*
 	bool newRef;
 
 	if (arc.Loading())
 	{
-		arc.ArchiveBoolean(&newRef);
+		arc.ArchiveBoolean(newRef);
 	}
 	else
 	{
-		newRef = !arc.ObjectPositionExists(constArrayValue);
-		arc.ArchiveBoolean(&newRef);
+		newRef = !arc.ObjectPositionExists(arrayHolder);
+		arc.ArchiveBoolean(newRef);
 	}
 
 	if (newRef)
 	{
 		if (arc.Loading())
 		{
-			constArrayValue = GetAssetManager()->NewObject<ScriptConstArrayHolder>();
+			arrayHolder = new ScriptConstArrayHolder();
 		}
 
-		arc.ArchiveObjectPosition(constArrayValue);
-		constArrayValue->Archive(arc);
+		arc.ArchiveObjectPosition(arrayHolder);
+		arrayHolder->Archive(arc);
 		return;
 	}
 	else
 	{
-		arc.ArchiveObjectPointer((Class **)&constArrayValue);
+		arc.ArchiveObjectPointer(arrayHolder);
 	}
-	*/
 }
 
 ScriptConstArrayHolder::ScriptConstArrayHolder(ScriptVariable *pVar, size_t size)
@@ -199,42 +217,40 @@ ScriptConstArrayHolder::~ScriptConstArrayHolder()
 }
 
 
-void ScriptPointer::Archive(Archiver&)
+void ScriptPointer::Archive(Archiver& arc)
 {
-	//list.Archive(arc, ScriptVariable::Archive);
+	con::Archive(arc, list, &ScriptVariable::Archive);
 }
 
-void ScriptPointer::Archive(Archiver&, ScriptPointer *&)
+void ScriptPointer::Archive(Archiver& arc, ScriptPointer*& pointerHolder)
 {
-	/*
 	bool newRef;
 
 	if (arc.Loading())
 	{
-		arc.ArchiveBoolean(&newRef);
+		arc.ArchiveBoolean(newRef);
 	}
 	else
 	{
-		newRef = !arc.ObjectPositionExists(pointerValue);
-		arc.ArchiveBoolean(&newRef);
+		newRef = !arc.ObjectPositionExists(pointerHolder);
+		arc.ArchiveBoolean(newRef);
 	}
 
 	if (newRef)
 	{
 		if (arc.Loading())
 		{
-			pointerValue = GetAssetManager()->NewObject<ScriptPointer>();
+			pointerHolder = new ScriptPointer();
 		}
 
-		arc.ArchiveObjectPosition(pointerValue);
-		pointerValue->Archive(arc);
+		arc.ArchiveObjectPosition(pointerHolder);
+		pointerHolder->Archive(arc);
 		return;
 	}
 	else
 	{
-		arc.ArchiveObjectPointer((Class **)&pointerValue);
+		arc.ArchiveObjectPointer(pointerHolder);
 	}
-	*/
 }
 
 void ScriptPointer::Clear()
@@ -462,35 +478,32 @@ ScriptVariable::~ScriptVariable()
 
 void ScriptVariable::Archive(Archiver& arc)
 {
-	/*
 	const_str s;
 
 	if (arc.Loading())
 	{
-		ScriptContext::Get().GetDirector().ArchiveString(arc, s);
+		ScriptContext::Get().GetDirector().GetDictionary().ArchiveString(arc, s);
 		key = s;
 	}
 	else
 	{
 		s = key;
-		ScriptContext::Get().GetDirector().ArchiveString(arc, s);
+		ScriptContext::Get().GetDirector().GetDictionary().ArchiveString(arc, s);
 	}
-	*/
 
 	ArchiveInternal(arc);
 }
 
 void ScriptVariable::Archive(Archiver& arc, ScriptVariable*& obj)
 {
-	arc.ArchiveObjectPointer((const void*&)obj);
+	arc.ArchiveObjectPointer((void*&)obj);
 }
 
-void ScriptVariable::ArchiveInternal(Archiver&)
+void ScriptVariable::ArchiveInternal(Archiver& arc)
 {
-	/*
 	arc.ArchiveObjectPosition(this);
 
-	arc.ArchiveByte(&type);
+	arc.ArchiveEnum(type);
 	switch (type)
 	{
 	case variableType_e::String:
@@ -499,33 +512,23 @@ void ScriptVariable::ArchiveInternal(Archiver&)
 			m_data.stringValue = new xstr(4);
 		}
 
-		arc.ArchiveString(m_data.stringValue);
+		::Archive(arc, *m_data.stringValue);
 		break;
 
 	case variableType_e::Integer:
-		arc.ArchiveInteger(&m_data.long64Value);
+		arc.ArchiveInt64(m_data.long64Value);
 		break;
 
 	case variableType_e::Float:
-		arc.ArchiveFloat(&m_data.floatValue);
+		arc.ArchiveFloat(m_data.floatValue);
 		break;
 
 	case variableType_e::Char:
-		arc.ArchiveChar(&m_data.charValue);
+		arc.ArchiveChar(m_data.charValue);
 		break;
 
 	case variableType_e::ConstString:
-		if (arc.Loading())
-		{
-			xstr s;
-			arc.ArchiveString(&s);
-			m_data.long64Value = ScriptContext::Get().GetDirector().AddString(s);
-		}
-		else
-		{
-			xstr s = ScriptContext::Get().GetDirector().GetString(m_data.long64Value);
-			arc.ArchiveString(&s);
-		}
+		ScriptContext::Get().GetDirector().GetDictionary().ArchiveString(arc, m_data.constStringValue);
 		break;
 
 	case variableType_e::Listener:
@@ -534,7 +537,7 @@ void ScriptVariable::ArchiveInternal(Archiver&)
 			m_data.listenerValue = new ListenerPtr;
 		}
 
-		arc.ArchiveSafePointer(m_data.listenerValue);
+		arc.ArchiveSafePointer(*m_data.listenerValue);
 		break;
 
 	case variableType_e::Array:
@@ -547,16 +550,16 @@ void ScriptVariable::ArchiveInternal(Archiver&)
 
 	case variableType_e::Ref:
 	case variableType_e::Container:
-		arc.ArchiveObjectPointer((Class **)&m_data.refValue);
+		arc.ArchiveObjectPointer((void*&)m_data.refValue);
 		break;
 
 	case variableType_e::SafeContainer:
 		if (arc.Loading())
 		{
-			m_data.safeContainerValue = new ListenerPtr;
+			m_data.safeContainerValue = new ConListPtr;
 		}
 
-		arc.ArchiveSafePointer(m_data.safeContainerValue);
+		arc.ArchiveSafePointer(*m_data.safeContainerValue);
 		break;
 
 	case variableType_e::Pointer:
@@ -569,13 +572,12 @@ void ScriptVariable::ArchiveInternal(Archiver&)
 			m_data.vectorValue = new float[3];
 		}
 
-		arc.ArchiveVec3(m_data.vectorValue);
+		arc.ArchiveElements(m_data.vectorValue, 3);
 		break;
 
 	default:
 		break;
 	}
-	*/
 }
 
 void ScriptVariable::CastBoolean()
@@ -2652,10 +2654,10 @@ ScriptVariable* ScriptVariableList::SetVariable(const_str name, ScriptVariable&&
 	return variable;
 }
 
-void ScriptVariableList::Archive(Archiver &)
+void ScriptVariableList::Archive(Archiver& arc)
 {
-	//BaseScriptClass::Archive(arc);
-	//list.Archive(arc);
+	Class::Archive(arc);
+	list.Archive(arc);
 }
 
 ScriptVariableErrors::CastError::CastError(const rawchar_t* sourceVal, const rawchar_t* targetVal)
@@ -2807,6 +2809,10 @@ ScriptVariableIterator::ScriptVariableIterator(const ScriptVariable& var)
 	: owningVar(var)
 	, data(initData(var))
 	, count(0)
+{
+}
+
+ScriptVariableIterator::~ScriptVariableIterator()
 {
 }
 

@@ -213,6 +213,7 @@ namespace mfuse
 		mfuse_EXPORTS ScriptVariable& GetValue(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValueChecked(uintptr_t pos);
 		mfuse_EXPORTS ScriptVariable& GetValue();
+		mfuse_EXPORTS ScriptVariable& GetLastValue();
 		mfuse_EXPORTS VarListView GetListView() const;
 		mfuse_EXPORTS VarListView GetListView(uintptr_t startPos) const;
 		mfuse_EXPORTS ScriptVariable* GetData();
