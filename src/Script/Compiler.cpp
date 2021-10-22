@@ -1629,7 +1629,7 @@ void ScriptEmitter::EmitSwitch(sval_t val, sourceLocation_t sourceLoc)
 	++switchDepth;
 
 	ScriptCountManager countManager;
-	ScriptEmitter emitter(countManager, *stateScript, info, 3);
+	ScriptEmitter emitter(countManager, *stateScript, info, 5);
 	emitter.canBreak = true;
 	emitter.switchDepth = 1;
 	emitter.EmitRoot(val);
