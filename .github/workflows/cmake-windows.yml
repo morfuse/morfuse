@@ -1,0 +1,51 @@
+name: Windows build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    # Build the project on Windows
+    runs-on: windows-latest
+    # build the 2 environments
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
+    
+    steps:
+    - uses: actions/checkout@v2
+    - working-directory: ${{github.workspace}}
+      run: mkdir cmake
+
+    # Install flex/bison
+    # Build this in release mode
+    - name: Install required tools
+      working-directory: ${{github.workspace}}
+      run: |
+        mkdir C:\src && cd C:\src
+        git clone --depth 1 --single-branch --branch v2.5.24 https://github.com/lexxmark/winflexbison.git
+        mkdir winflexbison\build
+        cd winflexbison\build
+        cmake -DCMAKE_BUILD_TYPE=Release ..\
+        cmake --build . --config Release
+        cmake --install . --config Release
+  
+    - name: Configure CMake
+      working-directory: ${{github.workspace}}\cmake
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build-type}} -DFLEX_EXECUTABLE="${env:ProgramFiles(x86)}\winflexbison\win_flex.exe" -DBISON_EXECUTABLE="${env:ProgramFiles(x86)}\winflexbison\win_bison.exe" -DFLEX_INCLUDE_DIR="${env:ProgramFiles(x86)}\winflexbison" ..\
+ 
+    - name: Build
+      # Build program with the generated make
+      working-directory: ${{github.workspace}}\cmake
+      run: |
+        cmake --build . --config ${{matrix.build-type}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}\cmake\tests
+      run: |
+        xcopy /Y ${{github.workspace}}\cmake\src\${{matrix.build-type}} ${{github.workspace}}\cmake\tests
+        ctest -C ${{matrix.build-type}}
