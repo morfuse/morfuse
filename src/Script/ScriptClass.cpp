@@ -28,8 +28,8 @@ ScriptClass::ScriptClass()
 }
 
 ScriptClass::ScriptClass(ScriptMaster& director)
-	: m_Self(nullptr)
-	, m_Script(nullptr)
+	: m_Script(nullptr)
+	, m_Self(nullptr)
 	, m_Threads(nullptr)
 	, headScript(director.headScript)
 {

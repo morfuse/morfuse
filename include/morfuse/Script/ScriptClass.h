@@ -65,8 +65,8 @@ namespace mfuse
 		/** The first thread in list. */
 		ScriptVM* m_Threads;
 
+		ScriptClass*& headScript;
 		ScriptClass* Next;
 		ScriptClass* Prev;
-		ScriptClass*& headScript;
 	};
 }

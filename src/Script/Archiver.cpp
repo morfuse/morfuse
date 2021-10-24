@@ -58,8 +58,8 @@ static constexpr unsigned int ARCHIVE_POINTER_SELF_REFERENTIAL = ~123456u;
 
 version_info_t::version_info_t()
 	: header("MFUS")
-	, version(1)
 	, archiveName("Morfuse Archive")
+	, version(1)
 {
 }
 

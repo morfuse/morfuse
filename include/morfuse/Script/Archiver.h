@@ -265,8 +265,8 @@ namespace mfuse
 			const char* what() const noexcept override;
 
 		private:
-			const rawchar_t* expectedClassName;
 			str className;
+			const rawchar_t* expectedClassName;
 		};
 
 		class ReadPastEndObject : public Base, public Messageable
