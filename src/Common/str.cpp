@@ -41,15 +41,29 @@ mfuse_EXPORTS intptr_t Hash<const_str_static>::operator()(const const_str_static
 	return Hash<const char*>()(key.c_str());
 }
 
+template<typename intType>
+bool checkNeg(intType& num)
+{
+	if (num < 0)
+	{
+		num = labs(num);
+		return true;
+	}
+
+	return false;
+}
+
 template<typename CharT, typename intType>
 static size_t numtoStr(intType num, CharT* output, size_t len, uintptr_t base)
 {
-	if (len == 0) {
+	if (!len) {
 		return 0;
 	}
 
-	intType sum = num;
+	const bool isNeg = checkNeg(num);
 	uintptr_t i = 0;
+
+	intType sum = num;
 	do
 	{
 		uint32_t digit = sum % base;
@@ -66,7 +80,12 @@ static size_t numtoStr(intType num, CharT* output, size_t len, uintptr_t base)
 	if (i == (len - 1) && sum)
 		return 0;
 
-	output[i] = '\0';
+	if (isNeg) {
+		output[i++] = '-';
+	}
+
+	output[i] = 0;
+
 	base_str<CharT>::reverse(output);
 
 	return i;
@@ -1118,7 +1137,6 @@ template<typename CharT>
 size_t mfuse::base_str<CharT>::floattoStr(float num, CharT* output, size_t len, uintptr_t precision)
 {
 	int32_t ipart = (int32_t)num;
-	float fpart = num - (float)ipart;
 	size_t totalDigits = numtoStr(ipart, output, len, 10);
 
 	if (precision != 0)
@@ -1126,17 +1144,31 @@ size_t mfuse::base_str<CharT>::floattoStr(float num, CharT* output, size_t len, 
 		// decimals
 		output[totalDigits] = '.';
 
-		fpart = fpart * pow(10, precision);
-
-		const size_t digits = numtoStr((int32_t)fpart, output + totalDigits + 1, len, 10);
-
-		totalDigits += digits;
-
-		uintptr_t k;
-		for(k = digits; k < precision; ++k) {
-			output[k] = '0';
+		float fpart = num - (float)ipart;
+		if (!fpart)
+		{
+			uintptr_t k;
+			uintptr_t idx = totalDigits + 1;
+			for (k = 0; k < precision; ++k, ++idx) {
+				output[idx] = '0';
+			}
+			output[idx] = 0;
 		}
-		output[totalDigits + 1] = 0;
+		else
+		{
+			fpart = fpart * pow(10, precision);
+
+			const size_t digits = numtoStr((int32_t)fpart, output + totalDigits + 1, len, 10);
+
+			totalDigits += digits;
+
+			uintptr_t k;
+			uintptr_t idx = totalDigits + 1 + digits;
+			for (k = digits + 1; k < precision; ++k) {
+				output[idx] = '0';
+			}
+			output[idx] = 0;
+		}
 	}
 
 	return totalDigits;
