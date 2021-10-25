@@ -1,4 +1,5 @@
 #include "helpers/test.h"
+#include "helpers/assert.h"
 
 using namespace mfuse;
 
@@ -59,7 +60,7 @@ void level1_innerloop(ScriptMaster& director, const ProgramScript* script)
 	director.ExecuteThread(script, parms);
 
 	const ScriptVariable& val = parms.GetValue(2);
-	assert(val.GetType() == variableType_e::Array);
+	assertTest(val.GetType() == variableType_e::Array);
 
 	const ScriptVariable* vars[] =
 	{
@@ -68,9 +69,9 @@ void level1_innerloop(ScriptMaster& director, const ProgramScript* script)
 		&val[ScriptVariable(2)]
 	};
 
-	assert(vars[0]->GetType() == variableType_e::Array);
-	assert(vars[1]->GetType() == variableType_e::ConstArray);
-	assert(vars[2]->GetType() == variableType_e::ConstArray);
+	assertTest(vars[0]->GetType() == variableType_e::Array);
+	assertTest(vars[1]->GetType() == variableType_e::ConstArray);
+	assertTest(vars[2]->GetType() == variableType_e::ConstArray);
 
 	const ScriptVariable& arr = *vars[0];
 	const ScriptVariable& keys = *vars[1];
@@ -83,19 +84,19 @@ void level1_innerloop(ScriptMaster& director, const ProgramScript* script)
 		&arr[ScriptVariable(l)]
 	};
 
-	assert(arrayValues[0]->GetType() == variableType_e::Integer);
-	assert(arrayValues[0]->intValue() == 1);
-	assert(arrayValues[1]->GetType() == variableType_e::Integer);
-	assert(arrayValues[1]->intValue() == 2);
-	assert(arrayValues[2]->GetType() == variableType_e::Listener);
-	assert(arrayValues[2]->listenerValue() == l);
+	assertTest(arrayValues[0]->GetType() == variableType_e::Integer);
+	assertTest(arrayValues[0]->intValue() == 1);
+	assertTest(arrayValues[1]->GetType() == variableType_e::Integer);
+	assertTest(arrayValues[1]->intValue() == 2);
+	assertTest(arrayValues[2]->GetType() == variableType_e::Listener);
+	assertTest(arrayValues[2]->listenerValue() == l);
 
-	assert(findInArray(keys, 3, variableType_e::Integer, 1));
-	assert(findInArray(keys, 3, variableType_e::ConstString, "test"));
-	assert(findInArray(keys, 3, variableType_e::Listener, l));
-	assert(findInArray(values, 3, variableType_e::Integer, 1));
-	assert(findInArray(values, 3, variableType_e::Integer, 2));
-	assert(findInArray(values, 3, variableType_e::Listener, l));
+	assertTest(findInArray(keys, 3, variableType_e::Integer, 1));
+	assertTest(findInArray(keys, 3, variableType_e::ConstString, "test"));
+	assertTest(findInArray(keys, 3, variableType_e::Listener, l));
+	assertTest(findInArray(values, 3, variableType_e::Integer, 1));
+	assertTest(findInArray(values, 3, variableType_e::Integer, 2));
+	assertTest(findInArray(values, 3, variableType_e::Listener, l));
 
 	delete l;
 }

@@ -1,3 +1,4 @@
+#include "helpers/assert.h"
 #include "helpers/test.h"
 
 #include <morfuse/Script/StateScript.h>
@@ -34,11 +35,11 @@ void exception1(ScriptMaster& director)
 	catch (StateScriptErrors::LabelNotFound& e)
 	{
 		gotException = true;
-		assert(e.GetFileName() == script->Filename());
-		assert(e.GetLabel() == "invalid_label");
+		assertTest(e.GetFileName() == script->Filename());
+		assertTest(e.GetLabel() == "invalid_label");
 	}
 
-	assert(gotException);
+	assertTest(gotException);
 
 	director.ExecuteThread(script, "valid_label");
 }
@@ -57,12 +58,12 @@ void exception3(ScriptMaster& director)
 	try
 	{
 		const ProgramScript* const script = director.GetProgramScript("exception3", stream);
-		assert(!script);
+		assertTest(!script);
 	}
 	catch (CompileException::UnknownCommand& e)
 	{
 		gotException = true;
-		assert(!str::cmp(e.getCommandName(), "test"));
+		assertTest(!str::cmp(e.getCommandName(), "test"));
 	}
 }
 

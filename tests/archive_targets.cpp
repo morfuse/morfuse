@@ -1,4 +1,6 @@
 #include "helpers/archive.h"
+#include "helpers/assert.h"
+
 #include <morfuse/Script/TargetList.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/Listener.h>
@@ -32,9 +34,9 @@ void WriteTest(std::ostream& stream, const version_info_t& info)
 		list.Archive(arc);
 	}
 
-	assert(!list.GetTarget(test0));
-	assert(list.GetTarget(test1));
-	assert(list.GetTarget(test2));
+	assertTest(!list.GetTarget(test0));
+	assertTest(list.GetTarget(test1));
+	assertTest(list.GetTarget(test2));
 }
 
 void ReadTest(std::istream& stream, const version_info_t& info)
@@ -50,8 +52,8 @@ void ReadTest(std::istream& stream, const version_info_t& info)
 		arc.ArchiveObject(comp1);
 		arc.ArchiveObject(comp2);
 
-		assert(comp1.GetTargetName().GetConstString() == test1);
-		assert(comp2.GetTargetName().GetConstString() == test2);
+		assertTest(comp1.GetTargetName().GetConstString() == test1);
+		assertTest(comp2.GetTargetName().GetConstString() == test2);
 
 		arc.ArchiveObject(l1);
 		arc.ArchiveObject(l2);
@@ -59,9 +61,9 @@ void ReadTest(std::istream& stream, const version_info_t& info)
 		list.Archive(arc);
 	}
 
-	assert(!list.GetTarget(test0));
-	assert(list.GetTarget(test1));
-	assert(list.GetTarget(test2));
+	assertTest(!list.GetTarget(test0));
+	assertTest(list.GetTarget(test1));
+	assertTest(list.GetTarget(test2));
 }
 
 int main()

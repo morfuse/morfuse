@@ -5,12 +5,12 @@
 #include <morfuse/Common/membuf.h>
 
 #include "helpers/test.h"
+#include "helpers/assert.h"
 
 #include <fstream>
 #include <iostream>
 
 using namespace mfuse;
-
 
 static const char scriptContent_level1[] =
 "\n\n\n"
@@ -118,7 +118,7 @@ void level1(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	uint32_t intValue = parms.GetInteger(1);
-	assert(intValue == (((1000 + 200) >> 1) + 1) * 2 / 3 * 4 + 5);
+	assertTest(intValue == (((1000 + 200) >> 1) + 1) * 2 / 3 * 4 + 5);
 }
 
 void level2(ScriptMaster& director)
@@ -129,7 +129,7 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	const str retVal = parms.GetString(1);
-	assert(!retVal.icmp("slash/dot.ccctest"));
+	assertTest(!retVal.icmp("slash/dot.ccctest"));
 }
 
 void level3(ScriptMaster& director)
@@ -140,7 +140,7 @@ void level3(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	const uint32_t intValue = parms.GetInteger(1);
-	assert(intValue == 571);
+	assertTest(intValue == 571);
 }
 
 void level4(ScriptMaster& director)
@@ -153,8 +153,8 @@ void level4(ScriptMaster& director)
 	ScriptVariable& var = parms.GetValue(1);
 	ScriptVariable* row1 = var.constArrayValue()[1].constArrayValue();
 	ScriptVariable* row2 = var.constArrayValue()[2].constArrayValue();
-	assert(row1[1].intValue() == 10 && row1[2].intValue() == 11 && row1[3].intValue() == 12);
-	assert(row2[1].intValue() == 20 && row2[2].intValue() == 21 && row2[3].intValue() == 22);
+	assertTest(row1[1].intValue() == 10 && row1[2].intValue() == 11 && row1[3].intValue() == 12);
+	assertTest(row2[1].intValue() == 20 && row2[2].intValue() == 21 && row2[3].intValue() == 22);
 }
 
 void level5(ScriptMaster& director)
@@ -165,7 +165,7 @@ void level5(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	const uint32_t intValue = parms.GetInteger(1);
-	assert(intValue == (((1 | 2 | 4 | 8 & 16) + 10) ^ 3));
+	assertTest(intValue == (((1 | 2 | 4 | 8 & 16) + 10) ^ 3));
 }
 
 void level6(ScriptMaster& director)
@@ -179,7 +179,7 @@ void level6(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	const uint32_t intValue = parms.GetInteger(parms.NumArgs());
-	assert(intValue == ((100 / 30) * 300));
+	assertTest(intValue == ((100 / 30) * 300));
 }
 
 void level7(ScriptMaster& director)
@@ -211,7 +211,7 @@ void level10(ScriptMaster& director)
 	Event parms;
 	director.ExecuteThread(script, parms);
 
-	assert(parms.GetInteger(1) == -1);
+	assertTest(parms.GetInteger(1) == -1);
 }
 
 void m3l1a(ScriptMaster& director)
@@ -233,7 +233,7 @@ void m3l1a(ScriptMaster& director)
 
 	const ProgramScript* const script = director.GetProgramScript("m3l1a", stream);
 
-	//assert(script);
+	//assertTest(script);
 	director.ExecuteThread(script);
 }
 
@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
 	// Execute all pending events
 	context.Execute();
 
-	assert(context.IsIdle());
+	assertTest(context.IsIdle());
 
 	return 0;
 }

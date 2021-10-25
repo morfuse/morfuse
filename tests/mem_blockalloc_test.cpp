@@ -1,5 +1,6 @@
+#include "helpers/assert.h"
+
 #include <morfuse/Common/MEM/BlockAlloc.h>
-#include <cassert>
 
 struct TestStruct
 {
@@ -57,8 +58,8 @@ void testMemory()
 			allocator.Free(instArr[i]);
 		}
 		
-		assert(allocator.Count() == 0);
-		assert(allocator.BlockCount() == 1);
+		assertTest(allocator.Count() == 0);
+		assertTest(allocator.BlockCount() == 1);
 	}
 
 	for (uint32_t i = 0; i < numElements; ++i)
@@ -77,8 +78,8 @@ void testMemory()
 
 	allocator.FreeAll();
 
-	assert(allocator.Count() == 0);
-	assert(allocator.BlockCount() == 0);
+	assertTest(allocator.Count() == 0);
+	assertTest(allocator.BlockCount() == 0);
 }
 
 int main(int argc, char* argv[])
@@ -100,8 +101,8 @@ inline void testNumElements(mfuse::MEM::BlockAlloc<TestStruct, blockSize>& alloc
 		++num;
 	};
 
-	assert(num == expected);
-	assert(allocator.Count() == expected);
+	assertTest(num == expected);
+	assertTest(allocator.Count() == expected);
 }
 
 inline void testCorruption(TestStruct* instArr[], uint32_t start, uint32_t end)
@@ -109,9 +110,9 @@ inline void testCorruption(TestStruct* instArr[], uint32_t start, uint32_t end)
 	for (uint32_t i = start; i < end; ++i)
 	{
 		TestStruct* ts = instArr[i];
-		assert(ts->values[0] == getIndex(i, 1));
-		assert(ts->values[1] == getIndex(i, 2));
-		assert(ts->values[2] == getIndex(i, 3));
-		assert(ts->values[3] == getIndex(i, 4));
+		assertTest(ts->values[0] == getIndex(i, 1));
+		assertTest(ts->values[1] == getIndex(i, 2));
+		assertTest(ts->values[2] == getIndex(i, 3));
+		assertTest(ts->values[3] == getIndex(i, 4));
 	}
 }

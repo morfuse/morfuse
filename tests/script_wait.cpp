@@ -1,5 +1,7 @@
 #include "helpers/archive.h"
 #include "helpers/context.h"
+#include "helpers/assert.h"
+
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptVariable.h>
 
@@ -91,14 +93,14 @@ void ReadTest(std::istream& stream, const version_info_t& info)
 		floatVar.Archive(arc);
 		arrayVar.Archive(arc);
 
-		assert(stringVar.stringValue() == "test");
-		assert(intVar.intValue() == 3);
-		assert(floatVar.floatValue() == 3.1f);
+		assertTest(stringVar.stringValue() == "test");
+		assertTest(intVar.intValue() == 3);
+		assertTest(floatVar.floatValue() == 3.1f);
 
-		assert(arrayVar.arraysize() == 1);
+		assertTest(arrayVar.arraysize() == 1);
 		ScriptVariableIterator it(arrayVar);
-		assert(it.GetKey().intValue() == 1);
-		assert(it.GetValue().floatValue() == 10.f);
+		assertTest(it.GetKey().intValue() == 1);
+		assertTest(it.GetValue().floatValue() == 10.f);
 
 		director.Archive(arc);
 	}

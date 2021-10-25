@@ -1,3 +1,4 @@
+#include "helpers/assert.h"
 #include <morfuse/Script/Context.h>
 #include <morfuse/Common/membuf.h>
 

@@ -1,4 +1,6 @@
 #include "helpers/archive.h"
+#include "helpers/assert.h"
+
 #include <morfuse/Script/Listener.h>
 #include <morfuse/Script/EventContext.h>
 
@@ -106,17 +108,17 @@ void ReadTest(std::istream& stream, const version_info_t& info)
 
 		uint8_t num8;
 		arc.ArchiveUInt8(num8);
-		assert(num8 == 1);
+		assertTest(num8 == 1);
 		uint16_t num16;
 		arc.ArchiveUInt16(num16);
-		assert(num16 == 2);
+		assertTest(num16 == 2);
 		uint32_t num32;
 		arc.ArchiveUInt32(num32);
-		assert(num32 == 3);
+		assertTest(num32 == 3);
 
 		str string;
 		Archive(arc, string);
-		assert(string == "Test string");
+		assertTest(string == "Test string");
 
 		// instance 1
 		inst1 = new Listener();
@@ -158,14 +160,14 @@ void ReadTest(std::istream& stream, const version_info_t& info)
 		}
 	}
 
-	assert(pInst1_1 == inst1 && pInst1_2 == inst1 && pInst1_3 == inst1);
-	assert(safe1_1 == inst1 && safe1_2 == inst1 && safe1_3 == inst1);
+	assertTest(pInst1_1 == inst1 && pInst1_2 == inst1 && pInst1_3 == inst1);
+	assertTest(safe1_1 == inst1 && safe1_2 == inst1 && safe1_3 == inst1);
 
-	assert(pInst2_1 == inst2 && pInst2_2 == inst2 && pInst2_3 == inst2);
-	assert(safe2_1 == inst2 && safe2_2 == inst2 && safe2_3 == inst2);
+	assertTest(pInst2_1 == inst2 && pInst2_2 == inst2 && pInst2_3 == inst2);
+	assertTest(safe2_1 == inst2 && safe2_2 == inst2 && safe2_3 == inst2);
 
-	assert(inst3);
-	assert(pInst3 == inst3);
+	assertTest(inst3);
+	assertTest(pInst3 == inst3);
 
 	delete inst1;
 	delete inst2;

@@ -1,3 +1,4 @@
+#include "helpers/assert.h"
 #include <morfuse/Script/Event.h>
 #include <morfuse/Script/EventSystem.h>
 #include <morfuse/Script/Context.h>
@@ -28,15 +29,15 @@ int main(int argc, const char* argv[])
 	EventDef node4("ev4", 0, "", "", "", evType_e::Normal);
 	EventDef movedNode = std::move(node2);
 
-	assert(node4.GetNext() == &node3);
-	assert(node3.GetNext() == &movedNode);
-	assert(movedNode.GetNext() == &node1);
-	assert(node1.GetPrev() == &movedNode);
-	assert(movedNode.GetPrev() == &node3);
-	assert(node3.GetPrev() == &node4);
+	assertTest(node4.GetNext() == &node3);
+	assertTest(node3.GetNext() == &movedNode);
+	assertTest(movedNode.GetNext() == &node1);
+	assertTest(node1.GetPrev() == &movedNode);
+	assertTest(movedNode.GetPrev() == &node3);
+	assertTest(node3.GetPrev() == &node4);
 
-	assert(node2.GetNext() == nullptr);
-	assert(node2.GetPrev() == nullptr);
+	assertTest(node2.GetNext() == nullptr);
+	assertTest(node2.GetPrev() == nullptr);
 
 	const size_t numNodes = 3005;
 	con::Container<TestNode> nodes;
@@ -56,7 +57,7 @@ int main(int argc, const char* argv[])
 
 	for (size_t i = 0; i < numNodes; i++)
 	{
-		assert(evt.FindNormalEventNum(nodes[i].name));
+		assertTest(evt.FindNormalEventNum(nodes[i].name));
 	}
 
 	ScriptContext context;

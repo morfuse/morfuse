@@ -1,4 +1,5 @@
 #include <morfuse/Script/Context.h>
+#include "helpers/assert.h"
 
 using namespace mfuse;
 
@@ -18,16 +19,16 @@ void testSafeListeners(TrackedInstances& trInst, size_t numSafe, size_t numUnsaf
 		trInst.Add(l);
 	}
 
-	assert(trInst.GetNumInstances() == numSafe + numUnsafe);
+	assertTest(trInst.GetNumInstances() == numSafe + numUnsafe);
 	// this should clear all unsafe listeners
 	trInst.Cleanup();
-	assert(trInst.GetNumInstances() == numSafe);
+	assertTest(trInst.GetNumInstances() == numSafe);
 
 	if (listeners)
 	{
 		delete[] listeners;
 		trInst.Cleanup();
-		assert(trInst.GetNumInstances() == 0);
+		assertTest(trInst.GetNumInstances() == 0);
 	}
 
 	if (numSafe && numUnsafe)
@@ -45,16 +46,16 @@ void testSafeListeners(TrackedInstances& trInst, size_t numSafe, size_t numUnsaf
 			trInst.Add(l);
 		}
 
-		assert(trInst.GetNumInstances() == numSafe + numUnsafe);
+		assertTest(trInst.GetNumInstances() == numSafe + numUnsafe);
 		// this should clear all unsafe listeners
 		trInst.Cleanup();
-		assert(trInst.GetNumInstances() == numSafe);
+		assertTest(trInst.GetNumInstances() == numSafe);
 
 		if (listeners)
 		{
 			delete[] listeners;
 			trInst.Cleanup();
-			assert(trInst.GetNumInstances() == 0);
+			assertTest(trInst.GetNumInstances() == 0);
 		}
 	}
 }
@@ -71,7 +72,7 @@ int main()
 	}
 
 	trInst.Cleanup();
-	assert(!trInst.GetNumInstances());
+	assertTest(!trInst.GetNumInstances());
 
 	testSafeListeners(trInst, 10000, 0);
 	testSafeListeners(trInst, 0, 10000);

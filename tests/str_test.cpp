@@ -1,14 +1,13 @@
 #include <morfuse/Common/str.h>
-
-#include <cassert>
+#include "helpers/assert.h"
 
 using namespace mfuse;
 
 template<typename CharT>
 void string_assert(const base_str<CharT>& s, size_t expected_len, const CharT* expected_data)
 {
-	assert(s.length() == expected_len);
-	assert(!base_str<CharT>::icmp(s, expected_data));
+	assertTest(s.length() == expected_len);
+	assertTest(!base_str<CharT>::icmp(s, expected_data));
 }
 
 /*

@@ -1,4 +1,5 @@
 #include "helpers/test.h"
+#include "helpers/assert.h"
 
 using namespace mfuse;
 
@@ -31,13 +32,13 @@ void level1(ScriptMaster& director)
 	const TargetList& tl = context.GetTargetList();
 	const_str targetName = director.GetDictionary().Get("test");
 	const Listener* comp = tl.GetNextTarget(nullptr, targetName);
-	assert(comp);
-	assert(tl.GetNextTarget(comp, targetName));
+	assertTest(comp);
+	assertTest(tl.GetNextTarget(comp, targetName));
 
 	context.GetTrackedInstances().Cleanup();
 	comp = tl.GetNextTarget(nullptr, targetName);
-	assert(comp);
-	assert(tl.GetNextTarget(comp, targetName));
+	assertTest(comp);
+	assertTest(tl.GetNextTarget(comp, targetName));
 }
 
 void level2(ScriptMaster& director)
