@@ -225,11 +225,6 @@ varname		[a-zA-Z0-9_\"]+
 									yymore();
 								}
 
-[a-zA-Z_]+						{
-									BEGIN(IDENTIFIER);
-									yymore();
-								}
-
 .								{ YY_FATAL_ERROR("bad token:\n"); }
 
 %{
@@ -239,6 +234,10 @@ varname		[a-zA-Z0-9_\"]+
 
 
 /*
+[a-zA-Z_]+						{
+									BEGIN(IDENTIFIER);
+									yymore();
+								}
 
 [a-zA-Z0-9_]+					{
 									if(!strcmp(yytext, "game"))
