@@ -21,14 +21,6 @@ inline void executeHandlers(mfuse::ScriptContext& context, const handler_t (&han
 	for (size_t i = 0; i < N; ++i)
 	{
 		const handler_t& h = handlers[i];
-		try
-		{
-			h.handler(director);
-		}
-		catch (std::exception& e)
-		{
-			std::cerr << "Exception occured at '" << h.name << "': " << e.what() << std::endl;
-			throw;
-		}
+		h.handler(director);
 	}
 }
