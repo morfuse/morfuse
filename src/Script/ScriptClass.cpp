@@ -167,7 +167,8 @@ ScriptThread *ScriptClass::CreateThreadInternal(const ScriptVariable& label)
 	{
 		const ScriptClass* const scriptClass = director.CurrentScriptClass();
 		const ProgramScript* const scr = scriptClass->GetScript();
-		return director.CreateScriptThread(scr, m_Self, label.constStringValue());
+		// create a scriptclass in the same group
+		return director.CreateScriptThread(this, label.constStringValue());
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
