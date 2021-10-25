@@ -45,7 +45,7 @@
 
 //%expect 294
 
-%precedence TOKEN_EOF 0
+%precedence TOKEN_EOF 0 "end of file"
 %precedence TOKEN_EOL
 
 %left TOKEN_COMMA
@@ -114,7 +114,8 @@
 %%
 
 program
-	: line_opt statement_list[list] line_opt { pt.rootVal = pt.node1(statementType_e::StatementList, $list); }
+	: statement_list[list] { pt.rootVal = pt.node1(statementType_e::StatementList, $list); }
+	| line_opt { pt.rootVal = pt.node0(statementType_e::None); }
 	;
 
 statement_list
@@ -123,7 +124,7 @@ statement_list
 	;
 
 statement
-	: line_opt statement_declaration[stmt_decl] line_opt{ $$ = $stmt_decl; }
+	: line_opt statement_declaration[stmt_decl] line_opt { $$ = $stmt_decl; }
 ;
 
 statement_declaration
@@ -251,7 +252,7 @@ nonident_prim_expr
 	| TOKEN_LEFT_BRACKET expr[exp1] expr[exp2] expr[exp3] TOKEN_RIGHT_BRACKET { $$ = pt.node4(statementType_e::Vector, $exp1, $exp2, $exp3, TOKPOS(@1)); }
 	| TOKEN_LISTENER { $$ = pt.node2(statementType_e::Listener, $1, TOKPOS(@1)); }
 	| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = $2; }
-	| TOKEN_LEFT_BRACKET TOKEN_RIGHT_BRACKET { $$ = pt.node0(statementType_e::None); }
+	//| TOKEN_LEFT_BRACKET TOKEN_RIGHT_BRACKET { $$ = pt.node0(statementType_e::None); }
 	| TOKEN_NEG nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
 	| TOKEN_COMPLEMENT nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
 	| TOKEN_NOT nonident_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
@@ -283,5 +284,6 @@ makearray_statement
 line_opt
 	: {}
 	| TOKEN_EOL
+	;
 
 %%
