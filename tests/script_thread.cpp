@@ -20,7 +20,7 @@ static const char scriptContent_level1[] =
 "local.var += 200\n"
 "local.var >>= 1\n"
 "local.var = (local.var + 1) * 2 / 3 * 4 + 5\n"
-"end local.var\n";
+"end local.var";
 
 static const char scriptContent_level2[] =
 "main:\n"
@@ -52,7 +52,7 @@ static const char scriptContent_level4[] =
 "10 11 12\n"
 "20 21 22\n"
 "endArray\n"
-"end local.arr\n";
+"end local.arr";
 
 static const char scriptContent_level5[] =
 "main:\n"
@@ -62,12 +62,12 @@ static const char scriptContent_level5[] =
 "local.val = 2000\n"
 "} while(0)\n"
 "local.i = 1 | 2 | 4 | 8 & 16\n"
-"end ((local.i + local.val) ^ 3)\n";
+"end ((local.i + local.val) ^ 3)";
 
 static const char scriptContent_level6[] =
 "main1 local.i local.j local.k local.l:\n"
 "local.val = local.i / local.j\n"
-"end (local.val * local.k)\n";
+"end (local.val * local.k)";
 
 static const char scriptContent_level7[] =
 "main:\n"
@@ -87,7 +87,7 @@ static const char scriptContent_level7[] =
 "  println local.b[local.j]\n"
 " }\n"
 "}\n"
-"end\n";
+"end";
 
 static const char scriptContent_level8[] =
 "main:\n"
@@ -96,7 +96,7 @@ static const char scriptContent_level8[] =
 
 static const char scriptContent_level9[] =
 "main:\n"
-"exec test.scr"
+"exec test.scr\n"
 "thread test.scr::main";
 
 static const char scriptContent_level10[] =
@@ -107,6 +107,15 @@ static const char scriptContent_level10[] =
 "end 0\n"
 "other local.var:\n"
 "end -local.var\n";
+
+static const char scriptContent_level11[] =
+"targetname";
+
+static const char scriptContent_level12[] =
+"\n\n";
+
+static const char scriptContent_level13[] =
+"";
 
 void level1(ScriptMaster& director)
 {
@@ -214,6 +223,24 @@ void level10(ScriptMaster& director)
 	assertTest(parms.GetInteger(1) == -1);
 }
 
+void level11(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level11", scriptContent_level11);
+	director.ExecuteThread(script);
+}
+
+void level12(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level12", scriptContent_level12);
+	director.ExecuteThread(script);
+}
+
+void level13(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level13", scriptContent_level13);
+	director.ExecuteThread(script);
+}
+
 void m3l1a(ScriptMaster& director)
 {
 	std::fstream stream("m3l1a.scr", std::ios_base::in | std::ios_base::binary);
@@ -249,6 +276,9 @@ const handler_t list[] =
 	{ "level8", &level8 },
 	{ "level9", &level9 },
 	{ "level10", &level10 },
+	{ "level11", &level11 },
+	{ "level12", &level12 },
+	{ "level13", &level13 },
 	{ "m3l1a", &m3l1a },
 };
 
