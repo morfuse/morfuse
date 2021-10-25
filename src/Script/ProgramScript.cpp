@@ -442,7 +442,7 @@ void ProgramScript::Load(std::istream& stream)
 		std::streamsize start = stream.tellg();
 		stream.seekg(0, stream.end);
 		const std::streamsize sz = stream.tellg() - start;
-		stream.seekg(start, stream.beg);
+		stream.seekg(start);
 
 		// copy the whole script content for locating positions
 		if (sz)
@@ -450,7 +450,7 @@ void ProgramScript::Load(std::istream& stream)
 			char* newBuf = (char*)allocateMemory(sz + 1);
 			newBuf[sz] = 0;
 			stream.read(newBuf, sz);
-			stream.seekg(start, stream.beg);
+			stream.seekg(start);
 
 			m_SourceBuffer = newBuf;
 			m_SourceLength = sz;

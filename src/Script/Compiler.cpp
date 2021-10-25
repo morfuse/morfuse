@@ -389,7 +389,7 @@ void ScriptEmitter::Reset()
 	{
 		apucBreakJumpLocations[i] = 0;
 		apucContinueJumpLocations[i] = 0;
-		prev_opcodes[i].opcode = 0;
+		prev_opcodes[i].opcode = -1;
 		prev_opcodes[i].VarStackOffset = 0;
 	}
 
