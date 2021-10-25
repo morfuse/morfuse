@@ -2,6 +2,19 @@
 
 :source-highlighter: highlight.js
 
+ifdef::env-github[]
+++++
+<p align="center">
+  <a href=""https://github.com/morfuse/morfuse/actions/workflows/cmake-linux.yml"><img src="https://github.com/morfuse/morfuse/actions/workflows/cmake-linux.yml/badge.svg?branch=main" /></a>
+  <a href="""https://github.com/morfuse/morfuse/actions/workflows/cmake-windows.yml""><img src="https://github.com/morfuse/morfuse/actions/workflows/cmake-windows.yml/badge.svg?branch=main" /></a>
+++++
+endif::[]
+
+ifndef::env-github[]
+image:https://github.com/morfuse/morfuse/actions/workflows/cmake-linux.yml/badge.svg?branch=main[link="https://github.com/morfuse/morfuse/actions/workflows/cmake-linux.yml"]
+image:https://github.com/morfuse/morfuse/actions/workflows/cmake-windows.yml/badge.svg?branch=main[link="https://github.com/morfuse/morfuse/actions/workflows/cmake-windows.yml"]
+endif::[]
+
 == Introduction
 
 Morfuse is a game scripting engine system library, it can parse, compile and interpret script files from Medal of Honor: Allied Assault. This implementation is more optimized towards games in general and not only Medal of Honor.
