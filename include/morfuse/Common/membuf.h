@@ -34,7 +34,7 @@ namespace mfuse
 
 		pos_type seekpos(pos_type off, std::ios_base::openmode) override
 		{
-			this->setg(this->eback(), this->eback() + off, this->egptr());
+			this->setg(this->eback(), this->eback() + (size_t)off, this->egptr());
 			return this->gptr() - this->eback();
 		}
 	};
@@ -81,7 +81,7 @@ namespace mfuse
 
 		pos_type seekpos(pos_type off, std::ios_base::openmode) override
 		{
-			this->setp(buf + off, this->epptr());
+			this->setp(buf + (size_t)off, this->epptr());
 			return this->pptr() - buf;
 		}
 

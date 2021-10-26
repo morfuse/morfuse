@@ -151,13 +151,13 @@ inline intptr_t Hash<unsigned long>::operator()(const unsigned long& key) const
 template<>
 inline intptr_t Hash<long long>::operator()(const long long& key) const
 {
-	return key;
+	return (intptr_t)key;
 }
 
 template<>
 inline intptr_t Hash<unsigned long long>::operator()(const unsigned long long& key) const
 {
-	return key;
+	return (intptr_t)key;
 }
 
 template<>

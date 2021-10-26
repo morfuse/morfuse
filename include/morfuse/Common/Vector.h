@@ -907,13 +907,13 @@ namespace mfuse
 
 	inline float Quat::operator[](const size_t index) const
 	{
-		assert((index >= 0) && (index < 4));
+		assert(index < 4);
 		return (&x)[index];
 	}
 
 	inline float & Quat::operator[](const size_t index)
 	{
-		assert((index >= 0) && (index < 4));
+		assert(index < 4);
 		return (&x)[index];
 	}
 

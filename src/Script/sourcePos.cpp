@@ -21,7 +21,7 @@ sourceLocation_t::sourceLocation_t(uint8_t val)
 	}
 }
 
-bool sourceLocation_t::getLine(const rawchar_t* sourceBuffer, size_t sourceLength, str& sourceLine) const
+bool sourceLocation_t::getLine(const rawchar_t* sourceBuffer, uint64_t sourceLength, str& sourceLine) const
 {
 	const rawchar_t* lineStr = sourceBuffer + sourcePos - column;
 
@@ -52,7 +52,7 @@ bool sourceLocation_t::getLine(const rawchar_t* sourceBuffer, size_t sourceLengt
 	return true;
 }
 
-void mfuse::printSourcePos(const sourceLocation_t& sourcePos, const rawchar_t* scriptName, const rawchar_t* sourceBuffer, size_t sourceLength, std::ostream& out)
+void mfuse::printSourcePos(const sourceLocation_t& sourcePos, const rawchar_t* scriptName, const rawchar_t* sourceBuffer, uint64_t sourceLength, std::ostream& out)
 {
 	str sourceLine;
 	if(sourcePos.getLine(sourceBuffer, sourceLength, sourceLine))

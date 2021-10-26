@@ -18,8 +18,8 @@ namespace mfuse
 		sourceLocation_t();
 		sourceLocation_t(uint8_t val);
 
-		mfuse_EXPORTS bool getLine(const rawchar_t* sourceBuffer, size_t sourceLength, str& sourceLine) const;
+		mfuse_EXPORTS bool getLine(const rawchar_t* sourceBuffer, uint64_t sourceLength, str& sourceLine) const;
 	};
 
-	void printSourcePos(const sourceLocation_t& sourcePos, const rawchar_t* scriptName, const rawchar_t* sourceBuffer, size_t sourceLength, std::ostream& out);
+	void printSourcePos(const sourceLocation_t& sourcePos, const rawchar_t* scriptName, const rawchar_t* sourceBuffer, uint64_t sourceLength, std::ostream& out);
 }
