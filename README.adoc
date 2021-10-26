@@ -17,8 +17,19 @@ endif::[]
 
 == Introduction
 
-Morfuse is a game scripting engine system library, it can parse, compile and interpret script files from Medal of Honor: Allied Assault. This implementation is more optimized towards games in general and not only Medal of Honor.
-This script engine was originally derived from a script system called Morpheus, from FAKK2.
+Morfuse is a scripting engine library: it has its own script language. It is a script engine inspired from Ritual's ÜberTools for Quake III and Medal of Honor: Allied Assault (it can parse scripts from the last one). This script engine targets games primarily.
+
+== Requirements
+
+=== Windows
+
+- Winflexbison (https://github.com/lexxmark/winflexbison)
+- CMake (and any compiler)
+
+=== Linux
+
+- Flex and Bison
+- CMake (and any compiler)
 
 == Example
 
@@ -30,20 +41,19 @@ main:
 end
 ----
 
-No documentation, yet but more has to come. Feel free to contribute if you're interested in this script engine!
+There is no documentation yet but it would be nice to have one. Feel free to contribute if you're interested in this script engine!
 
 == General features
 
-* Event system
-* Ability to declare a class with events into the script system so it can be used
-* Simple entity target list, something like `$entity_name.some_var = 1`
-* Can call a script label with parameters and/or retrieve the return value from thread
-* Cross-platform
+Those are obvious but still worth mentioning:
+
+* Cross-platform (Linux, Windows, x86, x64, ARM, PowerPC, etc...)
+* Ability to create classes and methods to be used by scripts
+* Pausable/Resumable threads
+* Dynamic variables
+* Script can be executed with parameters through C++ code, C++ code can easily retrieve return values from thread
+* Target list, something like `$entity_name.some_var = 1`
 
 == TODO
 
-* [ ] Documentation and more complete README
-* [ ] Implement a module system to bind events/classes into a module (plugins)
-* [ ] Ability to add events to, or override from existing classes, like ScriptThread
-* [ ] Ability to debug scripts
-* [ ] JIT compiler (low priority)
+Full list of things to do here: https://github.com/morfuse/morfuse/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement
