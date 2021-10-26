@@ -42,14 +42,20 @@ mfuse_EXPORTS intptr_t Hash<const_str_static>::operator()(const const_str_static
 }
 
 template<typename intType>
-bool checkNeg(intType& num)
+bool checkNeg(intType& num, typename std::enable_if<std::is_signed<intType>::value, intType>::type = 0)
 {
 	if (num < 0)
 	{
-		num = labs(num);
+		num = -num;
 		return true;
 	}
 
+	return false;
+}
+
+template<typename intType>
+bool checkNeg(intType&, typename std::enable_if<!std::is_signed<intType>::value, intType>::type = 0)
+{
 	return false;
 }
 
@@ -1647,6 +1653,12 @@ const base_str<CharT>& base_strview<CharT>::getDynamicString() const
 }
 
 template<typename CharT>
+base_str<CharT> mfuse::base_strview<CharT>::getString() const
+{
+	return isDynamic() ? getDynamicString() : c_str();
+}
+
+template<typename CharT>
 base_const_str_static<CharT>::base_const_str_static(const CharT* stringValue)
 	: string(stringValue)
 {
@@ -1667,15 +1679,19 @@ bool base_str<CharT>::operator==(const base_str<CharT>& b) const
 template<typename CharT>
 bool base_str<CharT>::operator==(const CharT* b) const
 {
-/*
-	assert(b);
-	if (!b)
-	{
-		return false;
-	}
-	return (!base_str::cmp(c_str(), b));
-*/
 	return b && !base_str::cmp(c_str(), b);
+}
+
+template<typename CharT>
+bool mfuse::base_str<CharT>::operator==(std::nullptr_t) const
+{
+	return m_data == nullptr;
+}
+
+template<typename U>
+bool mfuse::operator==(std::nullptr_t, const base_str<U>& b)
+{
+	return b.m_data == nullptr;
 }
 
 template<typename CharT>
@@ -1709,6 +1725,18 @@ bool mfuse::operator!=(const CharT* a, const base_str<CharT>& b)
 }
 
 template<typename CharT>
+bool mfuse::base_str<CharT>::operator!=(std::nullptr_t) const
+{
+	return m_data != nullptr;
+}
+
+template<typename U>
+bool mfuse::operator!=(std::nullptr_t, const base_str<U>& b)
+{
+	return b.m_data != nullptr;
+}
+
+template<typename CharT>
 const CharT* base_const_str_static<CharT>::c_str() const
 {
 	return string;
@@ -1728,7 +1756,9 @@ template mfuse_EXPORTS void mfuse::Archive(Archiver& arc, base_str<char>& s);
 	template class mfuse_EXPORTS base_str<CharT>; \
 	template mfuse_EXPORTS base_str<CharT> mfuse::operator+(const CharT* a, const base_str<CharT>& b); \
 	template mfuse_EXPORTS bool mfuse::operator==(const CharT* a, const base_str<CharT>& b); \
+	template mfuse_EXPORTS bool mfuse::operator==(std::nullptr_t, const base_str<CharT>& b); \
 	template mfuse_EXPORTS bool mfuse::operator!=(const CharT* a, const base_str<CharT>& b); \
+	template mfuse_EXPORTS bool mfuse::operator!=(std::nullptr_t, const base_str<CharT>& b); \
 	template class mfuse_EXPORTS base_strview<CharT>; \
 	template class mfuse_EXPORTS base_const_str_static<CharT>
 

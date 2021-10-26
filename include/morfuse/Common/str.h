@@ -94,13 +94,17 @@ namespace mfuse
 
 		bool operator==(const base_str& b) const;
 		bool operator==(const CharT* b) const;
+		bool operator==(std::nullptr_t) const;
 		template<typename U> friend bool operator==(const U* a, const base_str<U>& b);
+		template<typename U> friend bool operator==(std::nullptr_t, const base_str<U>& b);
 
 		bool operator!=(const base_str& b) const;
 		bool operator!=(const CharT* b) const;
+		bool operator!=(std::nullptr_t) const;
 		template<typename U> friend bool operator!=(const U* a, const base_str<U>& b);
+		template<typename U> friend bool operator!=(std::nullptr_t, const base_str<U>& b);
 
-		operator const CharT* () const;
+		explicit operator const CharT* () const;
 
 		int icmpn(const CharT* text, size_t n) const;
 		int icmpn(const base_str& text, size_t n) const;
@@ -187,6 +191,7 @@ namespace mfuse
 		size_t len() const;
 		bool isDynamic() const;
 		const base_str<CharT>& getDynamicString() const;
+		base_str<CharT> getString() const;
 
 	private:
 		union {
