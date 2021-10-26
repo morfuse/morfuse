@@ -43,7 +43,7 @@
 	#define yylex lexer.yylex
 }
 
-//%expect 294
+%expect 125
 
 %precedence TOKEN_EOF 0 "end of file"
 %precedence TOKEN_EOL
