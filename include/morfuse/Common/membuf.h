@@ -39,19 +39,6 @@ namespace mfuse
 		}
 	};
 
-	class imemstream : public std::istream
-	{
-	public:
-		imemstream(const rawchar_t* buf, size_t length)
-			: std::istream(&mem)
-			, mem(buf, buf + length)
-		{
-			rdbuf(&mem);
-		}
-
-	private:
-		imembuf mem;
-	};
 	struct omembuf : std::streambuf
 	{
 		omembuf(rawchar_t* begin, rawchar_t* end)
@@ -87,6 +74,20 @@ namespace mfuse
 
 	private:
 		rawchar_t* buf;
+	};
+
+	class imemstream : public std::istream
+	{
+	public:
+		imemstream(const rawchar_t* buf, size_t length)
+			: std::istream(&mem)
+			, mem(buf, buf + length)
+		{
+			rdbuf(&mem);
+		}
+
+	private:
+		imembuf mem;
 	};
 
 	class omemstream : public std::ostream
