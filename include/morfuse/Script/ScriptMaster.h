@@ -100,10 +100,10 @@ namespace mfuse
 		/** Return the thread that was running before the current thread. */
 		mfuse_EXPORTS ScriptThread* PreviousThread() noexcept;
 
-		mfuse_EXPORTS void ExecuteThread(const ProgramScript* scr, const StringResolvable& label = {});
-		mfuse_EXPORTS void ExecuteThread(const StringResolvable& scriptName, const StringResolvable& label = {});
-		mfuse_EXPORTS void ExecuteThread(const ProgramScript* scr, Event& parms, const StringResolvable& label = {});
-		mfuse_EXPORTS void ExecuteThread(const StringResolvable& scriptName, Event& parms, const StringResolvable& label = {});
+		mfuse_EXPORTS ScriptThread* ExecuteThread(const ProgramScript* scr, const StringResolvable& label = {});
+		mfuse_EXPORTS ScriptThread* ExecuteThread(const StringResolvable& scriptName, const StringResolvable& label = {});
+		mfuse_EXPORTS ScriptThread* ExecuteThread(const ProgramScript* scr, Event& parms, const StringResolvable& label = {});
+		mfuse_EXPORTS ScriptThread* ExecuteThread(const StringResolvable& scriptName, Event& parms, const StringResolvable& label = {});
 
 		/**
 		 * Compile and return an anonymous program script.

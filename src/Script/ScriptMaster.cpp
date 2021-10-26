@@ -102,25 +102,31 @@ ScriptThread* ScriptMaster::CreateScriptThread(ScriptClass* scriptClass, const o
 	return new ScriptThread(scriptClass, codePos);
 }
 
-void ScriptMaster::ExecuteThread(const ProgramScript* scr, const StringResolvable& label)
+ScriptThread* ScriptMaster::ExecuteThread(const ProgramScript* scr, const StringResolvable& label)
 {
-	ScriptThread* const Thread = CreateScriptThread(scr, nullptr, label);
-	Thread->Execute();
+	ScriptThread* const thread = CreateScriptThread(scr, nullptr, label);
+	SafePtr<ScriptThread> threadPtr = thread;
+	thread->Execute();
+
+	return threadPtr.Pointer();
 }
 
-void ScriptMaster::ExecuteThread(const StringResolvable& scriptName, const StringResolvable& label)
+ScriptThread* ScriptMaster::ExecuteThread(const StringResolvable& scriptName, const StringResolvable& label)
 {
 	const ProgramScript* const script = GetProgramScript(scriptName);
 	return ExecuteThread(script, label);
 }
 
-void ScriptMaster::ExecuteThread(const ProgramScript* scr, Event& parms, const StringResolvable& label)
+ScriptThread* ScriptMaster::ExecuteThread(const ProgramScript* scr, Event& parms, const StringResolvable& label)
 {
-	ScriptThread* const Thread = CreateScriptThread(scr, nullptr, label);
-	Thread->Execute(parms);
+	ScriptThread* const thread = CreateScriptThread(scr, nullptr, label);
+	SafePtr<ScriptThread> threadPtr = thread;
+	thread->Execute(parms);
+
+	return threadPtr.Pointer();
 }
 
-void ScriptMaster::ExecuteThread(const StringResolvable& scriptName, Event& parms, const StringResolvable& label)
+ScriptThread* ScriptMaster::ExecuteThread(const StringResolvable& scriptName, Event& parms, const StringResolvable& label)
 {
 	const ProgramScript* const script = GetProgramScript(scriptName);
 	return ExecuteThread(script, parms, label);
