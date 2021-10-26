@@ -1128,27 +1128,27 @@ void ScriptThread::operator delete(void* ptr)
 	ScriptContext::Get().GetAllocator().GetBlock<ScriptThread>().Free(ptr);
 }
 
-void ScriptThread::CreateReturnThread(Event *ev)
+void ScriptThread::CreateReturnThread(Event& ev)
 {
 	m_ScriptVM->GetScriptClass()->CreateReturnThread(ev);
 }
 
-void ScriptThread::CreateThread(Event *ev)
+void ScriptThread::CreateThread(Event& ev)
 {
 	m_ScriptVM->GetScriptClass()->CreateThread(ev);
 }
 
-void ScriptThread::ExecuteReturnScript(Event* ev)
+void ScriptThread::ExecuteReturnScript(Event& ev)
 {
 	m_ScriptVM->GetScriptClass()->ExecuteReturnScript(ev);
 }
 
-void ScriptThread::ExecuteScript(Event* ev)
+void ScriptThread::ExecuteScript(Event& ev)
 {
 	m_ScriptVM->GetScriptClass()->ExecuteScript(ev);
 }
 
-void ScriptThread::EventCreateListener(Event* ev)
+void ScriptThread::EventCreateListener(Event& ev)
 {
 	Listener* const l = new Listener();
 
@@ -1156,72 +1156,72 @@ void ScriptThread::EventCreateListener(Event* ev)
 	// make sure to free the listener afterwards
 	context.GetTrackedInstances().Add(l);
 
-	ev->AddListener(l);
+	ev.AddListener(l);
 }
 
-void ScriptThread::CharToInt(Event* ev)
+void ScriptThread::CharToInt(Event& ev)
 {
-	str c = ev->GetString(1);
+	str c = ev.GetString(1);
 
-	ev->AddInteger(c[0u]);
+	ev.AddInteger(c[0u]);
 }
 
 /*
-void ScriptThread::FileOpen(Event* ev)
+void ScriptThread::FileOpen(Event& ev)
 {
 	str filename;
 	str accesstype;
 	FILE *f = NULL;
 	rawchar_t buf[16] = { 0 };
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 		ScriptError("Wrong arguments count for fopen!\n");
 
-	filename = ev->GetString(1);
+	filename = ev.GetString(1);
 
-	accesstype = ev->GetString(2);
+	accesstype = ev.GetString(2);
 
 	f = fopen(filename.c_str(), accesstype);
 
 	if (f == NULL)
 	{
-		ev->AddInteger(0);
+		ev.AddInteger(0);
 		return;
 	}
 	else
 	{
-		ev->AddInteger((int)(int64_t)f);
+		ev.AddInteger((int)(int64_t)f);
 		return;
 	}
 
 
 }
 
-void ScriptThread::FileWrite(Event* ev)
+void ScriptThread::FileWrite(Event& ev)
 {
 
 }
 
-void ScriptThread::FileRead(Event* ev)
+void ScriptThread::FileRead(Event& ev)
 {
 
 }
 
-void ScriptThread::FileClose(Event* ev)
+void ScriptThread::FileClose(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 	char buf[16] = { 0 };
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 		ScriptError("Wrong arguments count for fclose!\n");
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
@@ -1233,40 +1233,40 @@ void ScriptThread::FileClose(Event* ev)
 
 	if (ret == 0)
 	{
-		ev->AddInteger(0);
+		ev.AddInteger(0);
 		return;
 	}
 	else
 	{
-		ev->AddInteger(ret);
+		ev.AddInteger(ret);
 		return;
 	}
 
 
 }
 
-void ScriptThread::FileEof(Event* ev)
+void ScriptThread::FileEof(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1) {
 		ScriptError("Wrong arguments count for feof!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
 	ret = feof(f);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 }
 
-void ScriptThread::FileSeek(Event* ev)
+void ScriptThread::FileSeek(Event& ev)
 {
 	int id = 0;
 	int pos = 0;
@@ -1274,23 +1274,23 @@ void ScriptThread::FileSeek(Event* ev)
 	int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 3) {
 		ScriptError("Wrong arguments count for fseek!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
-	offset = ev->GetInteger(2);
+	offset = ev.GetInteger(2);
 
 	if (offset < 0) {
 		ScriptError("Wrong file offset! Should be starting from 0. - fseek\n");
 	}
 
-	pos = ev->GetInteger(3);
+	pos = ev.GetInteger(3);
 
 	if (pos != 0 && pos != 1 && pos != 2) {
 		ScriptError("Wrong file offset start! Should be between 0 - 2! - fseek\n");
@@ -1298,45 +1298,45 @@ void ScriptThread::FileSeek(Event* ev)
 
 	ret = fseek(f, offset, pos);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 
 
 }
 
-void ScriptThread::FileTell(Event* ev)
+void ScriptThread::FileTell(Event& ev)
 {
 	int id = 0;
 	long int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1) {
 		ScriptError("Wrong arguments count for ftell!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
 	ret = ftell(f);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 }
 
-void ScriptThread::FileRewind(Event* ev)
+void ScriptThread::FileRewind(Event& ev)
 {
 	int id = 0;
 	long int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1) {
 		ScriptError("Wrong arguments count for frewind!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
@@ -1344,76 +1344,76 @@ void ScriptThread::FileRewind(Event* ev)
 
 }
 
-void ScriptThread::FilePutc(Event* ev)
+void ScriptThread::FilePutc(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 	int c = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2) {
 		ScriptError("Wrong arguments count for fputc!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
-	c = ev->GetInteger(2);
+	c = ev.GetInteger(2);
 
 	ret = fputc((char)c, f);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 }
 
-void ScriptThread::FilePuts(Event* ev)
+void ScriptThread::FilePuts(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 	str c;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2) {
 		ScriptError("Wrong arguments count for fputs!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
-	c = ev->GetString(2);
+	c = ev.GetString(2);
 	//gi.Printf("Putting line into a file\n");
 	ret = fputs(c.c_str(), f);
 	//gi.Printf("Ret val: %i\n", ret);
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 }
 
-void ScriptThread::FileGetc(Event* ev)
+void ScriptThread::FileGetc(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1) {
 		ScriptError("Wrong arguments count for fgetc!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
 	ret = fgetc(f);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 }
 
-void ScriptThread::FileGets(Event* ev)
+void ScriptThread::FileGets(Event& ev)
 {
 	int id = 0;
 	int maxCount = 0;
@@ -1421,17 +1421,17 @@ void ScriptThread::FileGets(Event* ev)
 	char *c = NULL;
 	char *buff = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2) {
 		ScriptError("Wrong arguments count for fgets!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
-	maxCount = ev->GetInteger(2);
+	maxCount = ev.GetInteger(2);
 
 	if (maxCount <= 0) {
 		ScriptError("Maximum buffer size should be higher than 0! - fgets\n");
@@ -1442,7 +1442,7 @@ void ScriptThread::FileGets(Event* ev)
 	if (buff == NULL)
 	{
 		ScriptError("Failed to allocate memory during fputs scriptCommand text buffer initialization! Try setting maximum buffer length lower.\n");
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 	}
 
 	memset(buff, 0, maxCount + 1);
@@ -1450,71 +1450,71 @@ void ScriptThread::FileGets(Event* ev)
 	c = fgets(buff, maxCount, f);
 
 	if (c == NULL)
-		ev->AddString("");
+		ev.AddString("");
 	else
-		ev->AddString(c);
+		ev.AddString(c);
 
 	free(buff);
 }
 
-void ScriptThread::FileError(Event* ev)
+void ScriptThread::FileError(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1) {
 		ScriptError("Wrong arguments count for ferror!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
 	ret = ferror(f);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 }
 
-void ScriptThread::FileFlush(Event* ev)
+void ScriptThread::FileFlush(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	FILE *f = NULL;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
 		ScriptError("Wrong arguments count for fflush!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
 	ret = fflush(f);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 
 }
 
-void ScriptThread::FileExists(Event* ev)
+void ScriptThread::FileExists(Event& ev)
 {
 	int id = 0;
 	FILE *f = 0;
 	str filename;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
 		ScriptError("Wrong arguments count for fexists!\n");
 	}
 
-	filename = ev->GetString(1);
+	filename = ev.GetString(1);
 
 	if (filename == NULL)
 	{
@@ -1525,16 +1525,16 @@ void ScriptThread::FileExists(Event* ev)
 	if (f)
 	{
 		fclose(f);
-		ev->AddInteger(1);
+		ev.AddInteger(1);
 	}
 	else
 	{
-		ev->AddInteger(0);
+		ev.AddInteger(0);
 	}
 
 }
 
-void ScriptThread::FileReadAll(Event* ev)
+void ScriptThread::FileReadAll(Event& ev)
 {
 	int id = 0;
 	FILE *f = NULL;
@@ -1543,14 +1543,14 @@ void ScriptThread::FileReadAll(Event* ev)
 	size_t size = 0;
 	size_t sizeRead = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
 		ScriptError("Wrong arguments count for freadall!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 
 	f = (FILE *)id;
 
@@ -1563,62 +1563,62 @@ void ScriptThread::FileReadAll(Event* ev)
 
 	if (ret == NULL)
 	{
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 		ScriptError("Error while allocating memory buffer for file content - freadall!\n");
 	}
 
 	sizeRead = fread(ret, 1, size, f);
 	ret[sizeRead] = '\0';
 
-	ev->AddString(ret);
+	ev.AddString(ret);
 
 	free(ret);
 }
 
-void ScriptThread::FileSaveAll(Event* ev)
+void ScriptThread::FileSaveAll(Event& ev)
 {
 	int id = 0;
 	FILE *f = NULL;
 	size_t sizeWrite = 0;
 	str text;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
 		ScriptError("Wrong arguments count for fsaveall!\n");
 	}
 
-	id = ev->GetInteger(1);
+	id = ev.GetInteger(1);
 	f = (FILE *)id;
 
-	text = ev->GetString(2);
+	text = ev.GetString(2);
 
 	if (text == NULL)
 	{
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 		ScriptError("Text to be written is NULL - fsaveall!\n");
 	}
 
 	sizeWrite = fwrite(text, 1, strlen(text), f);
 
-	ev->AddInteger((int)sizeWrite);
+	ev.AddInteger((int)sizeWrite);
 }
 
-void ScriptThread::FileRemove(Event* ev)
+void ScriptThread::FileRemove(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	str filename;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
 		ScriptError("Wrong arguments count for fremove!\n");
 	}
 
-	filename = ev->GetString(1);
+	filename = ev.GetString(1);
 
 	if (filename == NULL)
 	{
@@ -1627,25 +1627,25 @@ void ScriptThread::FileRemove(Event* ev)
 
 	ret = remove(filename);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 
 }
 
-void ScriptThread::FileRename(Event* ev)
+void ScriptThread::FileRename(Event& ev)
 {
 	int id = 0;
 	int ret = 0;
 	str oldfilename, newfilename;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
 		ScriptError("Wrong arguments count for frename!\n");
 	}
 
-	oldfilename = ev->GetString(1);
-	newfilename = ev->GetString(2);
+	oldfilename = ev.GetString(1);
+	newfilename = ev.GetString(2);
 
 	if (!oldfilename)
 	{
@@ -1659,11 +1659,11 @@ void ScriptThread::FileRename(Event* ev)
 
 	ret = rename(oldfilename, newfilename);
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 
 }
 
-void ScriptThread::FileCopy(Event* ev)
+void ScriptThread::FileCopy(Event& ev)
 {
 	size_t n = 0;
 	unsigned int ret = 0;
@@ -1671,7 +1671,7 @@ void ScriptThread::FileCopy(Event* ev)
 	FILE *f = NULL, *fCopy = NULL;
 	char buffer[4096];
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
@@ -1679,8 +1679,8 @@ void ScriptThread::FileCopy(Event* ev)
 		return;
 	}
 
-	filename = ev->GetString(1);
-	copyfilename = ev->GetString(2);
+	filename = ev.GetString(1);
+	copyfilename = ev.GetString(2);
 
 	if (!filename)
 	{
@@ -1699,7 +1699,7 @@ void ScriptThread::FileCopy(Event* ev)
 	if (f == NULL)
 	{
 		//glbs.Printf("Could not open \"%s\" for copying - fcopy!\n", filename.c_str());
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 		return;
 	}
 
@@ -1709,7 +1709,7 @@ void ScriptThread::FileCopy(Event* ev)
 	{
 		fclose(f);
 		//glbs.Printf("Could not open \"%s\" for copying - fcopy!\n", copyfilename.c_str());
-		ev->AddInteger(-2);
+		ev.AddInteger(-2);
 		return;
 	}
 
@@ -1721,7 +1721,7 @@ void ScriptThread::FileCopy(Event* ev)
 			fflush(fCopy);
 			fclose(fCopy);
 			//glbs.Printf("There was an error while copying files - fcopy!\n");
-			ev->AddInteger(-3);
+			ev.AddInteger(-3);
 			return;
 		}
 	}
@@ -1730,16 +1730,16 @@ void ScriptThread::FileCopy(Event* ev)
 	fflush(fCopy);
 	fclose(fCopy);
 
-	ev->AddInteger(0);
+	ev.AddInteger(0);
 }
 #if 0
-void ScriptThread::FileReadPak(Event* ev)
+void ScriptThread::FileReadPak(Event& ev)
 {
 	str filename;
 	const char *content = NULL;
 	int ret = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -1747,7 +1747,7 @@ void ScriptThread::FileReadPak(Event* ev)
 		return;
 	}
 
-	filename = ev->GetString(1);
+	filename = ev.GetString(1);
 
 	if (filename == NULL)
 	{
@@ -1764,14 +1764,14 @@ void ScriptThread::FileReadPak(Event* ev)
 	if (content == NULL)
 	{
 		//glbs.Printf("Error while reading pak file content - freadpak!\n");
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 		return;
 	}
 
-	ev->AddString(content);
+	ev.AddString(content);
 }
 
-void ScriptThread::FileList(Event* ev)
+void ScriptThread::FileList(Event& ev)
 {
 	const char *path = NULL;
 	str extension;
@@ -1781,7 +1781,7 @@ void ScriptThread::FileList(Event* ev)
 	ScriptVariable *ref = new ScriptVariable;
 	ScriptVariable *array = new ScriptVariable;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 3)
 	{
@@ -1789,9 +1789,9 @@ void ScriptThread::FileList(Event* ev)
 		return;
 	}
 
-	path = ev->GetString(1);
-	extension = ev->GetString(2);
-	wantSubs = ev->GetBoolean(3);
+	path = ev.GetString(1);
+	extension = ev.GetString(2);
+	wantSubs = ev.GetBoolean(3);
 
 	FileManager* FM = GetFileManager();
 
@@ -1816,18 +1816,18 @@ void ScriptThread::FileList(Event* ev)
 		ref->setArrayAt(*indexes, *values);
 	}
 
-	ev->AddValue(*array);
+	ev.AddValue(*array);
 
 	return;
 
 }
 #endif
-void ScriptThread::FileNewDirectory(Event* ev)
+void ScriptThread::FileNewDirectory(Event& ev)
 {
 	str path;
 	int ret = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -1835,7 +1835,7 @@ void ScriptThread::FileNewDirectory(Event* ev)
 		return;
 	}
 
-	path = ev->GetString(1);
+	path = ev.GetString(1);
 
 	if (path == NULL)
 	{
@@ -1849,16 +1849,16 @@ void ScriptThread::FileNewDirectory(Event* ev)
 	//ret = mkdir(path, 0777);
 #endif
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 	return;
 }
 
-void ScriptThread::FileRemoveDirectory(Event* ev)
+void ScriptThread::FileRemoveDirectory(Event& ev)
 {
 	str path;
 	int ret = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -1866,7 +1866,7 @@ void ScriptThread::FileRemoveDirectory(Event* ev)
 		return;
 	}
 
-	path = ev->GetString(1);
+	path = ev.GetString(1);
 
 	if (path == NULL)
 	{
@@ -1880,14 +1880,14 @@ void ScriptThread::FileRemoveDirectory(Event* ev)
 	ret = rmdir(path);
 #endif
 
-	ev->AddInteger(ret);
+	ev.AddInteger(ret);
 	return;
 }
 */
 
-void ScriptThread::GetArrayKeys(Event* ev)
+void ScriptThread::GetArrayKeys(Event& ev)
 {
-	const ScriptVariable& array = ev->GetValue(1);
+	const ScriptVariable& array = ev.GetValue(1);
 
 	const size_t arraySize = array.arraysize();
 
@@ -1902,12 +1902,12 @@ void ScriptThread::GetArrayKeys(Event* ev)
 		constArray[i] = it.GetKey();
 	}
 
-	ev->AddValue(std::move(constArray));
+	ev.AddValue(std::move(constArray));
 }
 
-void ScriptThread::GetArrayValues(Event* ev)
+void ScriptThread::GetArrayValues(Event& ev)
 {
-	const ScriptVariable& array = ev->GetValue(1);
+	const ScriptVariable& array = ev.GetValue(1);
 
 	const size_t arraySize = array.arraysize();
 
@@ -1922,10 +1922,10 @@ void ScriptThread::GetArrayValues(Event* ev)
 		constArray[i] = it.GetValue();
 	}
 
-	ev->AddValue(std::move(constArray));
+	ev.AddValue(std::move(constArray));
 }
 
-void ScriptThread::GetDate(Event* ev)
+void ScriptThread::GetDate(Event& ev)
 {
 	char buff[1024];
 	time_t rawtime;
@@ -1936,10 +1936,10 @@ void ScriptThread::GetDate(Event* ev)
 
 	strftime(buff, 64, "%d.%m.%Y %r", timeinfo);
 
-	ev->AddString(buff);
+	ev.AddString(buff);
 }
 
-void ScriptThread::GetTimeZone(Event* ev)
+void ScriptThread::GetTimeZone(Event& ev)
 {
 	int gmttime;
 	int local;
@@ -1950,7 +1950,7 @@ void ScriptThread::GetTimeZone(Event* ev)
 	int timediff;
 	int tmp;
 
-	tmp = ev->GetInteger(1);
+	tmp = ev.GetInteger(1);
 
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
@@ -1963,10 +1963,10 @@ void ScriptThread::GetTimeZone(Event* ev)
 
 	timediff = local - gmttime;
 
-	ev->AddInteger(timediff);
+	ev.AddInteger(timediff);
 }
 
-void ScriptThread::PregMatch(Event*)
+void ScriptThread::PregMatch(Event&)
 {
 	/*
 	slre_cap sl_cap[32];
@@ -1980,8 +1980,8 @@ void ScriptThread::PregMatch(Event*)
 
 	memset(sl_cap, 0, sizeof(sl_cap));
 
-	pattern = ev->GetString(1);
-	subject = ev->GetString(2);
+	pattern = ev.GetString(1);
+	subject = ev.GetString(2);
 
 	iMaxLength = strlen(subject);
 	iLength = 0;
@@ -2015,39 +2015,36 @@ void ScriptThread::PregMatch(Event*)
 		i++;
 	}
 
-	ev->AddValue(array);
+	ev.AddValue(array);
 	*/
 }
 
-void ScriptThread::EventIsArray(Event* ev)
+void ScriptThread::EventIsArray(Event& ev)
 {
-	ScriptVariable * value = &ev->GetValue(1);
+	ScriptVariable * value = &ev.GetValue(1);
 
 	if (value == NULL)
 	{
-		return ev->AddInteger(0);
+		return ev.AddInteger(0);
 	}
 
-	ev->AddInteger(
+	ev.AddInteger(
 		value->GetType() == variableType_e::Array
 		|| value->GetType() == variableType_e::ConstArray
 		|| value->GetType() == variableType_e::SafeContainer
 	);
 }
 
-void ScriptThread::EventIsDefined(Event* ev)
+void ScriptThread::EventIsDefined(Event& ev)
 {
-	ev->AddInteger(!ev->IsNilAt(1));
+	ev.AddInteger(!ev.IsNilAt(1));
 }
 
-void ScriptThread::FlagClear(Event* ev)
+void ScriptThread::FlagClear(Event& ev)
 {
-	str name;
-	Flag *flag;
+	const str name = ev.GetString(1);
 
-	name = ev->GetString(1);
-
-	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
+	Flag* flag = ScriptContext::Get().GetDirector().flags.FindFlag(name.c_str());
 
 	if (flag == NULL) {
 		throw ScriptException("Invalid flag " + name);
@@ -2056,14 +2053,11 @@ void ScriptThread::FlagClear(Event* ev)
 	delete flag;
 }
 
-void ScriptThread::FlagInit(Event* ev)
+void ScriptThread::FlagInit(Event& ev)
 {
-	str name;
-	Flag *flag;
+	const str name = ev.GetString(1);
 
-	name = ev->GetString(1);
-
-	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
+	Flag* flag = ScriptContext::Get().GetDirector().flags.FindFlag(name.c_str());
 
 	if (flag != NULL)
 	{
@@ -2076,14 +2070,11 @@ void ScriptThread::FlagInit(Event* ev)
 	flag->flagName = name;
 }
 
-void ScriptThread::FlagSet(Event* ev)
+void ScriptThread::FlagSet(Event& ev)
 {
-	str name;
-	Flag *flag;
+	const str name = ev.GetString(1);
 
-	name = ev->GetString(1);
-
-	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
+	Flag* flag = ScriptContext::Get().GetDirector().flags.FindFlag(name.c_str());
 
 	if (flag == NULL) {
 		throw ScriptException("Invalid flag '" + name + "'");
@@ -2092,14 +2083,11 @@ void ScriptThread::FlagSet(Event* ev)
 	flag->Set();
 }
 
-void ScriptThread::FlagWait(Event* ev)
+void ScriptThread::FlagWait(Event& ev)
 {
-	str name;
-	Flag *flag;
+	const str name = ev.GetString(1);
 
-	name = ev->GetString(1);
-
-	flag = ScriptContext::Get().GetDirector().flags.FindFlag(name);
+	Flag* flag = ScriptContext::Get().GetDirector().flags.FindFlag(name.c_str());
 
 	if (flag == NULL) {
 		throw ScriptException("Invalid flag '" + name + "'");
@@ -2108,9 +2096,9 @@ void ScriptThread::FlagWait(Event* ev)
 	flag->Wait(this);
 }
 
-void ScriptThread::Lock(Event* ev)
+void ScriptThread::Lock(Event& ev)
 {
-	ScriptMutex *pMutex = (ScriptMutex *)ev->GetListener(1);
+	ScriptMutex *pMutex = (ScriptMutex *)ev.GetListener(1);
 
 	if (!pMutex) {
 		throw ScriptException("Invalid mutex.");
@@ -2119,9 +2107,9 @@ void ScriptThread::Lock(Event* ev)
 	pMutex->Lock();
 }
 
-void ScriptThread::UnLock(Event* ev)
+void ScriptThread::UnLock(Event& ev)
 {
-	ScriptMutex *pMutex = (ScriptMutex *)ev->GetListener(1);
+	ScriptMutex *pMutex = (ScriptMutex *)ev.GetListener(1);
 
 	if (!pMutex) {
 		throw ScriptException("Invalid mutex.");
@@ -2130,11 +2118,11 @@ void ScriptThread::UnLock(Event* ev)
 	pMutex->Unlock();
 }
 
-void ScriptThread::MathCos(Event* ev)
+void ScriptThread::MathCos(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2142,17 +2130,17 @@ void ScriptThread::MathCos(Event* ev)
 		return;
 	}
 
-	x = (double)ev->GetFloat(1);
+	x = (double)ev.GetFloat(1);
 	res = cos(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathSin(Event* ev)
+void ScriptThread::MathSin(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2160,17 +2148,17 @@ void ScriptThread::MathSin(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = sin(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathTan(Event* ev)
+void ScriptThread::MathTan(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2178,17 +2166,17 @@ void ScriptThread::MathTan(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = tan(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathACos(Event* ev)
+void ScriptThread::MathACos(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2196,17 +2184,17 @@ void ScriptThread::MathACos(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = acos(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathASin(Event* ev)
+void ScriptThread::MathASin(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2214,17 +2202,17 @@ void ScriptThread::MathASin(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = asin(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathATan(Event* ev)
+void ScriptThread::MathATan(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2232,17 +2220,17 @@ void ScriptThread::MathATan(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = atan(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathATan2(Event* ev)
+void ScriptThread::MathATan2(Event& ev)
 {
 	double x = 0.0f, y = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
@@ -2250,19 +2238,19 @@ void ScriptThread::MathATan2(Event* ev)
 		return;
 	}
 
-	y = ev->GetFloat(1);
-	x = ev->GetFloat(2);
+	y = ev.GetFloat(1);
+	x = ev.GetFloat(2);
 
 	res = atan2(y, x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathCosH(Event* ev)
+void ScriptThread::MathCosH(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2270,17 +2258,17 @@ void ScriptThread::MathCosH(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = cosh(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathSinH(Event* ev)
+void ScriptThread::MathSinH(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2288,17 +2276,17 @@ void ScriptThread::MathSinH(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = sinh(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathTanH(Event* ev)
+void ScriptThread::MathTanH(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2306,17 +2294,17 @@ void ScriptThread::MathTanH(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = tanh(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathExp(Event* ev)
+void ScriptThread::MathExp(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2324,13 +2312,13 @@ void ScriptThread::MathExp(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = exp(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathFrexp(Event* ev)
+void ScriptThread::MathFrexp(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 	int exp = 0;
@@ -2341,7 +2329,7 @@ void ScriptThread::MathFrexp(Event* ev)
 	ScriptVariable *SignificandVal = new ScriptVariable;
 	ScriptVariable *ExponentVal = new ScriptVariable;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2349,7 +2337,7 @@ void ScriptThread::MathFrexp(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = frexp(x, &exp);
 
 	ref->setRefValue(array);
@@ -2363,15 +2351,15 @@ void ScriptThread::MathFrexp(Event* ev)
 	ref->setArrayAt(*SignificandIndex, *SignificandVal);
 	ref->setArrayAt(*ExponentIndex, *ExponentVal);
 
-	ev->AddValue(*array);
+	ev.AddValue(*array);
 }
 
-void ScriptThread::MathLdexp(Event* ev)
+void ScriptThread::MathLdexp(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 	int exp = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
@@ -2379,19 +2367,19 @@ void ScriptThread::MathLdexp(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
-	exp = ev->GetInteger(2);
+	x = ev.GetFloat(1);
+	exp = ev.GetInteger(2);
 
 	res = ldexp(x, exp);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathLog(Event* ev)
+void ScriptThread::MathLog(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2399,17 +2387,17 @@ void ScriptThread::MathLog(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = log(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathLog10(Event* ev)
+void ScriptThread::MathLog10(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2417,13 +2405,13 @@ void ScriptThread::MathLog10(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = log10(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathModf(Event* ev)
+void ScriptThread::MathModf(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 	double intpart = 0;
@@ -2434,7 +2422,7 @@ void ScriptThread::MathModf(Event* ev)
 	ScriptVariable *FractionalVal = new ScriptVariable;
 	ScriptVariable *IntpartVal = new ScriptVariable;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2442,7 +2430,7 @@ void ScriptThread::MathModf(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = modf(x, &intpart);
 
 	ref->setRefValue(array);
@@ -2455,15 +2443,15 @@ void ScriptThread::MathModf(Event* ev)
 	ref->setArrayAt(*IntpartIndex, *IntpartVal);
 	ref->setArrayAt(*FractionalIndex, *FractionalVal);
 
-	ev->AddValue(*array);
+	ev.AddValue(*array);
 }
 
-void ScriptThread::MathPow(Event* ev)
+void ScriptThread::MathPow(Event& ev)
 {
 	double base = 0.0f, res = 0.0f;
 	int exponent = 0;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
@@ -2471,18 +2459,18 @@ void ScriptThread::MathPow(Event* ev)
 		return;
 	}
 
-	base = ev->GetFloat(1);
-	exponent = ev->GetInteger(2);
+	base = ev.GetFloat(1);
+	exponent = ev.GetInteger(2);
 	res = pow(base, exponent);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathSqrt(Event* ev)
+void ScriptThread::MathSqrt(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2490,17 +2478,17 @@ void ScriptThread::MathSqrt(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = sqrt(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathCeil(Event* ev)
+void ScriptThread::MathCeil(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2508,17 +2496,17 @@ void ScriptThread::MathCeil(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = ceil(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathFloor(Event* ev)
+void ScriptThread::MathFloor(Event& ev)
 {
 	double x = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2526,17 +2514,17 @@ void ScriptThread::MathFloor(Event* ev)
 		return;
 	}
 
-	x = ev->GetFloat(1);
+	x = ev.GetFloat(1);
 	res = floor(x);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
-void ScriptThread::MathFmod(Event* ev)
+void ScriptThread::MathFmod(Event& ev)
 {
 	double numerator = 0.0f, denominator = 0.0f, res = 0.0f;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 2)
 	{
@@ -2544,11 +2532,11 @@ void ScriptThread::MathFmod(Event* ev)
 		return;
 	}
 
-	numerator = ev->GetFloat(1);
-	denominator = ev->GetFloat(2);
+	numerator = ev.GetFloat(1);
+	denominator = ev.GetFloat(2);
 	res = fmod(numerator, denominator);
 
-	ev->AddFloat((float)res);
+	ev.AddFloat((float)res);
 }
 
 /*
@@ -2646,66 +2634,66 @@ int checkMD5String(const char *string, char *md5Hash)
 }
 */
 
-void ScriptThread::Md5File(Event*)
+void ScriptThread::Md5File(Event&)
 {
 	/*
 	char hash[64];
 	str filename = NULL;
 	int ret = 0;
 
-	if (ev->NumArgs() != 1)
+	if (ev.NumArgs() != 1)
 	{
 		ScriptError("Wrong arguments count for md5file!\n");
 		return;
 	}
 
-	filename = ev->GetString(1);
+	filename = ev.GetString(1);
 
 	ret = checkMD5(filename, hash);
 	if (ret != 0)
 	{
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 		ScriptError("Error while generating MD5 checksum for file - md5file!\n");
 		return;
 	}
 
-	ev->AddString(hash);
+	ev.AddString(hash);
 	*/
 }
 
-void ScriptThread::Md5String(Event*)
+void ScriptThread::Md5String(Event&)
 {
 	/*
 	char hash[64];
 	str text = NULL;
 	int ret = 0;
 
-	if (ev->NumArgs() != 1)
+	if (ev.NumArgs() != 1)
 	{
 		ScriptError("Wrong arguments count for md5string!\n");
 		return;
 	}
 
-	text = ev->GetString(1);
+	text = ev.GetString(1);
 
 	ret = checkMD5String(text, hash);
 	if (ret != 0)
 	{
-		ev->AddInteger(-1);
+		ev.AddInteger(-1);
 		ScriptError("Error while generating MD5 checksum for strin!\n");
 		return;
 	}
 
-	ev->AddString(hash);
+	ev.AddString(hash);
 	*/
 }
 
-void ScriptThread::TypeOfVariable(Event* ev)
+void ScriptThread::TypeOfVariable(Event& ev)
 {
 	char *type = NULL;
 	ScriptVariable * variable;
 
-	size_t numArgs = ev->NumArgs();
+	size_t numArgs = ev.NumArgs();
 
 	if (numArgs != 1)
 	{
@@ -2713,13 +2701,13 @@ void ScriptThread::TypeOfVariable(Event* ev)
 		return;
 	}
 
-	variable = (ScriptVariable*)&ev->GetValue(1);
+	variable = (ScriptVariable*)&ev.GetValue(1);
 	type = (char*)variable->GetTypeName();
 
-	ev->AddString(type);
+	ev.AddString(type);
 }
 
-void ScriptThread::CancelWaiting(Event*)
+void ScriptThread::CancelWaiting(Event&)
 {
 	CancelWaitingAll();
 }
@@ -2737,89 +2725,89 @@ void ScriptThread::ArchiveInternal(Archiver& arc)
 	arc.ArchiveEnum(m_ThreadState);
 }
 
-void ScriptThread::Abs(Event* ev)
+void ScriptThread::Abs(Event& ev)
 {
-	ev->AddFloat(fabsf(ev->GetFloat(1)));
+	ev.AddFloat(fabsf(ev.GetFloat(1)));
 }
 
-void ScriptThread::SetTimer(Event* ev)
+void ScriptThread::SetTimer(Event& ev)
 {
 	int interval = -1;
 	Event *event;
 
-	if (ev->NumArgs() != 2) {
+	if (ev.NumArgs() != 2) {
 		throw ScriptException("Wrong arguments count for settimer!");
 	}
 
-	interval = ev->GetInteger(1);
+	interval = ev.GetInteger(1);
 
 	if (interval <= 0)
 	{
-		ev->AddInteger(1);
+		ev.AddInteger(1);
 		return;
 	}
 
 	event = new Event(EV_Listener_ExecuteScript);
-	event->AddValue(ev->GetValue(2));
+	event->AddValue(ev.GetValue(2));
 
 	PostEvent(event, interval);
 }
 
-void ScriptThread::Angles_ToForward(Event* ev)
+void ScriptThread::Angles_ToForward(Event& ev)
 {
 	Vector fwd;
 
-	ev->GetVector(1).AngleVectorsLeft(&fwd);
-	ev->AddVector(fwd);
+	ev.GetVector(1).AngleVectorsLeft(&fwd);
+	ev.AddVector(fwd);
 }
 
-void ScriptThread::Angles_ToLeft(Event* ev)
+void ScriptThread::Angles_ToLeft(Event& ev)
 {
 	Vector left;
 
-	ev->GetVector(1).AngleVectorsLeft(NULL, &left);
-	ev->AddVector(left);
+	ev.GetVector(1).AngleVectorsLeft(NULL, &left);
+	ev.AddVector(left);
 }
 
-void ScriptThread::Angles_ToUp(Event* ev)
+void ScriptThread::Angles_ToUp(Event& ev)
 {
 	Vector up;
 
-	ev->GetVector(1).AngleVectorsLeft(NULL, NULL, &up);
-	ev->AddVector(up);
+	ev.GetVector(1).AngleVectorsLeft(NULL, NULL, &up);
+	ev.AddVector(up);
 }
 
-void ScriptThread::Assert(Event* ev)
+void ScriptThread::Assert(Event& ev)
 {
 	(void)ev;
-	assert(ev->GetFloat(1));
+	assert(ev.GetFloat(1));
 }
 
-void ScriptThread::Cache(Event*)
+void ScriptThread::Cache(Event&)
 {
 }
 
-void ScriptThread::CastBoolean(Event* ev)
+void ScriptThread::CastBoolean(Event& ev)
 {
-	ev->AddInteger(ev->GetBoolean(1));
+	ev.AddInteger(ev.GetBoolean(1));
 }
 
-void ScriptThread::CastFloat(Event* ev)
+void ScriptThread::CastFloat(Event& ev)
 {
-	ev->AddFloat(ev->GetFloat(1));
+	ev.AddFloat(ev.GetFloat(1));
 }
 
-void ScriptThread::CastInt(Event* ev)
+void ScriptThread::CastInt(Event& ev)
 {
-	ev->AddInteger(ev->GetInteger(1));
+	ev.AddInteger(ev.GetInteger(1));
 }
 
-void ScriptThread::CastString(Event* ev)
+void ScriptThread::CastString(Event& ev)
 {
-	ev->AddString(ev->GetString(1));
+	ev.AddString(ev.GetString(1));
 }
 
-void ScriptThread::EventDelayThrow(Event* ev)
+void ScriptThread::EventDelayThrow(Event& ev)
 {
 	if (!m_ScriptVM->m_PrevCodePos) {
 		return;
@@ -2845,7 +2833,7 @@ void ScriptThread::EventDelayThrow(Event* ev)
 
 		Stop();
 
-		if (!BroadcastEvent(const_str(0), *ev))
+		if (!BroadcastEvent(const_str(0), ev))
 		{
 			m_ScriptVM->GetScriptClass()->EventDelayThrow(ev);
 		}
@@ -2857,15 +2845,15 @@ void ScriptThread::EventDelayThrow(Event* ev)
 	}
 }
 
-void ScriptThread::EventEnd(Event* ev)
+void ScriptThread::EventEnd(Event& ev)
 {
-	if (ev->NumArgs() > 0)
+	if (ev.NumArgs() > 0)
 	{
-		ScriptVariable value = ev->GetValue(1);
+		ScriptVariable value = ev.GetValue(1);
 
 		m_ScriptVM->End(value);
 
-		ev->AddValue(value);
+		ev.AddValue(value);
 	}
 	else
 	{
@@ -2873,22 +2861,22 @@ void ScriptThread::EventEnd(Event* ev)
 	}
 }
 
-void ScriptThread::EventTimeout(Event*)
+void ScriptThread::EventTimeout(Event&)
 {
-	//Director.maxTime = ev->GetFloat(1) * 1000.0f + 0.5f;
+	//Director.maxTime = ev.GetFloat(1) * 1000.0f + 0.5f;
 }
 
-void ScriptThread::EventError(Event* ev)
+void ScriptThread::EventError(Event& ev)
 {
-	if (ev->NumArgs() <= 1)
+	if (ev.NumArgs() <= 1)
 	{
-		throw ScriptException(ev->GetString(1));
+		throw ScriptException(ev.GetString(1));
 	} else {
-		throw ScriptAbortException(ev->GetString(1));
+		throw ScriptAbortException(ev.GetString(1));
 	}
 }
 
-void ScriptThread::EventGoto(Event* ev)
+void ScriptThread::EventGoto(Event& ev)
 {
 	m_ScriptVM->EventGoto(ev);
 
@@ -2903,11 +2891,11 @@ void ScriptThread::EventGoto(Event* ev)
 	}
 }
 
-void ScriptThread::EventRegisterCommand(Event*)
+void ScriptThread::EventRegisterCommand(Event&)
 {
 }
 
-void ScriptThread::EventThrow(Event* ev)
+void ScriptThread::EventThrow(Event& ev)
 {
 	if (!m_ScriptVM->m_PrevCodePos) {
 		return;
@@ -2933,7 +2921,7 @@ void ScriptThread::EventThrow(Event* ev)
 
 		Stop();
 
-		if (!BroadcastEvent(ConstStrings::Empty, *ev))
+		if (!BroadcastEvent(ConstStrings::Empty, ev))
 		{
 			m_ScriptVM->GetScriptClass()->EventThrow(ev);
 		}
@@ -2945,31 +2933,31 @@ void ScriptThread::EventThrow(Event* ev)
 	}
 }
 
-void ScriptThread::EventWait(Event* ev)
+void ScriptThread::EventWait(Event& ev)
 {
-	Wait(uint64_t(ev->GetFloat(1) * 1000.f));
+	Wait(uint64_t(ev.GetFloat(1) * 1000.f));
 }
 
-void ScriptThread::EventWaitFrame(Event*)
+void ScriptThread::EventWaitFrame(Event&)
 {
 	// FIXME: Proper wait?
 	Wait(ScriptContext::Get().GetTimeManager().GetTime());
 }
 
-void ScriptThread::GetSelf(Event* ev)
+void ScriptThread::GetSelf(Event& ev)
 {
-	ev->AddListener(m_ScriptVM->GetScriptClass()->GetSelf());
+	ev.AddListener(m_ScriptVM->GetScriptClass()->GetSelf());
 }
 
-void ScriptThread::Println(Event* ev)
+void ScriptThread::Println(Event& ev)
 {
 	std::ostream* out = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Output);
 	if (out)
 	{
-		const size_t numArgs = ev->NumArgs();
+		const size_t numArgs = ev.NumArgs();
 		for (uintptr_t i = 1; i <= numArgs; ++i)
 		{
-			*out << ev->GetString(i).c_str();
+			*out << ev.GetString(i).c_str();
 			if (i != numArgs) *out << ' ';
 		}
 
@@ -2977,25 +2965,25 @@ void ScriptThread::Println(Event* ev)
 	}
 }
 
-void ScriptThread::Print(Event* ev)
+void ScriptThread::Print(Event& ev)
 {
 	std::ostream* out = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Output);
 	if (out)
 	{
-		const size_t numArgs = ev->NumArgs();
+		const size_t numArgs = ev.NumArgs();
 		for (uintptr_t i = 1; i <= numArgs; ++i)
 		{
-			*out << ev->GetString(i).c_str();
+			*out << ev.GetString(i).c_str();
 			if (i != numArgs) *out << ' ';
 		}
 	}
 }
 
-void ScriptThread::MPrintln(Event* ev)
+void ScriptThread::MPrintln(Event& ev)
 {
 	SimpleEntity *m_Self = (SimpleEntity *)m_ScriptVM->GetScriptClass()->GetSelf();
 
-	if (!m_Self || !m_Self->inheritsFrom(SimpleEntity::staticclass()))
+	if (!m_Self || !m_Self->inheritsFrom(&SimpleEntity::staticclass()))
 	{
 		return;
 	}
@@ -3005,56 +2993,56 @@ void ScriptThread::MPrintln(Event* ev)
 	//m_Self->MPrintf("\n");
 }
 
-void ScriptThread::MPrint(Event*)
+void ScriptThread::MPrint(Event&)
 {
 	SimpleEntity *m_Self = (SimpleEntity *)m_ScriptVM->GetScriptClass()->GetSelf();
 
-	if (!m_Self || !m_Self->inheritsFrom(SimpleEntity::staticclass()))
+	if (!m_Self || !m_Self->inheritsFrom(&SimpleEntity::staticclass()))
 	{
 		return;
 	}
 // FIXME
 /*
-	for (size_t i = 1; i <= ev->NumArgs(); i++)
+	for (size_t i = 1; i <= ev.NumArgs(); i++)
 	{
-		m_Self->MPrintf(ev->GetString(i));
+		m_Self->MPrintf(ev.GetString(i));
 	}
 */
 }
 
-void ScriptThread::RandomFloat(Event* ev)
+void ScriptThread::RandomFloat(Event& ev)
 {
-	ev->AddFloat(Random(ev->GetFloat(1)));
+	ev.AddFloat(Random(ev.GetFloat(1)));
 }
 
-void ScriptThread::RandomInt(Event* ev)
+void ScriptThread::RandomInt(Event& ev)
 {
-	ev->AddInteger((int)Random((float)ev->GetInteger(1)));
+	ev.AddInteger((int)Random((float)ev.GetInteger(1)));
 }
 
-void ScriptThread::Spawn(Event* ev)
+void ScriptThread::Spawn(Event& ev)
 {
 	SpawnInternal(ev);
 }
 
-Listener *ScriptThread::SpawnInternal(Event* ev)
+Listener *ScriptThread::SpawnInternal(Event& ev)
 {
-	if (ev->NumArgs() <= 0)
+	if (ev.NumArgs() <= 0)
 	{
 		throw ScriptException("Usage: spawn classname [keyname] [value]...");
 	}
 
-	const str className = ev->GetString(1);
+	const str className = ev.GetString(1);
 	SpawnArgs args;
 
 	if (ClassDef::GetClassForID(className.c_str()) || ClassDef::GetClass(className.c_str())) {
-		args.setArg("classname", className);
+		args.setArg("classname", className.c_str());
 	}
 
-	const size_t numArgs = ev->NumArgs();
+	const size_t numArgs = ev.NumArgs();
 	for (uintptr_t i = 2; i < numArgs; i++)
 	{
-		args.setArg(ev->GetString(i), ev->GetString(i + 1));
+		args.setArg(ev.GetString(i), ev.GetString(i + 1));
 	}
 
 	if (!args.getClassDef()) {
@@ -3099,12 +3087,12 @@ Listener *ScriptThread::SpawnInternal(Event* ev)
 	str classname;
 	Listener *l;
 
-	if (ev->NumArgs() <= 0)
+	if (ev.NumArgs() <= 0)
 	{
 		ScriptError("Usage: spawn entityname [keyname] [value]...");
 	}
 
-	classname = ev->GetString(1);
+	classname = ev.GetString(1);
 
 	if (getClassForID(classname) || getClass(classname))
 	{
@@ -3120,9 +3108,9 @@ Listener *ScriptThread::SpawnInternal(Event* ev)
 		args.setArg("model", classname);
 	}
 
-	for (int i = 2; i < ev->NumArgs(); i += 2)
+	for (int i = 2; i < ev.NumArgs(); i += 2)
 	{
-		args.setArg(ev->GetString(i), ev->GetString(i + 1));
+		args.setArg(ev.GetString(i), ev.GetString(i + 1));
 	}
 
 	if (!args.getClassDef())
@@ -3167,11 +3155,11 @@ Listener *ScriptThread::SpawnInternal(Event* ev)
 	return nullptr;
 }
 
-void ScriptThread::SpawnReturn(Event* ev)
+void ScriptThread::SpawnReturn(Event& ev)
 {
 	Listener *listener = SpawnInternal(ev);
 
-	ev->AddListener(listener);
+	ev.AddListener(listener);
 
 	/*
 	if (listener && checkInheritance(&Object::ClassInfo, listener->classinfo()))
@@ -3181,73 +3169,73 @@ void ScriptThread::SpawnReturn(Event* ev)
 	*/
 }
 
-void ScriptThread::EventVectorAdd(Event* ev)
+void ScriptThread::EventVectorAdd(Event& ev)
 {
-	ev->AddVector(ev->GetVector(1) + ev->GetVector(2));
+	ev.AddVector(ev.GetVector(1) + ev.GetVector(2));
 }
 
-void ScriptThread::EventVectorCloser(Event*)
+void ScriptThread::EventVectorCloser(Event&)
 {
 
 }
 
-void ScriptThread::EventVectorCross(Event* ev)
+void ScriptThread::EventVectorCross(Event& ev)
 {
-	ev->AddVector(Vector::Cross(ev->GetVector(1), ev->GetVector(2)));
+	ev.AddVector(Vector::Cross(ev.GetVector(1), ev.GetVector(2)));
 }
 
-void ScriptThread::EventVectorDot(Event* ev)
+void ScriptThread::EventVectorDot(Event& ev)
 {
-	Vector vector1 = ev->GetVector(1), vector2 = ev->GetVector(2);
+	Vector vector1 = ev.GetVector(1), vector2 = ev.GetVector(2);
 
-	ev->AddVector(Vector(vector1.x * vector2.x, vector1.y * vector2.y, vector1.z * vector2.z));
+	ev.AddVector(Vector(vector1.x * vector2.x, vector1.y * vector2.y, vector1.z * vector2.z));
 }
 
-void ScriptThread::EventVectorLength(Event* ev)
+void ScriptThread::EventVectorLength(Event& ev)
 {
-	ev->AddFloat(ev->GetVector(1).length());
+	ev.AddFloat(ev.GetVector(1).length());
 }
 
-void ScriptThread::EventVectorNormalize(Event* ev)
+void ScriptThread::EventVectorNormalize(Event& ev)
 {
-	Vector vector = ev->GetVector(1);
+	Vector vector = ev.GetVector(1);
 
 	vector.normalize();
 
-	ev->AddVector(vector);
+	ev.AddVector(vector);
 }
 
-void ScriptThread::EventVectorScale(Event* ev)
+void ScriptThread::EventVectorScale(Event& ev)
 {
-	Vector vector = ev->GetVector(1);
+	Vector vector = ev.GetVector(1);
 
-	vector *= ev->GetFloat(2);
+	vector *= ev.GetFloat(2);
 
-	ev->AddVector(vector);
+	ev.AddVector(vector);
 }
 
-void ScriptThread::EventVectorSubtract(Event* ev)
+void ScriptThread::EventVectorSubtract(Event& ev)
 {
-	ev->AddVector(ev->GetVector(1) - ev->GetVector(2));
+	ev.AddVector(ev.GetVector(1) - ev.GetVector(2));
 }
 
-void ScriptThread::EventVectorToAngles(Event* ev)
+void ScriptThread::EventVectorToAngles(Event& ev)
 {
-	ev->AddVector(ev->GetVector(1).toAngles());
+	ev.AddVector(ev.GetVector(1).toAngles());
 }
 
-void ScriptThread::EventVectorWithin(Event* ev)
+void ScriptThread::EventVectorWithin(Event& ev)
 {
 	Vector delta;
-	float dist = ev->GetFloat(2);
+	float dist = ev.GetFloat(2);
 
-	delta = ev->GetVector(1) - ev->GetVector(2);
+	delta = ev.GetVector(1) - ev.GetVector(2);
 
 	// check squared distance
-	ev->AddInteger(((delta * delta) < (dist * dist)));
+	ev.AddInteger(((delta * delta) < (dist * dist)));
 }
 
-void ScriptThread::GetTime(Event* ev)
+void ScriptThread::GetTime(Event& ev)
 {
 	int timearray[3], gmttime;
 	char buff[1024];
@@ -3272,7 +3260,7 @@ void ScriptThread::GetTime(Event* ev)
 
 	sprintf(buff, "%02i:%02i:%02i", (int)timearray[0], (int)timearray[1], (int)timearray[2]);
 
-	ev->AddString(buff);
+	ev.AddString(buff);
 }
 
 void ScriptThread::Execute()
@@ -3721,7 +3709,7 @@ Flag *FlagList::FindFlag(const rawchar_t* name)
 		Flag * index = m_Flags[i];
 
 		// found the flag
-		if (strcmp(index->flagName, name) == 0) {
+		if (!str::cmp(index->flagName.c_str(), name)) {
 			return index;
 		}
 	}

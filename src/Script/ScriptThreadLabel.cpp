@@ -14,7 +14,7 @@ using namespace mfuse;
 
 ScriptThreadLabel::ScriptThreadLabel()
 {
-	m_Script = NULL;
+	m_Script = nullptr;
 	m_Label = STRING_EMPTY;
 }
 
@@ -182,9 +182,11 @@ bool ScriptThreadLabel::TrySet(const rawchar_t *label)
 	{
 		Set(label);
 	}
-	catch (const rawchar_t *string)
+	catch (const std::exception& e)
 	{
-		printf("%s\n", string);
+		const ScriptContext& context = ScriptContext::Get();
+		std::ostream* out = context.GetOutputInfo().GetOutput(outputLevel_e::Error);
+		*out << e.what();
 		return false;
 	}
 
@@ -193,7 +195,7 @@ bool ScriptThreadLabel::TrySet(const rawchar_t *label)
 
 bool ScriptThreadLabel::TrySet(const_str label)
 {
-	return TrySet(ScriptContext::Get().GetDirector().GetDictionary().Get(label));
+	return TrySet(ScriptContext::Get().GetDirector().GetDictionary().Get(label).c_str());
 }
 
 bool ScriptThreadLabel::TrySetScript(const rawchar_t *label)
@@ -202,9 +204,11 @@ bool ScriptThreadLabel::TrySetScript(const rawchar_t *label)
 	{
 		SetScript(label);
 	}
-	catch (const rawchar_t *string)
+	catch (const std::exception& e)
 	{
-		printf("%s\n", string);
+		const ScriptContext& context = ScriptContext::Get();
+		std::ostream* out = context.GetOutputInfo().GetOutput(outputLevel_e::Error);
+		*out << e.what();
 		return false;
 	}
 
@@ -213,7 +217,7 @@ bool ScriptThreadLabel::TrySetScript(const rawchar_t *label)
 
 bool ScriptThreadLabel::TrySetScript(const_str label)
 {
-	return TrySetScript(ScriptContext::Get().GetDirector().GetDictionary().Get(label));
+	return TrySetScript(ScriptContext::Get().GetDirector().GetDictionary().Get(label).c_str());
 }
 
 bool ScriptThreadLabel::IsSet(void)

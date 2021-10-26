@@ -251,7 +251,7 @@ void m3l1a(ScriptMaster& director)
 	}
 
 	stream.seekg(0, stream.end);
-	const size_t fsize = stream.tellg();
+	const std::streamoff fsize = stream.tellg();
 	stream.seekg(0, stream.beg);
 
 	if (!fsize) {

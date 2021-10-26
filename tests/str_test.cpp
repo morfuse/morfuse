@@ -7,7 +7,7 @@ template<typename CharT>
 void string_assert(const base_str<CharT>& s, size_t expected_len, const CharT* expected_data)
 {
 	assertTest(s.length() == expected_len);
-	assertTest(!base_str<CharT>::icmp(s, expected_data));
+	assertTest(!base_str<CharT>::icmp(s.c_str(), expected_data));
 }
 
 /*

@@ -546,11 +546,11 @@ vmState_e ScriptVM::State()
 	return state;
 }
 
-void ScriptVM::EventGoto(Event *ev)
+void ScriptVM::EventGoto(Event& ev)
 {
-	const const_str label = ev->GetConstString(1);
+	const const_str label = ev.GetConstString(1);
 
-	SetFastData(std::move(*ev));
+	SetFastData(std::move(ev));
 
 	const script_label_t *s = m_ScriptClass->FindLabel(label);
 
@@ -562,11 +562,11 @@ void ScriptVM::EventGoto(Event *ev)
 	m_CodePos = s->codepos;
 }
 
-bool ScriptVM::EventThrow(Event *ev)
+bool ScriptVM::EventThrow(Event& ev)
 {
-	const const_str label = ev->GetConstString(1);
+	const const_str label = ev.GetConstString(1);
 
-	SetFastData(std::move(*ev));
+	SetFastData(std::move(ev));
 
 	while (1)
 	{

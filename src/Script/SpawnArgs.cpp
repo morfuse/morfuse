@@ -35,27 +35,27 @@ const char* SpawnArgs::getArg(const char* key, const char* defaultValue)
 	{
 		if (keyList.ObjectAt(i) == key)
 		{
-			return valueList.ObjectAt(i);
+			return valueList.ObjectAt(i).c_str();
 		}
 	}
 
 	return defaultValue;
 }
 
-void SpawnArgs::setArg(const char* key, const char* value)
+void SpawnArgs::setArg(const strview& key, const strview& value)
 {
 	const size_t num = keyList.NumObjects();
 	for (uintptr_t i = 1; i <= num; i++)
 	{
-		if (keyList.ObjectAt(i) == key)
+		if (keyList.ObjectAt(i) == key.c_str())
 		{
-			valueList.ObjectAt(i) = value;
+			valueList.ObjectAt(i) = value.getString();
 			return;
 		}
 	}
 
-	keyList.AddObject(str(key));
-	valueList.AddObject(str(value));
+	keyList.AddObject(key.getString());
+	valueList.AddObject(value.getString());
 }
 
 void SpawnArgs::operator=(SpawnArgs& otherlist)
@@ -80,12 +80,12 @@ size_t SpawnArgs::NumArgs(void)
 
 const char* SpawnArgs::getKey(uintptr_t index)
 {
-	return keyList.ObjectAt(index + 1);
+	return keyList.ObjectAt(index + 1).c_str();
 }
 
 const char* SpawnArgs::getValue(uintptr_t index)
 {
-	return valueList.ObjectAt(index + 1);
+	return valueList.ObjectAt(index + 1).c_str();
 }
 
 void SpawnArgs::Archive(Archiver& arc)
@@ -142,7 +142,7 @@ Listener* SpawnArgs::SpawnInternal(void)
 {
 	const ClassDef* cls = getClassDef();
 
-	if (!cls && !cls->inheritsFrom(Listener::staticclass()))
+	if (!cls && !cls->inheritsFrom(&Listener::staticclass()))
 	{
 		throw SpawnErrors::NoSpawnFunction();
 	}

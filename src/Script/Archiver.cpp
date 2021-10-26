@@ -401,7 +401,7 @@ void Archiver::ArchiveObject(Class& obj)
 			throw ArchiveErrors::InvalidClass(classname);
 		}
 
-		if (obj.classinfo() != cls)
+		if (&obj.classinfo() != cls)
 		{
 			throw ArchiveErrors::ObjectClassError(classname, obj.GetClassname());
 		}

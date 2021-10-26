@@ -57,7 +57,7 @@ int main(int argc, const char* argv[])
 
 	for (size_t i = 0; i < numNodes; i++)
 	{
-		assertTest(evt.FindNormalEventNum(nodes[i].name));
+		assertTest(evt.FindNormalEventNum(nodes[i].name.c_str()));
 	}
 
 	ScriptContext context;

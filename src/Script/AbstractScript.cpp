@@ -187,7 +187,7 @@ void AbstractScript::PrintSourcePos(std::ostream& out, const rawchar_t* sourceLi
 	const ScriptContext& context = ScriptContext::Get();
 	const str& fileName = context.GetDirector().GetDictionary().Get(Filename());
 
-	out << "(" << fileName << ", " << line << "):" << std::endl << sourceLine << std::endl;
+	out << "(" << fileName.c_str() << ", " << line << "):" << std::endl << sourceLine << std::endl;
 	if (column >= 1) {
 		out << std::setw(column + 1) << std::setfill(' ') << "^" << std::endl;
 	}

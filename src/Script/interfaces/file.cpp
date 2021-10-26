@@ -20,5 +20,5 @@ const char* FileExceptions::NotFound::what() const noexcept
 
 const char* FileExceptions::NotFound::getFileName() const noexcept
 {
-	return fname;
+	return fname.c_str();
 }

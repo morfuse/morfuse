@@ -87,31 +87,31 @@ namespace mfuse
 		//
 		// Scripting functions
 		//
-		void CommandDelay(Event *ev);
-		void EventDelete(Event *ev);
-		void EventInheritsFrom(Event *ev);
-		void EventIsInheritedBy(Event *ev);
-		void GetClassname(Event *ev);
+		void CommandDelay(Event& ev);
+		void EventDelete(Event& ev);
+		void EventInheritsFrom(Event& ev);
+		void EventIsInheritedBy(Event& ev);
+		void GetClassname(Event& ev);
 
-		void CancelFor(Event *ev);
-		void CreateReturnThread(Event *ev);
-		void CreateThread(Event *ev);
-		void ExecuteReturnScript(Event *ev);
-		void ExecuteScript(Event *ev);
-		void EventDelayThrow(Event *ev);
-		void EventEndOn(Event *ev);
-		void EventGetOwner(Event *ev);
-		void EventNotify(Event *ev);
-		void EventThrow(Event *ev);
-		void EventUnregister(Event *ev);
-		void WaitCreateReturnThread(Event *ev);
-		void WaitCreateThread(Event *ev);
-		void WaitExecuteReturnScript(Event *ev);
-		void WaitExecuteScript(Event *ev);
-		void WaitTill(Event *ev);
-		void WaitTillTimeout(Event *ev);
-		void WaitTillAny(Event *ev);
-		void WaitTillAnyTimeout(Event* ev);
+		void CancelFor(Event& ev);
+		void CreateReturnThread(Event& ev);
+		void CreateThread(Event& ev);
+		void ExecuteReturnScript(Event& ev);
+		void ExecuteScript(Event& ev);
+		void EventDelayThrow(Event& ev);
+		void EventEndOn(Event& ev);
+		void EventGetOwner(Event& ev);
+		void EventNotify(Event& ev);
+		void EventThrow(Event& ev);
+		void EventUnregister(Event& ev);
+		void WaitCreateReturnThread(Event& ev);
+		void WaitCreateThread(Event& ev);
+		void WaitExecuteReturnScript(Event& ev);
+		void WaitExecuteScript(Event& ev);
+		void WaitTill(Event& ev);
+		void WaitTillTimeout(Event& ev);
+		void WaitTillAny(Event& ev);
+		void WaitTillAnyTimeout(Event& ev);
 
 	protected:
 		/* Game functions */
@@ -125,10 +125,10 @@ namespace mfuse
 		bool UnregisterSource(const_str name, Listener* listener);
 		bool UnregisterTarget(const_str name, Listener* listener);
 		void UnregisterTargets(const_str name, const ConList& listeners, ConList& stoppedListeners, con::Container<const_str>& stoppedNames);
-		void ExecuteScriptInternal(Event* ev, ScriptVariable& scriptVariable);
-		void ExecuteThreadInternal(Event* ev, ScriptVariable& returnValue);
-		void WaitExecuteScriptInternal(Event* ev, ScriptVariable& returnValue);
-		void WaitExecuteThreadInternal(Event* ev, ScriptVariable& returnValue);
+		void ExecuteScriptInternal(Event& ev, ScriptVariable& scriptVariable);
+		void ExecuteThreadInternal(Event& ev, ScriptVariable& returnValue);
+		void WaitExecuteScriptInternal(Event& ev, ScriptVariable& returnValue);
+		void WaitExecuteThreadInternal(Event& ev, ScriptVariable& returnValue);
 
 		void PostEventInternal(Event* ev, inttime_t delay, int flags);
 

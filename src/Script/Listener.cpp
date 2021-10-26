@@ -306,17 +306,6 @@ void ConList::Archive(Archiver& arc)
 	Archive(arc, ArchiveListenerPtr);
 }
 
-#if 0
-template<>
-void con::Entry<const_str, ConList>::Archive(Archiver& arc)
-{
-	/*
-	Director.ArchiveString(arc, key);
-	value.Archive(arc);
-	*/
-}
-#endif
-
 Listener::Listener()
 {
 	m_EndList = NULL;
@@ -444,16 +433,8 @@ bool Listener::EventPending(const EventDef &ev)
 
 void Listener::PostEventInternal(Event *ev, inttime_t delay, int flags)
 {
-	if (!ev->Num() || !classinfo()->GetResponse(ev->Num()))
+	if (!ev->Num() || !classinfo().GetResponse(ev->Num()))
 	{
-		/*
-#ifdef _DEBUG
-			glbs.DPrintf("^~^~^ Failed execution of event '%s' for class '%s'\n"), ev->name.c_str(), GetClassname();
-#else
-			glbs.DPrintf("^~^~^ Failed execution of event for class '%s'\n"), GetClassname();
-#endif
-		*/
-
 		delete ev;
 		return;
 	}
@@ -478,30 +459,21 @@ bool Listener::PostponeEvent(Event &ev, inttime_t time)
 
 ScriptVariable Listener::ProcessEventReturn(Event& ev)
 {
-	const ClassDef* const c = classinfo();
+	const ClassDef& c = classinfo();
 	const ResponseDefClass* responses = NULL;
 	Response response = NULL;
 	ScriptVariable returnValue;
 
 	if (!ev.Num())
 	{
-		/*
-#ifdef _DEBUG
-		EVENT_Printf("^~^~^ Failed execution of event '%s' for class '%s'\n"), ev->name.c_str(), c->classname;
-#else
-		EVENT_Printf("^~^~^ Failed execution of event for class '%s'\n"), c->classname;
-#endif
-		*/
-
 		return returnValue;
 	}
 
-	responses = c->GetResponse(ev.Num());
+	responses = c.GetResponse(ev.Num());
 
 	if (responses == NULL)
 	{
 
-		//EVENT_Printf("^~^~^ Failed execution of command '%s' for class '%s'\n"), Event::GetEventName(ev->Num()).c_str(), c->classname;
 		return returnValue;
 	}
 
@@ -511,7 +483,7 @@ ScriptVariable Listener::ProcessEventReturn(Event& ev)
 
 	if (response)
 	{
-		(this->*response)(&ev);
+		(this->*response)(ev);
 	}
 
 	if (previousArgs != ev.NumArgs() && ev.NumArgs() != 0)
@@ -522,7 +494,7 @@ ScriptVariable Listener::ProcessEventReturn(Event& ev)
 	return returnValue;
 }
 
-ScriptVariable Listener::ProcessEventReturn(Event *ev)
+ScriptVariable Listener::ProcessEventReturn(Event* ev)
 {
 	ScriptVariable returnValue = ProcessEventReturn(*ev);
 	delete ev;
@@ -563,7 +535,7 @@ void Listener::ProcessScriptEvent(Event* ev)
 
 void Listener::ProcessScriptEvent(Event& ev)
 {
-	const ClassDef* const c = classinfo();
+	const ClassDef& c = classinfo();
 	const ResponseDefClass *responses = NULL;
 	Response response = NULL;
 
@@ -572,7 +544,7 @@ void Listener::ProcessScriptEvent(Event& ev)
 		throw ListenerErrors::EventNotFound(*this);
 	}
 
-	responses = c->GetResponse(ev.Num());
+	responses = c.GetResponse(ev.Num());
 
 	if (responses == NULL)
 	{
@@ -583,7 +555,7 @@ void Listener::ProcessScriptEvent(Event& ev)
 
 	if (response)
 	{
-		(this->*response)(&ev);
+		(this->*response)(ev);
 	}
 }
 
@@ -1127,7 +1099,7 @@ size_t Listener::WaitingSize(const_str name) const
 
 bool Listener::WaitTillDisabled(const_str s)
 {
-	for (const ClassDef *c = classinfo(); c != NULL; c = c->GetSuper())
+	for (const ClassDef *c = &classinfo(); c != NULL; c = c->GetSuper())
 	{
 		if (c->WaitTillDefined(s))
 		{
@@ -1140,45 +1112,47 @@ bool Listener::WaitTillDisabled(const_str s)
 
 int Listener::GetFlags(Event *event) const
 {
-	return classinfo()->GetFlags(event);
+	return classinfo().GetFlags(event);
 }
 
 //==========================
 // Listener's events
 //==========================
 
-void Listener::EventDelete(Event *ev)
+void Listener::EventDelete(Event& ev)
 {
-	if (ev->NumArgs()) {
+	if (ev.NumArgs()) {
 		throw ScriptException("Arguments not allowed");
 	}
 
 	delete this;
 }
 
-void Listener::EventInheritsFrom(Event *ev)
+void Listener::EventInheritsFrom(Event& ev)
 {
-	ev->AddInteger(inheritsFrom(ev->GetString(1)));
+	const str className = ev.GetString(1);
+	ev.AddInteger(inheritsFrom(className.c_str()));
 }
 
-void Listener::EventIsInheritedBy(Event *ev)
+void Listener::EventIsInheritedBy(Event& ev)
 {
-	ev->AddInteger(isInheritedBy(ev->GetString(1)));
+	const str className = ev.GetString(1);
+	ev.AddInteger(isInheritedBy(className.c_str()));
 }
 
-void Listener::GetClassname(Event *ev)
+void Listener::GetClassname(Event& ev)
 {
-	ev->AddString(Class::GetClassname());
+	ev.AddString(Class::GetClassname());
 }
 
-void Listener::CommandDelay(Event *ev)
+void Listener::CommandDelay(Event& ev)
 {
-	if (ev->NumArgs() < 2) {
+	if (ev.NumArgs() < 2) {
 		throw ScriptException("Not enough arguments.");
 	}
 
 	EventSystem& eventSystem = EventSystem::Get();
-	const eventName_t eventName = eventSystem.GetEventConstName(ev->GetString(2).c_str());
+	const eventName_t eventName = eventSystem.GetEventConstName(ev.GetString(2).c_str());
 	const eventInfo_t* const eventInfo = eventSystem.FindEventInfo(eventName);
 	if(eventInfo)
 	{
@@ -1191,12 +1165,12 @@ void Listener::CommandDelay(Event *ev)
 
 		Event* e = new Event(eventNum);
 
-		for (size_t i = 3; i <= ev->NumArgs(); i++)
+		for (size_t i = 3; i <= ev.NumArgs(); i++)
 		{
-			e->AddValue(ev->GetValue(i));
+			e->AddValue(ev.GetValue(i));
 		}
 
-		PostEvent(e, uinttime_t(ev->GetFloat(1) * 1000.f));
+		PostEvent(e, uinttime_t(ev.GetFloat(1) * 1000.f));
 	}
 	else
 	{
@@ -1204,20 +1178,20 @@ void Listener::CommandDelay(Event *ev)
 	}
 }
 
-void Listener::CancelFor(Event *ev)
+void Listener::CancelFor(Event& ev)
 {
 	Event RemoveEvent(EV_Remove);
-	BroadcastEvent(ev->GetConstString(1), RemoveEvent);
+	BroadcastEvent(ev.GetConstString(1), RemoveEvent);
 }
 
-void Listener::EventDelayThrow(Event *ev)
+void Listener::EventDelayThrow(Event& ev)
 {
-	BroadcastEvent(const_str(0), *ev);
+	BroadcastEvent(const_str(0), ev);
 }
 
-void Listener::EventEndOn(Event *ev)
+void Listener::EventEndOn(Event& ev)
 {
-	const_str name = ev->GetConstString(1);
+	const_str name = ev.GetConstString(1);
 
 	if (ScriptContext::Get().GetDirector().CurrentThread() == this) {
 		throw ScriptException("cannot end the current thread!");
@@ -1226,27 +1200,27 @@ void Listener::EventEndOn(Event *ev)
 	EndOn(name, ScriptContext::Get().GetDirector().CurrentThread());
 }
 
-void Listener::EventGetOwner(Event *ev)
+void Listener::EventGetOwner(Event& ev)
 {
-	ev->AddListener(GetScriptOwner());
+	ev.AddListener(GetScriptOwner());
 }
 
-void Listener::EventNotify(Event *ev)
+void Listener::EventNotify(Event& ev)
 {
-	Unregister(ev->GetConstString(1));
+	Unregister(ev.GetConstString(1));
 }
 
-void Listener::EventThrow(Event *ev)
+void Listener::EventThrow(Event& ev)
 {
-	BroadcastEvent(const_str(0), *ev);
+	BroadcastEvent(const_str(0), ev);
 }
 
-void Listener::EventUnregister(Event *ev)
+void Listener::EventUnregister(Event& ev)
 {
-	Unregister(ev->GetConstString(1));
+	Unregister(ev.GetConstString(1));
 }
 
-void Listener::WaitTill(Event *ev)
+void Listener::WaitTill(Event& ev)
 {
 	const_str name;
 
@@ -1254,7 +1228,7 @@ void Listener::WaitTill(Event *ev)
 		throw ScriptException("cannot waittill on the current thread!");
 	}
 
-	name = ev->GetConstString(1);
+	name = ev.GetConstString(1);
 
 	if (WaitTillDisabled(name))
 	{
@@ -1265,7 +1239,7 @@ void Listener::WaitTill(Event *ev)
 	Register(name, ScriptContext::Get().GetDirector().CurrentThread());
 }
 
-void Listener::WaitTillTimeout(Event *ev)
+void Listener::WaitTillTimeout(Event& ev)
 {
 	const_str name;
 	float timeout_time;
@@ -1274,8 +1248,8 @@ void Listener::WaitTillTimeout(Event *ev)
 		throw ScriptException("cannot waittill on the current thread!");
 	}
 
-	timeout_time = ev->GetFloat(1);
-	name = ev->GetConstString(2);
+	timeout_time = ev.GetFloat(1);
+	name = ev.GetConstString(2);
 
 	if (WaitTillDisabled(name))
 	{
@@ -1289,7 +1263,7 @@ void Listener::WaitTillTimeout(Event *ev)
 	ScriptContext::Get().GetDirector().CurrentThread()->PostEvent(newEvent, uinttime_t(timeout_time * 1000.f));
 }
 
-void Listener::WaitTillAny(Event *ev)
+void Listener::WaitTillAny(Event& ev)
 {
 	const_str name;
 
@@ -1297,9 +1271,9 @@ void Listener::WaitTillAny(Event *ev)
 		throw ScriptException("cannot waittill any on the current thread!");
 	}
 
-	for (size_t i = 1; i <= ev->NumArgs(); i++)
+	for (size_t i = 1; i <= ev.NumArgs(); i++)
 	{
-		name = ev->GetConstString(i);
+		name = ev.GetConstString(i);
 
 		if (WaitTillDisabled(name))
 		{
@@ -1311,7 +1285,7 @@ void Listener::WaitTillAny(Event *ev)
 	}
 }
 
-void Listener::WaitTillAnyTimeout(Event *ev)
+void Listener::WaitTillAnyTimeout(Event& ev)
 {
 	const_str name;
 	float timeout_time;
@@ -1320,11 +1294,11 @@ void Listener::WaitTillAnyTimeout(Event *ev)
 		throw ScriptException("cannot waittill any on the current thread!");
 	}
 
-	timeout_time = ev->GetFloat(1);
+	timeout_time = ev.GetFloat(1);
 
-	for (size_t i = 1; i <= ev->NumArgs(); i++)
+	for (size_t i = 1; i <= ev.NumArgs(); i++)
 	{
-		name = ev->GetConstString(i);
+		name = ev.GetConstString(i);
 
 		if (WaitTillDisabled(name))
 		{
@@ -1339,34 +1313,34 @@ void Listener::WaitTillAnyTimeout(Event *ev)
 	ScriptContext::Get().GetDirector().CurrentThread()->PostEvent(newEvent, uinttime_t(timeout_time * 1000));
 }
 
-void Listener::ExecuteScriptInternal(Event *ev, ScriptVariable& returnValue)
+void Listener::ExecuteScriptInternal(Event& ev, ScriptVariable& returnValue)
 {
-	ScriptThread* const thread = CreateScriptInternal(ev->GetValue(1));
-	thread->ScriptExecute(ev->GetListView(2), returnValue);
+	ScriptThread* const thread = CreateScriptInternal(ev.GetValue(1));
+	thread->ScriptExecute(ev.GetListView(2), returnValue);
 }
 
-void Listener::ExecuteThreadInternal(Event *ev, ScriptVariable& returnValue)
+void Listener::ExecuteThreadInternal(Event& ev, ScriptVariable& returnValue)
 {
-	ScriptThread* const thread = CreateThreadInternal(ev->GetValue(1));
-	thread->ScriptExecute(ev->GetListView(2), returnValue);
+	ScriptThread* const thread = CreateThreadInternal(ev.GetValue(1));
+	thread->ScriptExecute(ev.GetListView(2), returnValue);
 }
 
-void Listener::WaitExecuteScriptInternal(Event *ev, ScriptVariable& returnValue)
+void Listener::WaitExecuteScriptInternal(Event& ev, ScriptVariable& returnValue)
 {
-	ScriptThread* const thread = CreateScriptInternal(ev->GetValue(1));
+	ScriptThread* const thread = CreateScriptInternal(ev.GetValue(1));
 
 	thread->GetScriptClass()->Register(const_str(0), ScriptContext::Get().GetDirector().CurrentThread());
 
-	thread->ScriptExecute(ev->GetListView(2), returnValue);
+	thread->ScriptExecute(ev.GetListView(2), returnValue);
 }
 
-void Listener::WaitExecuteThreadInternal(Event *ev, ScriptVariable& returnValue)
+void Listener::WaitExecuteThreadInternal(Event& ev, ScriptVariable& returnValue)
 {
-	ScriptThread* const thread = CreateThreadInternal(ev->GetValue(1));
+	ScriptThread* const thread = CreateThreadInternal(ev.GetValue(1));
 
 	thread->Register(const_str(0), ScriptContext::Get().GetDirector().CurrentThread());
 
-	thread->ScriptExecute(ev->GetListView(2), returnValue);
+	thread->ScriptExecute(ev.GetListView(2), returnValue);
 }
 
 ScriptThread *Listener::CreateScriptInternal(const ScriptVariable& label)
@@ -1416,7 +1390,7 @@ ScriptThread *Listener::CreateThreadInternal(const ScriptVariable& label)
 	}
 }
 
-void Listener::CreateReturnThread(Event *ev)
+void Listener::CreateReturnThread(Event& ev)
 {
 	ScriptVariable returnValue;
 
@@ -1424,17 +1398,17 @@ void Listener::CreateReturnThread(Event *ev)
 
 	ExecuteThreadInternal(ev, returnValue);
 
-	ev->AddValue(returnValue);
+	ev.AddValue(returnValue);
 }
 
-void Listener::CreateThread(Event *ev)
+void Listener::CreateThread(Event& ev)
 {
 	ScriptVariable returnValue;
 
 	ExecuteThreadInternal(ev, returnValue);
 }
 
-void Listener::ExecuteReturnScript(Event *ev)
+void Listener::ExecuteReturnScript(Event& ev)
 {
 	ScriptVariable returnValue;
 
@@ -1442,17 +1416,17 @@ void Listener::ExecuteReturnScript(Event *ev)
 
 	ExecuteScriptInternal(ev, returnValue);
 
-	ev->AddValue(returnValue);
+	ev.AddValue(returnValue);
 }
 
-void Listener::ExecuteScript(Event *ev)
+void Listener::ExecuteScript(Event& ev)
 {
 	ScriptVariable returnValue;
 
 	ExecuteScriptInternal(ev, returnValue);
 }
 
-void Listener::WaitCreateReturnThread(Event *ev)
+void Listener::WaitCreateReturnThread(Event& ev)
 {
 	ScriptVariable returnValue;
 
@@ -1460,17 +1434,17 @@ void Listener::WaitCreateReturnThread(Event *ev)
 
 	WaitExecuteThreadInternal(ev, returnValue);
 
-	ev->AddValue(returnValue);
+	ev.AddValue(returnValue);
 }
 
-void Listener::WaitCreateThread(Event *ev)
+void Listener::WaitCreateThread(Event& ev)
 {
 	ScriptVariable returnValue;
 
 	WaitExecuteThreadInternal(ev, returnValue);
 }
 
-void Listener::WaitExecuteReturnScript(Event *ev)
+void Listener::WaitExecuteReturnScript(Event& ev)
 {
 	ScriptVariable returnValue;
 
@@ -1478,10 +1452,10 @@ void Listener::WaitExecuteReturnScript(Event *ev)
 
 	WaitExecuteScriptInternal(ev, returnValue);
 
-	ev->AddValue(returnValue);
+	ev.AddValue(returnValue);
 }
 
-void Listener::WaitExecuteScript(Event *ev)
+void Listener::WaitExecuteScript(Event& ev)
 {
 	ScriptVariable returnValue;
 
@@ -1525,7 +1499,7 @@ ListenerErrors::EventNotFound::EventNotFound(const Listener& lPtr)
 const char* ListenerErrors::EventNotFound::what() const noexcept
 {
 	if (!filled()) {
-		fill("Failed execution of event for class '" + str(GetListener().classinfo()->GetClassName()) + "'");
+		fill("Failed execution of event for class '" + str(GetListener().classinfo().GetClassName()) + "'");
 	}
 
 	return Messageable::what();
@@ -1548,7 +1522,7 @@ const char* ListenerErrors::EventListenerFailed::what() const noexcept
 	{
 		const EventSystem& evt = EventSystem::Get();
 		const str eventName = evt.GetEventName(eventNum);
-		fill("Failed execution of event '" + eventName + "' for class '" + str(GetListener().classinfo()->GetClassName()) + "'");
+		fill("Failed execution of event '" + eventName + "' for class '" + str(GetListener().classinfo().GetClassName()) + "'");
 	}
 
 	return Messageable::what();

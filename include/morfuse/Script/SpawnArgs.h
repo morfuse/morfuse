@@ -22,7 +22,7 @@ public:
 	void Clear(void);
 
 	const char* getArg(const char* key, const char* defaultValue = nullptr);
-	void setArg(const char* key, const char* value);
+	void setArg(const strview& key, const strview& value);
 
 	size_t NumArgs(void);
 	const char* getKey(uintptr_t index);

@@ -62,7 +62,7 @@ intptr_t Hash<ScriptVariable>::operator()(const ScriptVariable& key) const
 		return Hash<str>()(key.stringValue());
 
 	case variableType_e::Integer:
-		return key.GetData().long64Value;
+		return (intptr_t)key.GetData().long64Value;
 
 	case variableType_e::Listener:
 		l = key.listenerValue();
@@ -871,7 +871,7 @@ void ScriptVariable::PrintValue()
 		break;
 
 	case variableType_e::ConstString:
-		*out << context.GetDirector().GetDictionary().Get(m_data.constStringValue);
+		*out << context.GetDirector().GetDictionary().Get(m_data.constStringValue).c_str();
 		break;
 
 	case variableType_e::String:
@@ -1087,7 +1087,7 @@ rawchar_t ScriptVariable::charValue() const
 			throw ScriptVariableErrors::CastError("string not of length 1", "listener");
 		}
 
-		return *value;
+		return value[0];
 
 	default:
 		throw ScriptVariableErrors::CastError(GetTypeName(), "char");
@@ -1213,6 +1213,7 @@ float ScriptVariable::floatValue() const
 {
 	const rawchar_t *string;
 	float val;
+	rawchar_t* p;
 
 	switch (type)
 	{
@@ -1225,8 +1226,8 @@ float ScriptVariable::floatValue() const
 		/* Transform the string into an integer if possible */
 	case variableType_e::String:
 	case variableType_e::ConstString:
-		string = stringValue();
-		val = (float)atof((const rawchar_t *)string);
+		string = stringValue().c_str();
+		val = std::strtof(string, &p);
 
 		return val;
 
@@ -1249,7 +1250,8 @@ uint32_t ScriptVariable::intValue() const
 	case variableType_e::ConstString:
 	{
 		str string = stringValue();
-		uint32_t val = atoi(string);
+		rawchar_t* p;
+		const uint32_t val = std::strtol(string.c_str(), &p, 10);
 
 		return val;
 	}
@@ -1273,7 +1275,8 @@ uint64_t ScriptVariable::longValue() const
 	case variableType_e::ConstString:
 	{
 		str string = stringValue();
-		uint64_t val = atoll(string);
+		rawchar_t* p;
+		const uint64_t val = std::strtoll(string.c_str(), &p, 10);
 
 		return val;
 	}
@@ -1401,7 +1404,7 @@ Vector ScriptVariable::vectorValue() const
 
 	case variableType_e::ConstString:
 	case variableType_e::String:
-		string = stringValue();
+		string = stringValue().c_str();
 
 		if (str::cmp(string, "") == 0) {
 			throw ScriptVariableErrors::CastError("empty string", "vector");
@@ -1433,7 +1436,7 @@ Vector ScriptVariable::vectorValue() const
 			throw ScriptVariableErrors::CastError("NULL", "vector");
 		}
 
-		if (!ClassDef::checkInheritance(SimpleEntity::staticclass(), m_data.listenerValue->Pointer()->classinfo()))
+		if (!ClassDef::checkInheritance(&SimpleEntity::staticclass(), &m_data.listenerValue->Pointer()->classinfo()))
 		{
 			throw ScriptVariableErrors::CastError(GetTypeName(), "vector");
 		}
@@ -1503,7 +1506,7 @@ void ScriptVariable::setArrayAtRef(const ScriptVariable& index, const ScriptVari
 		intValue = index.intValue();
 		string = stringValue();
 
-		if (intValue >= (intptr_t)strlen(string)) {
+		if (intValue >= (intptr_t)string.length()) {
 			throw ScriptVariableErrors::TypeIndexOutOfRange("String", intValue);
 		}
 

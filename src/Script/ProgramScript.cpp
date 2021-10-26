@@ -439,21 +439,21 @@ void ProgramScript::Load(std::istream& stream)
 
 	if (context.GetSettings().IsDeveloperEnabled())
 	{
-		std::streamsize start = stream.tellg();
+		std::streamoff start = stream.tellg();
 		stream.seekg(0, stream.end);
-		const std::streamsize sz = stream.tellg() - start;
+		const std::streamoff sz = stream.tellg() - start;
 		stream.seekg(start);
 
 		// copy the whole script content for locating positions
 		if (sz)
 		{
-			char* newBuf = (char*)allocateMemory(sz + 1);
+			char* newBuf = (char*)allocateMemory(size_t(sz + 1));
 			newBuf[sz] = 0;
 			stream.read(newBuf, sz);
 			stream.seekg(start);
 
 			m_SourceBuffer = newBuf;
-			m_SourceLength = sz;
+			m_SourceLength = size_t(sz);
 		}
 	}
 

@@ -132,10 +132,9 @@ namespace mfuse
 	template<typename T>
 	T* Archiver::ReadObject()
 	{
-		const ClassDef* const cls = T::staticclass();
-		assert(cls);
+		const ClassDef& cls = T::staticclass();
 
-		T* instance = static_cast<T*>(cls->createInstance());
+		T* instance = static_cast<T*>(cls.createInstance());
 		ArchiveObject(*instance);
 		return instance;
 	}

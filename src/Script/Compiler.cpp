@@ -538,19 +538,19 @@ bool ScriptEmitter::BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type
 		break;
 
 	case method_level:
-		c = Level::staticclass();
+		c = &Level::staticclass();
 		break;
 
 	case method_local:
-		c = ScriptThread::staticclass();
+		c = &ScriptThread::staticclass();
 		break;
 
 	case method_parm:
-		c = Parm::staticclass();
+		c = &Parm::staticclass();
 		break;
 
 	case method_group:
-		c = ScriptClass::staticclass();
+		c = &ScriptClass::staticclass();
 		break;
 
 	default:
@@ -587,19 +587,19 @@ bool ScriptEmitter::BuiltinWriteVariable(sourceLocation_t sourceLoc, uint8_t typ
 		break;
 
 	case method_level:
-		c = Level::staticclass();
+		c = &Level::staticclass();
 		break;
 
 	case method_local:
-		c = ScriptThread::staticclass();
+		c = &ScriptThread::staticclass();
 		break;
 
 	case method_parm:
-		c = Parm::staticclass();
+		c = &Parm::staticclass();
 		break;
 
 	case method_group:
-		c = ScriptClass::staticclass();
+		c = &ScriptClass::staticclass();
 		break;
 
 	default:

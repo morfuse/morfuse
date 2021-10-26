@@ -46,19 +46,19 @@ void Parm::Archive(Archiver& arc)
 	//arc.ArchiveSafePointer(&owner);
 }
 
-void Parm::GetOther(Event *ev)
+void Parm::GetOther(Event& ev)
 {
-	ev->AddListener(other);
+	ev.AddListener(other);
 }
 
-void Parm::GetOwner(Event *ev)
+void Parm::GetOwner(Event& ev)
 {
-	ev->AddListener(owner);
+	ev.AddListener(owner);
 }
 
-void Parm::GetPreviousThread(Event *ev)
+void Parm::GetPreviousThread(Event& ev)
 {
-	ev->AddListener(ScriptContext::Get().GetDirector().PreviousThread());
+	ev.AddListener(ScriptContext::Get().GetDirector().PreviousThread());
 }
 
 MFUS_CLASS_DECLARATION(Listener, Parm, NULL)

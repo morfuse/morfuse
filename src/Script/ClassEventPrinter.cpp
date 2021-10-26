@@ -319,7 +319,7 @@ con::Container<EventArgDef> ClassEventPrinter::SetupDocumentation(EventDef& def)
 				{
 					str argName = argNames.ObjectAt(index + 1);
 					EventArgDef* argDef = new (definition) EventArgDef;
-					argDef->Setup(name, argName, argSpec, rangeSpec);
+					argDef->Setup(name, argName.c_str(), argSpec.c_str(), rangeSpec.c_str());
 				}
 				else
 				{

@@ -81,7 +81,7 @@ bool ScriptVM::executeGetter(EventSystem& eventSystem, Listener* listener, op_ev
 {
 	const eventInfo_t& eventInfo = eventSystem.FindEventInfoChecked((eventName_t)eventName);
 
-	if (eventInfo.getterNum && listener->classinfo()->GetDef(eventInfo.getterNum))
+	if (eventInfo.getterNum && listener->classinfo().GetDef(eventInfo.getterNum))
 	{
 		ScriptEvent ev(eventInfo.getterNum);
 
@@ -97,7 +97,7 @@ bool ScriptVM::executeGetter(EventSystem& eventSystem, Listener* listener, op_ev
 
 		return true;
 	}
-	else if (eventInfo.setterNum && listener->classinfo()->GetDef(eventInfo.setterNum))
+	else if (eventInfo.setterNum && listener->classinfo().GetDef(eventInfo.setterNum))
 	{
 		throw ScriptException("Cannot get a write-only variable");
 	}
@@ -109,7 +109,7 @@ bool ScriptVM::executeSetter(EventSystem& eventSystem, Listener* listener, op_ev
 {
 	const eventInfo_t& eventInfo = eventSystem.FindEventInfoChecked((eventName_t)eventName);
 
-	if (eventInfo.setterNum && listener->classinfo()->GetDef(eventInfo.setterNum))
+	if (eventInfo.setterNum && listener->classinfo().GetDef(eventInfo.setterNum))
 	{
 		ScriptEvent ev(eventInfo.setterNum, 1);
 
@@ -120,7 +120,7 @@ bool ScriptVM::executeSetter(EventSystem& eventSystem, Listener* listener, op_ev
 
 		return true;
 	}
-	else if (eventInfo.getterNum && listener->classinfo()->GetDef(eventInfo.getterNum))
+	else if (eventInfo.getterNum && listener->classinfo().GetDef(eventInfo.getterNum))
 	{
 		throw ScriptException("Cannot set a read-only variable");
 	}

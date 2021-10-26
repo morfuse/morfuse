@@ -39,24 +39,24 @@ namespace mfuse
 		const Vector& getOrigin() const;
 		TargetComponent& GetTargetComponent();
 
-		void EventGetAngle(Event *ev);
-		void EventGetAngles(Event *ev);
-		void EventGetOrigin(Event *ev);
-		void EventGetTargetname(Event *ev);
-		void EventGetTarget(Event *ev);
+		void EventGetAngle(Event& ev);
+		void EventGetAngles(Event& ev);
+		void EventGetOrigin(Event& ev);
+		void EventGetTargetname(Event& ev);
+		void EventGetTarget(Event& ev);
 
-		void EventSetAngle(Event *ev);
-		void EventSetAngles(Event *ev);
-		void EventSetOrigin(Event *ev);
-		void EventSetTargetname(Event *ev);
-		void EventSetTarget(Event *ev);
+		void EventSetAngle(Event& ev);
+		void EventSetAngles(Event& ev);
+		void EventSetOrigin(Event& ev);
+		void EventSetTargetname(Event& ev);
+		void EventSetTarget(Event& ev);
 
-		void GetCentroid(Event *ev);
+		void GetCentroid(Event& ev);
 
-		void GetForwardVector(Event *ev);
-		void GetLeftVector(Event *ev);
-		void GetRightVector(Event *ev);
-		void GetUpVector(Event *ev);
+		void GetForwardVector(Event& ev);
+		void GetLeftVector(Event& ev);
+		void GetRightVector(Event& ev);
+		void GetUpVector(Event& ev);
 
 	private:
 		// Base coord variable

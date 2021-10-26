@@ -290,35 +290,35 @@ TargetComponent& SimpleEntity::GetTargetComponent()
 	return targetComp;
 }
 
-void SimpleEntity::EventGetAngle( Event *ev )
+void SimpleEntity::EventGetAngle( Event& ev )
 {
-	ev->AddFloat( angles[ 1 ] );
+	ev.AddFloat( angles[ 1 ] );
 }
 
-void SimpleEntity::EventGetAngles( Event *ev )
+void SimpleEntity::EventGetAngles( Event& ev )
 {
-	ev->AddVector( angles );
+	ev.AddVector( angles );
 }
 
-void SimpleEntity::EventGetOrigin( Event *ev )
+void SimpleEntity::EventGetOrigin( Event& ev )
 {
-	ev->AddVector( origin );
+	ev.AddVector( origin );
 }
 
-void SimpleEntity::EventGetTargetname( Event *ev )
+void SimpleEntity::EventGetTargetname( Event& ev )
 {
-	ev->AddConstString(targetComp.GetTargetName());
+	ev.AddConstString(targetComp.GetTargetName());
 }
 
-void SimpleEntity::EventGetTarget( Event *ev )
+void SimpleEntity::EventGetTarget( Event& ev )
 {
-	ev->AddConstString(targetComp.GetTarget());
+	ev.AddConstString(targetComp.GetTarget());
 }
 
-void SimpleEntity::EventSetAngle( Event *ev )
+void SimpleEntity::EventSetAngle( Event& ev )
 {
 	Vector dir;
-	float angle = ev->GetFloat( 1 );
+	float angle = ev.GetFloat( 1 );
 
 	dir = GetMovedir( angle );
 	dir.toAngles();
@@ -326,72 +326,72 @@ void SimpleEntity::EventSetAngle( Event *ev )
 	setAngles( dir );
 }
 
-void SimpleEntity::EventSetAngles( Event *ev )
+void SimpleEntity::EventSetAngles( Event& ev )
 {
 	Vector angles;
 
-	if( ev->NumArgs() == 1 )
+	if( ev.NumArgs() == 1 )
 	{
-		angles = ev->GetVector( 1 );
+		angles = ev.GetVector( 1 );
 	}
 	else
 	{
-		angles = Vector( ev->GetFloat( 1 ), ev->GetFloat( 2 ), ev->GetFloat( 3 ) );
+		angles = Vector( ev.GetFloat( 1 ), ev.GetFloat( 2 ), ev.GetFloat( 3 ) );
 	}
 
 	setAngles( angles );
 }
 
-void SimpleEntity::EventSetOrigin(Event* ev)
+void SimpleEntity::EventSetOrigin(Event& ev)
 {
-	setOriginEvent(ev->GetVector(1));
+	setOriginEvent(ev.GetVector(1));
 }
 
-void SimpleEntity::EventSetTargetname(Event* ev)
+void SimpleEntity::EventSetTargetname(Event& ev)
 {
-	targetComp.SetTargetName(ev->GetConstString(1));
+	targetComp.SetTargetName(ev.GetConstString(1));
 }
 
-void SimpleEntity::EventSetTarget(Event* ev)
+void SimpleEntity::EventSetTarget(Event& ev)
 {
-	targetComp.SetTarget(ev->GetConstString(1));
+	targetComp.SetTarget(ev.GetConstString(1));
 }
 
-void SimpleEntity::GetCentroid( Event *ev )
+void SimpleEntity::GetCentroid( Event& ev )
 {
-	ev->AddVector( centroid );
+	ev.AddVector( centroid );
 }
 
-void SimpleEntity::GetForwardVector( Event *ev )
+void SimpleEntity::GetForwardVector( Event& ev )
 {
 	Vector fwd;
 
 	angles.AngleVectorsLeft(&fwd, NULL, NULL);
-	ev->AddVector( fwd );
+	ev.AddVector( fwd );
 }
 
-void SimpleEntity::GetLeftVector( Event *ev )
+void SimpleEntity::GetLeftVector( Event& ev )
 {
 	Vector left;
 
 	angles.AngleVectorsLeft(NULL, &left, NULL);
-	ev->AddVector( left );
+	ev.AddVector( left );
 }
 
-void SimpleEntity::GetRightVector( Event *ev )
+void SimpleEntity::GetRightVector( Event& ev )
 {
 	Vector right;
 
 	angles.AngleVectors(NULL, &right, NULL);
-	ev->AddVector( right );
+	ev.AddVector( right );
 }
 
-void SimpleEntity::GetUpVector( Event *ev )
+void SimpleEntity::GetUpVector( Event& ev )
 {
 	Vector up;
 
 	angles.AngleVectorsLeft(NULL, NULL, &up);
-	ev->AddVector( up );
+	ev.AddVector( up );
 }
 
 MFUS_CLASS_DECLARATION( Listener, SimpleEntity, NULL )

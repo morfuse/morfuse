@@ -161,8 +161,8 @@ namespace mfuse
 		bool IsSuspended();
 		vmState_e State();
 
-		void EventGoto(Event *ev);
-		bool EventThrow(Event* ev);
+		void EventGoto(Event& ev);
+		bool EventThrow(Event& ev);
 
 	private:
 		bool Process(ScriptContext& context, uinttime_t interruptTime);

@@ -12,9 +12,9 @@ namespace mfuse
 
 		void Archive(Archiver& arc) override;
 
-		void GetOther(Event *ev);
-		void GetOwner(Event *ev);
-		void GetPreviousThread(Event* ev);
+		void GetOther(Event& ev);
+		void GetOwner(Event& ev);
+		void GetPreviousThread(Event& ev);
 
 	private:
 		ListenerPtr other;
