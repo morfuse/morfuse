@@ -19,29 +19,115 @@ endif::[]
 
 Morfuse is a scripting engine library: it has its own script language. It is a script engine inspired from Ritual's ÜberTools for Quake III and Medal of Honor: Allied Assault (it can parse scripts from the last one). This script engine targets games primarily.
 
-== Requirements
+== Building
 
-=== Windows
+=== Requirements
+
+==== Windows
 
 - Winflexbison (https://github.com/lexxmark/winflexbison)
-- CMake (and any compiler)
+- CMake (at least 3.13)
+- A compiler that supports C++17 and has no issue with the standard (MSVC 2019 works well)
 
-=== Linux
+==== Linux
 
 - Flex and Bison
-- CMake (and any compiler)
+- CMake (at least 3.13)
+- A compiler that supports C++17 and has no issue with the standard (clang-12 is the most liked)
 
-== Example
+=== Configure and compile
+
+==== Windows
+
+- Download the latest version of Winflexbison from here: https://github.com/lexxmark/winflexbison/releases and extract it somewhere
+- (Checkout morfuse and) create a *cmake* directory inside the project's directory (can be named anything) and cd into it
+- Configure with CMake, assuming that you have a compiler installed/present in %PATH%:
+[source,batch]
+----
+cmake -DFLEX_EXECUTABLE="<path to winflexbison>\win_flex.exe" -DBISON_EXECUTABLE="<path to winflexbison>\win_bison.exe" -DFLEX_INCLUDE_DIR="<path to winflexbison>\flex_bison\" -DCMAKE_BUILD_TYPE=Release ..\
+----
+- Build & install:
+[source,batch]
+----
+cmake --build . --config Release
+cmake --install . --config Release
+----
+
+==== Linux (Ubuntu)
+
+- Install required tools (CMake, clang-12, ninja-build, flex, bison and libfl-dev for Flex):
+[source]
+----
+apt install -y cmake make clang-12 lld-12 ninja-build flex bison libfl-dev
+----
+- (Checkout morfuse and) create a *cmake* directory inside the project's directory (can be named anything) and cd into it
+- Configure with CMake:
+[source,bash]
+----
+cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..\
+----
+- Build and install:
+[source,bash]
+----
+ninja
+cmake --install . --config Release
+----
+
+=== Using the library externally
+
+Since it's CMake and cross-platform, you can use it with your CMake project! Just define *morfuse_DIR* to the path of the installed library and call `find_package(morfuse)`. The include directory will be set in *morfuse_INCLUDE_DIR*
+
+=== Example code
 
 [source,cpp]
 ----
-main:
-    local.value = "Hello, world!"
-    println local.value
-end
+#include <morfuse/Script/Context.h>
+#include <morfuse/Common/membuf.h>
+
+#include <iostream>
+
+const char sampleScript[] =
+"main:\n"
+"local.string = \"Hello, world!\"\n"
+"println local.string\n"
+"end";
+
+int main()
+{
+	// This example only cover the execution of script
+
+	mfuse::ScriptContext context;
+	// Set the stream to use for 'Output'.
+	// The script above will call println which will use the 'Output' level
+	context.GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Output, &std::cout);
+
+	mfuse::ScriptMaster& director = context.GetDirector();
+
+	// Instantiate a memory buffer stream (implementation of std::istream)
+	// It will be used to read and parse the script from a memory buffer.
+	mfuse::imemstream membuf(sampleScript, sizeof(sampleScript));
+
+	// This will parse and compile the script into a program buffer (opcodes) that the interpreter will execute
+	// The parser will read the script using the buffer above
+	const mfuse::ProgramScript* const script = director.GetProgramScript("example", membuf);
+
+	// This will create a thread that will execute the ProgramScript instance above
+	// labels define the position at which threads will start
+	// If no label is specified (second parameter), the thread starts at position 0 by default
+	//
+	// If the thread has finished executing, then this method will return null, otherwise, in the case of a wait, it will return an object of the thread
+	director.ExecuteThread(script);
+
+	// Output:
+	// Hello, world!
+	//
+
+	return 0;
+}
+
 ----
 
-There is no documentation yet but it would be nice to have one. Feel free to contribute if you're interested in this script engine!
+There is no real documentation yet but it would be nice to have one. Feel free to contribute if you're interested in this script engine!
 
 == General features
 
