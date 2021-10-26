@@ -24,7 +24,9 @@ if(WIN32)
 	target_compile_definitions(morfuse PRIVATE "_CRT_SECURE_NO_WARNINGS=1")
 elseif(UNIX)
 	target_compile_options(morfuse PRIVATE "-Wall" "-Wextra")
-	target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete-hidden")
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete-hidden")
+	endif()
 	set_target_properties(morfuse PROPERTIES
 		C_VISIBILITY_PRESET hidden
 		CXX_VISIBILITY_PRESET hidden
@@ -43,13 +45,13 @@ if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug"))
 	endif()
 endif()
 
-set_target_properties(morfuse PROPERTIES
-	CXX_STANDARD 17
-	CXX_STANDARD_REQUIRED ON
-	CXX_EXTENSIONS OFF
-)
-
 target_compile_features(morfuse PUBLIC cxx_std_17)
+
+#set_target_properties(morfuse PROPERTIES
+#	CXX_STANDARD 17
+#	CXX_STANDARD_REQUIRED ON
+#	CXX_EXTENSIONS OFF
+#)
 
 target_compile_definitions(morfuse PRIVATE mfuse_DLL=1)
 target_include_directories(morfuse PRIVATE ${FLEX_INCLUDE_DIRS})
