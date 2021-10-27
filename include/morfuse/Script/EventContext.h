@@ -5,6 +5,7 @@
 #include "../Common/MEM/BlockAlloc.h"
 #include "Event.h"
 #include "EventQueue.h"
+#include "NamespaceManager.h"
 
 namespace mfuse
 {
@@ -43,6 +44,8 @@ namespace mfuse
 		mfuse_EXPORTS const TimeManager& GetTimeManager() const;
 		mfuse_EXPORTS EventQueue& GetEventQueue();
 		mfuse_EXPORTS const EventQueue& GetEventQueue() const;
+		mfuse_EXPORTS NamespaceManager& GetNamespaceManager();
+		mfuse_EXPORTS const NamespaceManager& GetNamespaceManager() const;
 
 		DefaultEventAllocator& GetAllocator();
 
@@ -53,5 +56,6 @@ namespace mfuse
 		DefaultEventAllocator allocator;
 		TimeManager timeManager;
 		EventQueue eventQueue;
+		NamespaceManager namespaceManager;
 	};
 }

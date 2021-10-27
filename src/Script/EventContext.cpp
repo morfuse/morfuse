@@ -45,3 +45,13 @@ DefaultEventAllocator& EventContext::GetAllocator()
 {
 	return allocator;
 }
+
+NamespaceManager& EventContext::GetNamespaceManager()
+{
+	return namespaceManager;
+}
+
+const NamespaceManager& EventContext::GetNamespaceManager() const
+{
+	return namespaceManager;
+}
