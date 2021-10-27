@@ -114,7 +114,12 @@ const ClassDef* SpawnArgs::getClassDef(const rawchar_t** foundClassName)
 	const ClassDef* cls = nullptr;
 
 	const rawchar_t* classname = getArg("classname");
-	if (foundClassName) *foundClassName = classname;
+	if (foundClassName) {
+		*foundClassName = classname;
+	}
+	else {
+		*foundClassName = "";
+	}
 
 	//
 	// check normal spawn functions
