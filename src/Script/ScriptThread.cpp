@@ -2849,11 +2849,9 @@ void ScriptThread::EventEnd(Event& ev)
 {
 	if (ev.NumArgs() > 0)
 	{
-		ScriptVariable value = ev.GetValue(1);
+		ScriptVariable& value = ev.GetValue(1);
 
-		m_ScriptVM->End(value);
-
-		ev.AddValue(value);
+		m_ScriptVM->EndRef(value);
 	}
 	else
 	{
@@ -3034,10 +3032,7 @@ Listener *ScriptThread::SpawnInternal(Event& ev)
 
 	const str className = ev.GetString(1);
 	SpawnArgs args;
-
-	if (ClassDef::GetClassForID(className.c_str()) || ClassDef::GetClass(className.c_str())) {
-		args.setArg("classname", className.c_str());
-	}
+	args.setArg("classname", className);
 
 	const size_t numArgs = ev.NumArgs();
 	for (uintptr_t i = 2; i < numArgs; i++)
@@ -3204,11 +3199,16 @@ void ScriptThread::Execute(Event& ev)
 	{
 		ScriptVariable returnValue;
 
-		returnValue.newPointer();
+		// reserve at least 2 for script VM and the callee
+		returnValue.newPointer(2);
 
 		ScriptExecute(ev.GetListView(), returnValue);
 
-		if (!returnValue.IsNone()) ev.AddValue(returnValue);
+		if (!returnValue.IsNone())
+		{
+			// add the returned value
+			ev.AddValue(std::move(returnValue));
+		}
 	}
 	catch (ScriptAbortExceptionBase&)
 	{
@@ -3232,7 +3232,7 @@ void ScriptThread::DelayExecute(Event& ev)
 
 	m_ScriptVM->SetFastData(ev.GetListView());
 
-	returnValue.newPointer();
+	returnValue.newPointer(2);
 	m_ScriptVM->m_ReturnValue = returnValue;
 	ev.AddValue(returnValue);
 
