@@ -37,7 +37,6 @@ void ClassSystem::BuildEventResponses(MEM::PreAllocator& allocator)
 	amount = 0;
 	numClassesBuilt = 0;
 
-	//for (ClassDef* c = ClassDef::GetList(); c; c = c->GetNext())
 	for (ClassDef::List::iterator c = ClassDef::GetList(); c; c = c.Next())
 	{
 		c->BuildResponseList(allocator);
@@ -54,9 +53,6 @@ void ClassSystem::BuildEventResponses(MEM::PreAllocator& allocator)
 		*dbg << "\n------------------\nEvent system initialized: "
 			<< numClassesBuilt << " classes " << EventSystem::NumEventCommands() << " events " << allocator.Size() << " total bytes allocated" << std::endl;
 	}
-
-	//GlobalOutput::Get().Printf(outputLevel_e::Debug, "\n------------------\nEvent system initialized: "
-	//	"%d classes %d events %d total memory in response list\n\n", numClassesBuilt, EventSystem::NumEventCommands(), allocator.Size());
 }
 
 void ClassSystem::ClearEventResponses(MEM::PreAllocator& allocator)

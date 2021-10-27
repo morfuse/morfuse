@@ -14,26 +14,29 @@ ClassDef::ClassDef(ClassDef* superclass, const rawchar_t* classname, const rawch
 	NewInstanceHandler newInstance)
 {
 	this->classname = classname;
-	this->classID = classID;
+	this->classID = classID ? classID : "";
 	this->responses = responses;
 	this->responseLookup = nullptr;
 	this->newInstance = newInstance;
 	this->super = superclass;
 	this->waitTillSet = nullptr;
 
-	if (!classID) classID = "";
+	// Add to front of list
+	classlist.Add(this);
 
-	// Fixup class definitions that was created before their parent
-	/*
-	for (node = classlist; node != nullptr; node = node->next)
-	{
-		if ((node->super == nullptr) && (!str::icmp(node->superclass, this->classname)) &&
-			(str::icmp(node->classname, "Class")))
-		{
-			node->super = this;
-		}
-	}
-	*/
+	numclasses++;
+}
+
+ClassDef::ClassDef(const NamespaceDef& namespaceRef, ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseDefClass* responses, NewInstanceHandler newInstance)
+	: ObjectInNamespace(namespaceRef)
+{
+	this->classname = classname;
+	this->classID = classID ? classID : "";
+	this->responses = responses;
+	this->responseLookup = nullptr;
+	this->newInstance = newInstance;
+	this->super = superclass;
+	this->waitTillSet = nullptr;
 
 	// Add to front of list
 	classlist.Add(this);
@@ -113,21 +116,21 @@ void ClassDef::BuildResponseList(MEM::PreAllocator& allocator)
 
 	const size_t num = EventSystem::NumEventCommands();
 	responseLookup = new (allocator) const ResponseDefClass * [num];
-	// event number start with 1
-	--responseLookup;
 
 	if (super)
 	{
 		// when a parent is present
 		// copy the parent's responseLookup first
 		super->BuildResponseList(allocator);
-		std::copy(super->responseLookup + 1, super->responseLookup + num + 1, responseLookup + 1);
+		std::copy(super->responseLookup + 1, super->responseLookup + num + 1, responseLookup);
 	}
 	else
 	{
 		// no parent so clear the response lookup
-		std::fill(responseLookup + 1, responseLookup + num + 1, nullptr);
+		std::fill(responseLookup, responseLookup + num, nullptr);
 	}
+	// event number start from 1
+	--responseLookup;
 
 	for (const ResponseDefClass* r = responses; r->event != nullptr; r++)
 	{
@@ -145,43 +148,12 @@ void ClassDef::BuildResponseList(MEM::PreAllocator& allocator)
 			responseLookup[ev] = nullptr;
 		}
 	}
-
-	// Construct the response event lookup
-	/*
-	for (const ClassDef* c = this; c != nullptr; c = c->GetSuper())
-	{
-		const ResponseDefClass* r = c->responses;
-
-		if (r)
-		{
-			for (size_t i = 0; r[i].event != nullptr; i++)
-			{
-				const uintptr_t ev = r[i].event->GetEventNum();
-
-				if (!set[ev])
-				{
-					set[ev] = true;
-
-					if (r[i].response)
-					{
-						responseLookup[ev] = &r[i];
-					}
-					else
-					{
-						responseLookup[ev] = nullptr;
-					}
-				}
-			}
-		}
-	}
-	*/
 }
 
 void ClassDef::ClearResponseList(MEM::PreAllocator& allocator)
 {
 	if (responseLookup)
 	{
-		//delete[] responseLookup;
 		allocator.Free(responseLookup + 1);
 		responseLookup = nullptr;
 	}
@@ -190,7 +162,10 @@ void ClassDef::ClearResponseList(MEM::PreAllocator& allocator)
 size_t ClassDef::GetNumEvents() const
 {
 	size_t num = 0;
-	for (size_t i = 0; responses[i].event != nullptr; i++, ++num);
+	for (const ResponseDefClass* r = responses; r->event != nullptr; r++) {
+		++num;
+	}
+
 	return num;
 }
 
@@ -261,29 +236,33 @@ void ClassDefExt::InitClassDef()
 	}
 }
 
-ClassDef* ClassDef::GetClassForID(const rawchar_t* name)
+const ClassDef* ClassDef::GetClass(const rawchar_t* name)
 {
+	if (!name || !*name) {
+		return nullptr;
+	}
+
 	for (auto c = ClassDef::GetList(); c; c = c.Next())
 	{
-		if (c->GetClassID() && !str::icmp(c->GetClassID(), name))
-		{
-			return c;
+		if (!str::icmp(c->GetClassName(), name)) {
+			return c.Node();
 		}
 	}
 
 	return nullptr;
 }
 
-const ClassDef* ClassDef::GetClass(const rawchar_t* name)
+ClassDef* ClassDef::GetClassForID(const rawchar_t* name)
 {
-	if (name == nullptr || !*name) {
+	if (!name || !*name) {
 		return nullptr;
 	}
 
 	for (auto c = ClassDef::GetList(); c; c = c.Next())
 	{
-		if (str::icmp(c->GetClassName(), name) == 0) {
-			return c.Node();
+		if (!str::icmp(c->GetClassID(), name))
+		{
+			return c;
 		}
 	}
 
@@ -294,7 +273,7 @@ bool ClassDef::checkInheritance(const ClassDef* superclass, const ClassDef* subc
 {
 	const ClassDef* c;
 
-	for (c = subclass; c != nullptr; c = c->GetSuper())
+	for (c = subclass; c; c = c->GetSuper())
 	{
 		if (c == superclass)
 		{

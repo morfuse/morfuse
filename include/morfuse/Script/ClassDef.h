@@ -5,24 +5,19 @@
 #include "../Common/str.h"
 #include "../Container/arrayset.h"
 #include "../Common/ConstStr.h"
+#include "NamespaceDef.h"
 
 namespace mfuse
 {
 	class Archiver;
 	class Class;
 	class Event;
+
 	namespace MEM { class PreAllocator; }
 
-	using eventNum_t = uintptr_t;
+	using eventNum_t = uint32_t;
 
-#define MFUS_CLASS_DECLARATION(parentclass, classname, classid)			\
-	mfuse::ClassDefTemplate<classname> classname::ClassInfo				\
-	(																	\
-		mfuse::ClassDef::GetClass<parentclass>(),						\
-		#classname, classid,											\
-		classname::Responses,											\
-		&classname::_newInstance										\
-	);																	\
+#define MFUS_CLASS_DECLARATION_INTERNAL_METHODS(classname)				\
 	classname *classname::_newInstance()								\
 	{																	\
 		return new classname;											\
@@ -48,6 +43,27 @@ namespace mfuse
 		return classname::staticclass().WaitTillDefined(s);				\
 	}																	\
 	mfuse::ResponseDef<classname> classname::Responses[] =
+
+#define MFUS_CLASS_DECLARATION_NAMESPACE(nspace, parentclass, classname, classid)	\
+	mfuse::ClassDefTemplate<classname> classname::ClassInfo				\
+	(																	\
+		nspace,															\
+		mfuse::ClassDef::GetClass<parentclass>(),						\
+		#classname, classid,											\
+		classname::Responses,											\
+		&classname::_newInstance										\
+	);																	\
+	MFUS_CLASS_DECLARATION_INTERNAL_METHODS(classname)
+
+#define MFUS_CLASS_DECLARATION(parentclass, classname, classid)			\
+	mfuse::ClassDefTemplate<classname> classname::ClassInfo				\
+	(																	\
+		mfuse::ClassDef::GetClass<parentclass>(),						\
+		#classname, classid,											\
+		classname::Responses,											\
+		&classname::_newInstance										\
+	);																	\
+	MFUS_CLASS_DECLARATION_INTERNAL_METHODS(classname)
 
 #define MFUS_CLASS_ABSTRACT_PROTOTYPE(classname)			\
 	private:												\
@@ -89,15 +105,22 @@ namespace mfuse
 	using ResponseLookup = const ResponseDefClass**;
 	using NewInstanceHandler = Class* (*)();
 
-	class ClassDef
+	class ClassDef : public ObjectInNamespace
 	{
 	public:
 		/* Create-a-class function */
 		mfuse_EXPORTS ClassDef(ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseDefClass* responses, NewInstanceHandler newInstance);
+		mfuse_EXPORTS ClassDef(const NamespaceDef& namespaceRef, ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseDefClass* responses, NewInstanceHandler newInstance);
 
 		template<typename ResponseType, typename NewInstance>
 		ClassDef(ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseType* responses, NewInstance newInstance)
 			: ClassDef(superclass, classname, classID, (const ResponseDefClass*)responses, (NewInstanceHandler)newInstance)
+		{
+		}
+
+		template<typename ResponseType, typename NewInstance>
+		ClassDef(const NamespaceDef& namespaceRef, ClassDef* superclass, const rawchar_t* classname, const rawchar_t* classID, const ResponseType* responses, NewInstance newInstance)
+			: ClassDef(namespaceRef, superclass, classname, classID, (const ResponseDefClass*)responses, (NewInstanceHandler)newInstance)
 		{
 		}
 

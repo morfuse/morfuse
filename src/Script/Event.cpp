@@ -5,6 +5,8 @@
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/EventSystem.h>
 #include <morfuse/Container/ContainerView.h>
+#include <morfuse/Container/Container_archive.h>
+
 #include <cstdarg>
 #include <string>
 
@@ -117,44 +119,28 @@ EventDef::EventDef()
 }
 
 EventDef::EventDef(const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type)
-	: EventDef(nullptr, command, flags, formatspec, argument_names, documentation, type)
-{
-}
-
-EventDef::EventDef(const ModuleDef* def, const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type)
-	: moduleDef(def)
-	, attributes(GetNewAttributes(command, type))
+	: attributes(GetNewAttributes(command, type))
 {
 	this->flags = flags;
 	this->formatspec = formatspec;
 	this->argument_names = argument_names;
 	this->documentation = documentation;
 
-	if (argument_names)
-	{
-		// get the number of args
-		minArgs = 1;
-		const rawchar_t* p = argument_names;
-		while (*p)
-		{
-			if (*p == ' ')
-			{
-				++minArgs;
-				while (*p++ == ' ');
-			}
-			else
-			{
-				p++;
-			}
-		}
-	}
-	else {
-		minArgs = 0;
-	}
+	InitArgs();
+}
+
+EventDef::EventDef(const NamespaceDef& def, const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type)
+	: ObjectInNamespace(def)
+	, attributes(GetNewAttributes(command, type))
+{
+	this->flags = flags;
+	this->formatspec = formatspec;
+	this->argument_names = argument_names;
+	this->documentation = documentation;
 }
 
 EventDef::EventDef(EventDef&& other)
-	: moduleDef(other.moduleDef)
+	: ObjectInNamespace(std::move(other))
 	, attributes(std::move(other.attributes))
 	, formatspec(other.formatspec)
 	, argument_names(other.argument_names)
@@ -168,7 +154,7 @@ EventDef::EventDef(EventDef&& other)
 
 EventDef& EventDef::operator=(EventDef&& other)
 {
-	moduleDef = other.moduleDef;
+	ObjectInNamespace::operator=(std::move(other));
 	attributes = std::move(other.attributes);
 	formatspec = other.formatspec;
 	argument_names = other.argument_names;
@@ -208,7 +194,32 @@ EventDefAttributes EventDef::GetNewAttributes(const rawchar_t* command, evType_e
 	// add the event
 	head.AddFirst(this);
 	// create a new event with unique index
-	return EventDefAttributes(command, type, ++defCount);
+	return EventDefAttributes(command, type, (eventNum_t)++defCount);
+}
+
+void EventDef::InitArgs()
+{
+	if (argument_names)
+	{
+		// get the number of args
+		minArgs = 1;
+		const rawchar_t* p = argument_names;
+		while (*p)
+		{
+			if (*p == ' ')
+			{
+				++minArgs;
+				while (*p++ == ' ');
+			}
+			else
+			{
+				p++;
+			}
+		}
+	}
+	else {
+		minArgs = 0;
+	}
 }
 
 bool EventDef::operator==(const rawchar_t* name) const
@@ -291,31 +302,6 @@ MFUS_CLASS_DECLARATION(Class, Event, NULL)
 	{ NULL, NULL }
 };
 
-void Event::Archive(Archiver&)
-{
-	/*
-	if (arc.Loading())
-	{
-		fromScript = false;
-	}
-
-	Class::Archive(arc);
-
-	arc.ArchiveUnsignedShort(&eventnum);
-	arc.ArchiveUnsignedShort(&dataSize);
-
-	if (arc.Loading())
-	{
-		data = new ScriptVariable[dataSize + 1];
-	}
-
-	for (int i = dataSize; i > 0; i--)
-	{
-		data[i].ArchiveInternal(arc);
-	}
-	*/
-}
-
 Event::Event()
 {
 	fromScript = false;
@@ -334,15 +320,13 @@ Event::Event(const EventDef& def, size_t numArgs)
 {
 }
 
-Event::Event(uintptr_t eventnumValue)
+Event::Event(eventNum_t eventnumValue)
 	: eventnum(eventnumValue)
 	, fromScript(false)
 {
-	//dataSize = 0;
-	//data = nullptr;
 }
 
-Event::Event(uintptr_t eventnumValue, size_t numArgs)
+Event::Event(eventNum_t eventnumValue, size_t numArgs)
 	: data(numArgs)
 	, eventnum(eventnumValue)
 	, fromScript(false)
@@ -422,6 +406,25 @@ bool Event::operator!=(const Event& ev)
 	return eventnum != ev.eventnum;
 }
 
+void Event::Archive(Archiver& arc)
+{
+	if (arc.Loading())
+	{
+		fromScript = false;
+	}
+
+	Class::Archive(arc);
+
+	arc.ArchiveUInt32(eventnum);
+
+	con::Archive(arc, data, &Event::ArchiveData);
+}
+
+void Event::ArchiveData(Archiver& arc, ScriptVariable& var)
+{
+	var.ArchiveInternal(arc);
+}
+
 void Event::Clear()
 {
 	data.ClearObjectList();
@@ -454,7 +457,7 @@ const rawchar_t* Event::GetFormat() const
 	return eventDef ? eventDef->formatspec : nullptr;
 }
 
-uintptr_t Event::Num() const
+eventNum_t Event::Num() const
 {
 	return eventnum;
 }

@@ -5,6 +5,7 @@
 #include "../Container/Container.h"
 #include "../Container/ContainerView.h"
 #include "../Common/TimeTypes.h"
+#include "NamespaceDef.h"
 
 namespace mfuse
 {
@@ -69,7 +70,6 @@ namespace mfuse
 	class Vector;
 	class EventQueueNode;
 	class Event;
-	class ModuleDef;
 
 	class EventDefAttributes
 	{
@@ -96,7 +96,7 @@ namespace mfuse
 		evType_e type;
 	};
 
-	class EventDef
+	class EventDef : public ObjectInNamespace
 	{
 	public:
 		EventDef();
@@ -104,7 +104,7 @@ namespace mfuse
 		// Arguments are : 'e' (Entity) 'v' (Vector) 'i' (Integer) 'f' (Float) 's' (String) 'b' (Boolean).
 		// Uppercase arguments means optional.
 		mfuse_EXPORTS EventDef(const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type = evType_e::Normal);
-		mfuse_EXPORTS EventDef(const ModuleDef* def, const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type = evType_e::Normal);
+		mfuse_EXPORTS EventDef(const NamespaceDef& nspace, const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type = evType_e::Normal);
 		mfuse_EXPORTS ~EventDef();
 		mfuse_EXPORTS EventDef(EventDef&& other);
 		mfuse_EXPORTS EventDef& operator=(EventDef&& other);
@@ -134,9 +134,9 @@ namespace mfuse
 
 	private:
 		EventDefAttributes GetNewAttributes(const rawchar_t* command, evType_e type);
+		void InitArgs();
 
 	public:
-		const ModuleDef* moduleDef;
 		EventDefAttributes attributes;
 		const rawchar_t* formatspec;
 		const rawchar_t* argument_names;
@@ -160,8 +160,8 @@ namespace mfuse
 		mfuse_EXPORTS Event();
 		mfuse_EXPORTS Event(const EventDef& def);
 		mfuse_EXPORTS Event(const EventDef& def, size_t numArgs);
-		mfuse_EXPORTS Event(uintptr_t eventnum);
-		mfuse_EXPORTS Event(uintptr_t eventnum, size_t numArgs);
+		mfuse_EXPORTS Event(eventNum_t eventnum);
+		mfuse_EXPORTS Event(eventNum_t eventnum, size_t numArgs);
 		mfuse_EXPORTS Event(const Event& other);
 		mfuse_EXPORTS Event(Event&& other);
 		mfuse_EXPORTS ~Event();
@@ -235,6 +235,7 @@ namespace mfuse
 
 		void* GetUninitializedValue();
 		void CheckPos(uintptr_t pos);
+		static void ArchiveData(Archiver& arc, ScriptVariable& var);
 
 	private:
 		con::Container<ScriptVariable> data;
