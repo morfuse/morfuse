@@ -32,41 +32,26 @@ ScriptEvent::ScriptEvent(eventNum_t eventNum, size_t numArgs)
 }
 
 template<>
-void ScriptVM::executeCommand<false, false>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
+void ScriptVM::executeCommandInternal<false>(Event& ev, Listener* listener, ScriptVariable* fromVar, op_parmNum_t iParamCount)
 {
-	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount) : ScriptEvent(eventnum);
-	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(1), iParamCount);
-}
-
-template<>
-void ScriptVM::executeCommand<true, false>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
-{
-	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount) : ScriptEvent(eventnum);
-	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(1), iParamCount);
-}
-
-template<>
-void ScriptVM::executeCommand<false, true>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
-{
-	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount + 1) : ScriptEvent(eventnum, 1);
-	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(), iParamCount);
-}
-
-template<>
-void ScriptVM::executeCommand<true, true>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
-{
-	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount + 1) : ScriptEvent(eventnum, 1);
-	return executeCommandInternal(ev, listener, m_Stack.GetTopArray(), iParamCount);
-}
-
-void ScriptVM::executeCommandInternal(Event& ev, Listener* listener, ScriptVariable* fromVar, op_parmNum_t iParamCount)
-{
-	for (uint16_t i = 0; i < iParamCount; i++)
-	{
-		ev.AddValue(fromVar[i]);
-	}
-
+	transferVarsToEvent(ev, fromVar, iParamCount);
 	listener->ProcessScriptEvent(ev);
+}
+
+template<>
+void ScriptVM::executeCommandInternal<true>(Event& ev, Listener* listener, ScriptVariable* fromVar, op_parmNum_t iParamCount)
+{
+	transferVarsToEvent(ev, fromVar, iParamCount);
+
+	try
+	{
+		listener->ProcessScriptEvent(ev);
+	}
+	catch (...)
+	{
+		m_Stack.GetTop().Clear();
+		throw;
+	}
 
 	ScriptVariable& pTop = m_Stack.GetTop();
 	if (ev.NumArgs() > iParamCount) {
@@ -74,6 +59,42 @@ void ScriptVM::executeCommandInternal(Event& ev, Listener* listener, ScriptVaria
 	}
 	else {
 		pTop.Clear();
+	}
+}
+
+template<>
+void ScriptVM::executeCommand<false, false>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
+{
+	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount) : ScriptEvent(eventnum);
+	return executeCommandInternal<false>(ev, listener, m_Stack.GetTopArray(1), iParamCount);
+}
+
+template<>
+void ScriptVM::executeCommand<true, false>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
+{
+	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount) : ScriptEvent(eventnum);
+	return executeCommandInternal<false>(ev, listener, m_Stack.GetTopArray(1), iParamCount);
+}
+
+template<>
+void ScriptVM::executeCommand<false, true>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
+{
+	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount + 1) : ScriptEvent(eventnum, 1);
+	return executeCommandInternal<true>(ev, listener, m_Stack.GetTopArray(), iParamCount);
+}
+
+template<>
+void ScriptVM::executeCommand<true, true>(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum)
+{
+	ScriptEvent ev = iParamCount ? ScriptEvent(eventnum, iParamCount + 1) : ScriptEvent(eventnum, 1);
+	return executeCommandInternal<true>(ev, listener, m_Stack.GetTopArray(), iParamCount);
+}
+
+void ScriptVM::transferVarsToEvent(Event& ev, ScriptVariable* fromVar, op_parmNum_t count)
+{
+	for (uint16_t i = 0; i < count; i++)
+	{
+		ev.AddValue(std::move(fromVar[i]));
 	}
 }
 
@@ -89,7 +110,7 @@ bool ScriptVM::executeGetter(EventSystem& eventSystem, Listener* listener, op_ev
 
 		ScriptVariable& pTop = m_Stack.GetTop();
 		if (ev.NumArgs() > 0) {
-			pTop = std::move(ev.GetValue(ev.NumArgs()));
+			pTop = std::move(ev.GetLastValue());
 		}
 		else {
 			pTop.Clear();
