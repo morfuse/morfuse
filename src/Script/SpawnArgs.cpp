@@ -6,6 +6,11 @@
 
 using namespace mfuse;
 
+MFUS_CLASS_DECLARATION(Class, SpawnArgs, nullptr)
+{
+	{ nullptr, nullptr }
+};
+
 SpawnArgs::SpawnArgs()
 {
 }
@@ -104,11 +109,12 @@ Finds the spawn function for the entity and returns ClassDef *
 ===============
 */
 
-const ClassDef* SpawnArgs::getClassDef()
+const ClassDef* SpawnArgs::getClassDef(const rawchar_t** foundClassName)
 {
 	const ClassDef* cls = nullptr;
 
 	const rawchar_t* classname = getArg("classname");
+	if (foundClassName) *foundClassName = classname;
 
 	//
 	// check normal spawn functions
@@ -121,6 +127,14 @@ const ClassDef* SpawnArgs::getClassDef()
 		{
 			cls = ClassDef::GetClass(classname);
 		}
+	}
+
+	const NamespaceManager& nspaceMan = EventContext::Get().GetNamespaceManager();
+
+	if (cls && !nspaceMan.IsObjectInNamespaceAllowed(*cls))
+	{
+		// skip classes that are not within allowed namespaces
+		cls = nullptr;
 	}
 
 	return cls;
@@ -138,11 +152,17 @@ Listener* SpawnArgs::Spawn(void)
 	return ent;
 }
 
-Listener* SpawnArgs::SpawnInternal(void)
+Listener* SpawnArgs::SpawnInternal()
 {
-	const ClassDef* cls = getClassDef();
+	const rawchar_t* foundClassName;
+	const ClassDef* cls = getClassDef(&foundClassName);
 
-	if (!cls && !cls->inheritsFrom(&Listener::staticclass()))
+	if (!cls)
+	{
+		throw SpawnErrors::InvalidClassName(foundClassName);
+	}
+
+	if (cls && !cls->inheritsFrom(&Listener::staticclass()))
 	{
 		throw SpawnErrors::NoSpawnFunction();
 	}
@@ -295,12 +315,26 @@ Listener* SpawnArgs::SpawnInternal(void)
 	return obj;
 }
 
+SpawnErrors::InvalidClassName::InvalidClassName(const str& classNameRef)
+	: className(classNameRef)
+{
+}
+
+const str& SpawnErrors::InvalidClassName::getClassName() const
+{
+	return className;
+}
+
+const char* SpawnErrors::InvalidClassName::what() const noexcept
+{
+	if (!filled()) {
+		fill("'" + className + "' is not a valid class name");
+	}
+
+	return Messageable::what();
+}
+
 const char* SpawnErrors::NoSpawnFunction::what() const noexcept
 {
 	return "No spawn function found";
 }
-
-MFUS_CLASS_DECLARATION(Class, SpawnArgs, nullptr)
-{
-	{ NULL, NULL }
-};

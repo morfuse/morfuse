@@ -3045,10 +3045,6 @@ Listener *ScriptThread::SpawnInternal(Event& ev)
 		args.setArg(ev.GetString(i), ev.GetString(i + 1));
 	}
 
-	if (!args.getClassDef()) {
-		throw ScriptErrors::InvalidClassName(className);
-	}
-
 	const rawchar_t* spawntarget = args.getArg("spawntarget");
 
 	ScriptContext& context = ScriptContext::Get();
@@ -3081,78 +3077,6 @@ Listener *ScriptThread::SpawnInternal(Event& ev)
 	context.GetTrackedInstances().Add(l);
 
 	return l;
-
-	/*
-	SpawnArgs args;
-	str classname;
-	Listener *l;
-
-	if (ev.NumArgs() <= 0)
-	{
-		ScriptError("Usage: spawn entityname [keyname] [value]...");
-	}
-
-	classname = ev.GetString(1);
-
-	if (getClassForID(classname) || getClass(classname))
-	{
-		args.setArg("classname", classname);
-	}
-	else
-	{
-		if (!strstr(classname.c_str(), ".tik"))
-		{
-			classname.append(".tik");
-		}
-
-		args.setArg("model", classname);
-	}
-
-	for (int i = 2; i < ev.NumArgs(); i += 2)
-	{
-		args.setArg(ev.GetString(i), ev.GetString(i + 1));
-	}
-
-	if (!args.getClassDef())
-	{
-		ScriptError("'%s' is not a valid entity name", classname.c_str());
-	}
-
-	const char *spawntarget = args.getArg("spawntarget");
-
-	if (spawntarget)
-	{
-		SimpleEntity *target = G_FindTarget(NULL, spawntarget);
-
-		if (!target)
-		{
-			ScriptError("Can't find targetname %s", spawntarget);
-		}
-
-		args.setArg("origin", va("%f %f %f", target->origin[0], target->origin[1], target->origin[2]));
-		args.setArg("angle", va("%f", target->angles[1]));
-	}
-
-	level.spawnflags = 0;
-
-	const char *s = args.getArg("spawnflags");
-	if (s) {
-		level.spawnflags = atoi(s);
-	}
-
-	level.m_bScriptSpawn = true;
-	l = args.Spawn();
-	level.m_bScriptSpawn = false;
-
-	if (level.m_bRejectSpawn)
-	{
-		level.m_bRejectSpawn = false;
-		ScriptError("Spawn command rejected for %s", classname.c_str());
-	}
-
-	return l;
-	*/
-	return nullptr;
 }
 
 void ScriptThread::SpawnReturn(Event& ev)
@@ -3160,13 +3084,6 @@ void ScriptThread::SpawnReturn(Event& ev)
 	Listener *listener = SpawnInternal(ev);
 
 	ev.AddListener(listener);
-
-	/*
-	if (listener && checkInheritance(&Object::ClassInfo, listener->classinfo()))
-	{
-		ScriptError("You must specify an explicit classname for misc object tik models");
-	}
-	*/
 }
 
 void ScriptThread::EventVectorAdd(Event& ev)
@@ -3176,7 +3093,6 @@ void ScriptThread::EventVectorAdd(Event& ev)
 
 void ScriptThread::EventVectorCloser(Event&)
 {
-
 }
 
 void ScriptThread::EventVectorCross(Event& ev)
@@ -3778,23 +3694,4 @@ void Flag::Wait(ScriptThread *Thread)
 	Thread->StartedWaitFor();
 
 	m_WaitList.AddObject(Thread->GetScriptVM());
-}
-
-ScriptErrors::InvalidClassName::InvalidClassName(const str& classNameRef)
-	: className(classNameRef)
-{
-}
-
-const str& ScriptErrors::InvalidClassName::getClassName() const
-{
-	return className;
-}
-
-const char* ScriptErrors::InvalidClassName::what() const noexcept
-{
-	if (!filled()) {
-		fill("'" + className + "' is not a valid entity name");
-	}
-
-	return Messageable::what();
 }
