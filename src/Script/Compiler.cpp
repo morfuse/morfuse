@@ -527,7 +527,7 @@ void ScriptEmitter::AddJumpToLocation(opval_t* pos)
 	ClearPrevOpcode();
 }
 
-bool ScriptEmitter::BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type, const prchar_t* name, uintptr_t eventnum)
+bool ScriptEmitter::BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type, const prchar_t* name, eventNum_t eventnum)
 {
 	const ClassDef* c;
 
@@ -576,7 +576,7 @@ bool ScriptEmitter::BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type
 	return false;
 }
 
-bool ScriptEmitter::BuiltinWriteVariable(sourceLocation_t sourceLoc, uint8_t type, const prchar_t* name, uintptr_t eventnum)
+bool ScriptEmitter::BuiltinWriteVariable(sourceLocation_t sourceLoc, uint8_t type, const prchar_t* name, eventNum_t eventnum)
 {
 	const ClassDef* c;
 
@@ -819,7 +819,7 @@ void ScriptEmitter::EmitCatch(sval_t val, const opval_t* try_begin_code_pos, sou
 
 void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const uintptr_t eventnum = eventSystem.FindNormalEventNum(commandName);
+	const eventNum_t eventnum = eventSystem.FindNormalEventNum(commandName);
 
 	if (!eventnum)
 	{
@@ -857,7 +857,7 @@ void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandNa
 
 void ScriptEmitter::EmitCommandMethodRet(sval_t listener, const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const uintptr_t eventnum = eventSystem.FindReturnEventNum(commandName);
+	const eventNum_t eventnum = eventSystem.FindReturnEventNum(commandName);
 
 	if (!eventnum)
 	{
@@ -878,7 +878,7 @@ void ScriptEmitter::EmitCommandMethodRet(sval_t listener, const prchar_t* comman
 
 void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const uintptr_t eventnum = eventSystem.FindNormalEventNum(commandName);
+	const eventNum_t eventnum = eventSystem.FindNormalEventNum(commandName);
 
 	if (!eventnum)
 	{
@@ -913,7 +913,7 @@ void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parame
 
 void ScriptEmitter::EmitCommandScriptRet(const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const uintptr_t eventnum = eventSystem.FindReturnEventNum(commandName);
+	const eventNum_t eventnum = eventSystem.FindReturnEventNum(commandName);
 
 	if (!eventnum)
 	{
@@ -1407,7 +1407,7 @@ void ScriptEmitter::EmitMakeArray(sval_t val, sourceLocation_t sourceLoc)
 	EmitConstArrayOpcode(iCount, sourceLoc);
 }
 
-void ScriptEmitter::EmitMethodExpression(uint32_t iParamCount, uintptr_t eventnum, sourceLocation_t sourceLoc)
+void ScriptEmitter::EmitMethodExpression(uint32_t iParamCount, eventNum_t eventnum, sourceLocation_t sourceLoc)
 {
 	if (iParamCount > 5)
 	{

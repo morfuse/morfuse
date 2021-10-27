@@ -133,8 +133,8 @@ namespace mfuse
 		void AddJumpBackLocation(opval_t* pos);
 		void AddJumpToLocation(opval_t* pos);
 
-		bool BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type, const rawchar_t* name, uintptr_t eventnum);
-		bool BuiltinWriteVariable(sourceLocation_t sourceLoc, uint8_t type, const rawchar_t* name, uintptr_t eventnum);
+		bool BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type, const rawchar_t* name, eventNum_t eventnum);
+		bool BuiltinWriteVariable(sourceLocation_t sourceLoc, uint8_t type, const rawchar_t* name, eventNum_t eventnum);
 
 		void EmitAssignmentStatement(sval_t lhs, sourceLocation_t sourceLoc);
 
@@ -174,7 +174,7 @@ namespace mfuse
 		void EmitAndJump(sval_t logic_stmt, sourceLocation_t sourceLoc);
 		void EmitOrJump(sval_t logic_stmt, sourceLocation_t sourceLoc);
 		void EmitMakeArray(sval_t val, sourceLocation_t sourceLoc);
-		void EmitMethodExpression(uint32_t iParamCount, uintptr_t eventnum, sourceLocation_t sourceLoc);
+		void EmitMethodExpression(uint32_t iParamCount, eventNum_t eventnum, sourceLocation_t sourceLoc);
 		void EmitNil(sourceLocation_t sourceLoc);
 		void EmitNop();
 		uintptr_t EmitNot(sourceLocation_t sourceLoc);
