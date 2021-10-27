@@ -66,7 +66,7 @@ namespace mfuse
 		uintptr_t			MaxObjects() const noexcept;
 		uintptr_t			NumObjects() const noexcept;
 		Type&				ObjectAt(const size_t index) const;
-		bool				ObjectInList(const Type& obj);
+		bool				ObjectInList(const Type& obj) const;
 		void				RemoveObjectAt(uintptr_t index);
 		void				RemoveObject(const Type& obj);
 		void				RemoveObject(const Type* obj);
@@ -381,7 +381,7 @@ namespace mfuse
 	}
 
 	template<class Type, class Allocator>
-	bool Container<Type, Allocator>::ObjectInList(const Type& obj)
+	bool Container<Type, Allocator>::ObjectInList(const Type& obj) const
 	{
 		if (!IndexOfObject(obj)) {
 			return false;
