@@ -20,43 +20,46 @@ namespace mfuse
 	class SimpleEntity;
 	typedef SafePtr< SimpleEntity > SimpleEntityPtr;
 
-	class SimpleEntity : public Listener
+	class mfuse_PUBLIC SimpleEntity : public Listener
 	{
-		MFUS_CLASS_PROTOTYPE(SimpleEntity);
+		MFUS_CLASS_PROTOTYPE_EXPORTS(SimpleEntity);
 
 	public:
-		SimpleEntity();
-		~SimpleEntity();
+		mfuse_EXPORTS SimpleEntity();
+		mfuse_EXPORTS ~SimpleEntity();
 
+		mfuse_EXPORTS void Archive(Archiver& arc) override;
+
+		mfuse_EXPORTS void setOrigin(Vector origin);
+		mfuse_EXPORTS void setOriginEvent(Vector origin);
+		mfuse_EXPORTS void setAngles(Vector angles);
+
+		mfuse_EXPORTS const Vector& getAngles() const;
+		mfuse_EXPORTS const Vector& getOrigin() const;
+		mfuse_EXPORTS TargetComponent& GetTargetComponent();
+
+	private:
+		mfuse_LOCAL void EventGetAngle(Event& ev);
+		mfuse_LOCAL void EventGetAngles(Event& ev);
+		mfuse_LOCAL void EventGetOrigin(Event& ev);
+		mfuse_LOCAL void EventGetTargetname(Event& ev);
+		mfuse_LOCAL void EventGetTarget(Event& ev);
+
+		mfuse_LOCAL void EventSetAngle(Event& ev);
+		mfuse_LOCAL void EventSetAngles(Event& ev);
+		mfuse_LOCAL void EventSetOrigin(Event& ev);
+		mfuse_LOCAL void EventSetTargetname(Event& ev);
+		mfuse_LOCAL void EventSetTarget(Event& ev);
+
+		mfuse_LOCAL void GetCentroid(Event& ev);
+
+		mfuse_LOCAL void GetForwardVector(Event& ev);
+		mfuse_LOCAL void GetLeftVector(Event& ev);
+		mfuse_LOCAL void GetRightVector(Event& ev);
+		mfuse_LOCAL void GetUpVector(Event& ev);
+
+	private:
 		void SimpleArchive(Archiver& arc);
-		void Archive(Archiver& arc) override;
-
-		virtual void setOrigin(Vector origin);
-		virtual void setOriginEvent(Vector origin);
-		virtual void setAngles(Vector angles);
-
-		const Vector& getAngles() const;
-		const Vector& getOrigin() const;
-		TargetComponent& GetTargetComponent();
-
-		void EventGetAngle(Event& ev);
-		void EventGetAngles(Event& ev);
-		void EventGetOrigin(Event& ev);
-		void EventGetTargetname(Event& ev);
-		void EventGetTarget(Event& ev);
-
-		void EventSetAngle(Event& ev);
-		void EventSetAngles(Event& ev);
-		void EventSetOrigin(Event& ev);
-		void EventSetTargetname(Event& ev);
-		void EventSetTarget(Event& ev);
-
-		void GetCentroid(Event& ev);
-
-		void GetForwardVector(Event& ev);
-		void GetLeftVector(Event& ev);
-		void GetRightVector(Event& ev);
-		void GetUpVector(Event& ev);
 
 	private:
 		// Base coord variable

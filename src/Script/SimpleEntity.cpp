@@ -9,8 +9,8 @@ EventDef EV_SimpleEntity_GetAngle
 (
 	"angle",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"get the angles of the entity using just one value.\n"
 	"Gets the yaw of the entity or an up and down\n"
 	"direction if newAngle is[ 0 - 359 ] or - 1 or - 2",
@@ -45,8 +45,8 @@ EventDef EV_SimpleEntity_GetAngles
 (
 	"angles",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"get the angles of the entity.",
 	evType_e::Getter
 );
@@ -75,8 +75,8 @@ EventDef EV_SimpleEntity_GetOrigin
 (
 	"origin",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"entity's origin",
 	evType_e::Getter
 );
@@ -105,8 +105,8 @@ EventDef EV_SimpleEntity_GetTargetname
 (
 	"targetname",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"entity's targetname",
 	evType_e::Getter
 );
@@ -135,8 +135,8 @@ EventDef EV_SimpleEntity_GetTarget
 (
 	"target",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"entity's target",
 	evType_e::Getter
 );
@@ -165,8 +165,8 @@ EventDef EV_SimpleEntity_Centroid
 (
 	"centroid",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"entity's centroid",
 	evType_e::Getter
 );
@@ -175,8 +175,8 @@ EventDef EV_SimpleEntity_ForwardVector
 (
 	"forwardvector",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"get the forward vector of angles",
 	evType_e::Getter
 );
@@ -185,8 +185,8 @@ EventDef EV_SimpleEntity_LeftVector
 (
 	"leftvector",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"get the left vector of angles",
 	evType_e::Getter
 );
@@ -195,8 +195,8 @@ EventDef EV_SimpleEntity_RightVector
 (
 	"rightvector",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"get the right vector of angles",
 	evType_e::Getter
 );
@@ -205,8 +205,8 @@ EventDef EV_SimpleEntity_UpVector
 (
 	"upvector",
 	EV_DEFAULT,
-	NULL,
-	NULL,
+	nullptr,
+	nullptr,
 	"get the up vector of angles",
 	evType_e::Getter
 );
@@ -259,18 +259,18 @@ void SimpleEntity::Archive(Archiver& arc)
 	arc.ArchiveElements((float*)centroid, 3);
 }
 
-void SimpleEntity::setOrigin( Vector origin )
+void SimpleEntity::setOrigin(Vector origin)
 {
 	this->origin = origin;
 	this->centroid = origin;
 }
 
-void SimpleEntity::setOriginEvent( Vector origin )
+void SimpleEntity::setOriginEvent(Vector origin)
 {
-	setOrigin( origin );
+	setOrigin(origin);
 }
 
-void SimpleEntity::setAngles( Vector angles )
+void SimpleEntity::setAngles(Vector angles)
 {
 	this->angles = angles.AnglesMod();
 }
@@ -290,56 +290,56 @@ TargetComponent& SimpleEntity::GetTargetComponent()
 	return targetComp;
 }
 
-void SimpleEntity::EventGetAngle( Event& ev )
+void SimpleEntity::EventGetAngle(Event& ev)
 {
-	ev.AddFloat( angles[ 1 ] );
+	ev.AddFloat(angles[1]);
 }
 
-void SimpleEntity::EventGetAngles( Event& ev )
+void SimpleEntity::EventGetAngles(Event& ev)
 {
-	ev.AddVector( angles );
+	ev.AddVector(angles);
 }
 
-void SimpleEntity::EventGetOrigin( Event& ev )
+void SimpleEntity::EventGetOrigin(Event& ev)
 {
-	ev.AddVector( origin );
+	ev.AddVector(origin);
 }
 
-void SimpleEntity::EventGetTargetname( Event& ev )
+void SimpleEntity::EventGetTargetname(Event& ev)
 {
 	ev.AddConstString(targetComp.GetTargetName());
 }
 
-void SimpleEntity::EventGetTarget( Event& ev )
+void SimpleEntity::EventGetTarget(Event& ev)
 {
 	ev.AddConstString(targetComp.GetTarget());
 }
 
-void SimpleEntity::EventSetAngle( Event& ev )
+void SimpleEntity::EventSetAngle(Event& ev)
 {
 	Vector dir;
-	float angle = ev.GetFloat( 1 );
+	float angle = ev.GetFloat(1);
 
-	dir = GetMovedir( angle );
+	dir = GetMovedir(angle);
 	dir.toAngles();
 
-	setAngles( dir );
+	setAngles(dir);
 }
 
-void SimpleEntity::EventSetAngles( Event& ev )
+void SimpleEntity::EventSetAngles(Event& ev)
 {
 	Vector angles;
 
-	if( ev.NumArgs() == 1 )
+	if (ev.NumArgs() == 1)
 	{
-		angles = ev.GetVector( 1 );
+		angles = ev.GetVector(1);
 	}
 	else
 	{
-		angles = Vector( ev.GetFloat( 1 ), ev.GetFloat( 2 ), ev.GetFloat( 3 ) );
+		angles = Vector(ev.GetFloat(1), ev.GetFloat(2), ev.GetFloat(3));
 	}
 
-	setAngles( angles );
+	setAngles(angles);
 }
 
 void SimpleEntity::EventSetOrigin(Event& ev)
@@ -357,44 +357,44 @@ void SimpleEntity::EventSetTarget(Event& ev)
 	targetComp.SetTarget(ev.GetConstString(1));
 }
 
-void SimpleEntity::GetCentroid( Event& ev )
+void SimpleEntity::GetCentroid(Event& ev)
 {
-	ev.AddVector( centroid );
+	ev.AddVector(centroid);
 }
 
-void SimpleEntity::GetForwardVector( Event& ev )
+void SimpleEntity::GetForwardVector(Event& ev)
 {
 	Vector fwd;
 
-	angles.AngleVectorsLeft(&fwd, NULL, NULL);
-	ev.AddVector( fwd );
+	angles.AngleVectorsLeft(&fwd, nullptr, nullptr);
+	ev.AddVector(fwd);
 }
 
-void SimpleEntity::GetLeftVector( Event& ev )
+void SimpleEntity::GetLeftVector(Event& ev)
 {
 	Vector left;
 
-	angles.AngleVectorsLeft(NULL, &left, NULL);
-	ev.AddVector( left );
+	angles.AngleVectorsLeft(nullptr, &left, nullptr);
+	ev.AddVector(left);
 }
 
-void SimpleEntity::GetRightVector( Event& ev )
+void SimpleEntity::GetRightVector(Event& ev)
 {
 	Vector right;
 
-	angles.AngleVectors(NULL, &right, NULL);
-	ev.AddVector( right );
+	angles.AngleVectors(nullptr, &right, nullptr);
+	ev.AddVector(right);
 }
 
-void SimpleEntity::GetUpVector( Event& ev )
+void SimpleEntity::GetUpVector(Event& ev)
 {
 	Vector up;
 
-	angles.AngleVectorsLeft(NULL, NULL, &up);
-	ev.AddVector( up );
+	angles.AngleVectorsLeft(nullptr, nullptr, &up);
+	ev.AddVector(up);
 }
 
-MFUS_CLASS_DECLARATION( Listener, SimpleEntity, NULL )
+MFUS_CLASS_DECLARATION(Listener, SimpleEntity, nullptr)
 {
 	{ &EV_SimpleEntity_GetAngle,				&SimpleEntity::EventGetAngle },
 	{ &EV_SimpleEntity_GetAngles,				&SimpleEntity::EventGetAngles },
@@ -416,5 +416,5 @@ MFUS_CLASS_DECLARATION( Listener, SimpleEntity, NULL )
 	{ &EV_SimpleEntity_LeftVector,				&SimpleEntity::GetLeftVector },
 	{ &EV_SimpleEntity_RightVector,				&SimpleEntity::GetRightVector },
 	{ &EV_SimpleEntity_UpVector,				&SimpleEntity::GetUpVector },
-	{ NULL, NULL }
+	{ nullptr, nullptr }
 };
