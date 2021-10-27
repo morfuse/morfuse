@@ -142,6 +142,7 @@ namespace mfuse
 		void LeaveFunction();
 
 		void End(const ScriptVariable& returnValue);
+		void EndRef(ScriptVariable& returnValue);
 		void End();
 
 		void Execute(const VarListView& data = VarListView(), const StringResolvable& label = StringResolvable());
@@ -192,9 +193,11 @@ namespace mfuse
 
 		template<bool bMethod = false, bool bReturn = false>
 		void executeCommand(Listener* listener, op_parmNum_t iParamCount, op_evName_t eventnum);
+		template<bool bReturn>
 		void executeCommandInternal(Event& ev, Listener* listener, ScriptVariable* fromVar, op_parmNum_t iParamCount);
 		bool executeGetter(EventSystem& eventSystem, Listener* listener, op_evName_t eventName);
 		bool executeSetter(EventSystem& eventSystem, Listener* listener, op_evName_t eventName);
+		void transferVarsToEvent(Event& ev, ScriptVariable* fromVar, op_parmNum_t count);
 
 		void jump(op_offset_t offset);
 		void jumpBack(op_offset_t offset);
