@@ -34,6 +34,13 @@ namespace con
 		 * @param container The container to use.
 		 */
 		ContainerView(const Container<T>& container);
+		/**
+		 * Construct with an existing container
+		 *
+		 * @param container The container to use.
+		 */
+		template<size_t N>
+		ContainerView(T (&objlistValue)[N]);
 
 		/** Return the number of objects in list. */
 		size_t NumObjects() const;
@@ -43,7 +50,7 @@ namespace con
 		 *
 		 * @param elementNum An element number, starting from 1 like the Container class.
 		 */
-		T* ObjectAt(uintptr_t elementNum) const;
+		T& ObjectAt(uintptr_t elementNum) const;
 
 		/**
 		 * Return the object at the specified index.
@@ -79,13 +86,20 @@ namespace con
 	}
 
 	template<typename T>
+	template<size_t N>
+	mfuse::con::ContainerView<T>::ContainerView(T (&objlistValue)[N])
+		: ContainerView(objlistValue, N)
+	{
+	}
+
+	template<typename T>
 	size_t ContainerView<T>::NumObjects() const
 	{
 		return arraysize;
 	}
 
 	template<typename T>
-	T* ContainerView<T>::ObjectAt(uintptr_t elementNum) const
+	T& ContainerView<T>::ObjectAt(uintptr_t elementNum) const
 	{
 		return objlist[elementNum - 1];
 	}
