@@ -166,8 +166,7 @@ void EventSystem::PreallocateMemory(size_t totalLength, size_t numUniqueEvents, 
 
 	eventDefName.getAllocator().SetAllocator(preAllocator);
 
-	// resize sets to their corresponding size
-	//eventDefList.resize(numUniqueEvents);
+	// can now create objects in the entire memory block
 	eventDefList = new (preAllocator) const EventDef * [numUniqueEvents];
 	commandList = new (preAllocator) eventInfo_t[numUniqueEvents + 1];
 	eventDefName.resize(numUniqueNameEvents);
@@ -182,7 +181,6 @@ void EventSystem::LoadEvents()
 		const EventDefAttributes& attributes = e->GetAttributes();
 		const eventNum_t eventNum = attributes.GetNum();
 
-		//eventDefList.addKeyValue(e->GetEventNum(), e);
 		eventDefList[eventNum - 1] = e;
 
 		const eventName_t index = eventDefName.addKeyIndex(attributes.GetString());
@@ -194,19 +192,15 @@ void EventSystem::LoadEvents()
 			switch (attributes.GetType())
 			{
 			case evType_e::Normal:
-				//normalCommandList[index] = eventNum;
 				info.normalNum = eventNum;
 				break;
 			case evType_e::Return:
-				//returnCommandList[index] = eventNum;
 				info.returnNum = eventNum;
 				break;
 			case evType_e::Getter:
-				//getterCommandList[index] = eventNum;
 				info.getterNum = eventNum;
 				break;
 			case evType_e::Setter:
-				//setterCommandList[index] = eventNum;
 				info.setterNum = eventNum;
 				break;
 			default:
@@ -218,21 +212,11 @@ void EventSystem::LoadEvents()
 
 void EventSystem::UnloadEvents()
 {
-
-	//commandList.clear();
 	for(size_t i = 0; i < numEvents; ++i) {
 		commandList[i].~eventInfo_t();
 	}
 
 	eventDefName.clear();
-	//eventDefList.clear();
-
-	/*
-	normalCommandList.clear();
-	returnCommandList.clear();
-	getterCommandList.clear();
-	setterCommandList.clear();
-	*/
 	numEvents = 0;
 
 	// release memory
