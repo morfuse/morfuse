@@ -121,6 +121,10 @@ namespace mfuse
 		con::Container<ScriptVariable*> list;
 
 	public:
+		ScriptPointer();
+		ScriptPointer(size_t initialSize);
+		~ScriptPointer();
+
 		void Archive(Archiver& arc);
 		static void Archive(Archiver& arc, ScriptPointer *& pointerHolder);
 
@@ -129,6 +133,7 @@ namespace mfuse
 		void add(ScriptVariable* var);
 		void remove(ScriptVariable* var);
 		void setValue(const ScriptVariable& var);
+		void setValueRef(ScriptVariable& var, const ScriptVariable& ignoredVar);
 	};
 	using ConList = con::ContainerClass<SafePtr<Listener>>;
 	using ConListPtr = SafePtr<ConList>;
@@ -256,7 +261,9 @@ namespace mfuse
 		void setListenerValue(Listener* newvalue);
 
 		void newPointer();
+		void newPointer(size_t initialSize);
 		void setPointer(const ScriptVariable& newvalue);
+		void setPointerRef(ScriptVariable& newvalue);
 
 		void setRefValue(ScriptVariable* ref);
 

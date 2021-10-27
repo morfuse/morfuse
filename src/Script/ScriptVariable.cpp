@@ -216,6 +216,20 @@ ScriptConstArrayHolder::~ScriptConstArrayHolder()
 	}
 }
 
+ScriptPointer::ScriptPointer()
+{
+
+}
+
+ScriptPointer::ScriptPointer(size_t initialSize)
+	: list(initialSize)
+{
+}
+
+ScriptPointer::~ScriptPointer()
+{
+
+}
 
 void ScriptPointer::Archive(Archiver& arc)
 {
@@ -286,8 +300,50 @@ void ScriptPointer::setValue(const ScriptVariable& var)
 	{
 		ScriptVariable* pVar = list.ObjectAt(i);
 
+		// since they're holding this script pointer, set it to none
+		// because otherwise it would call ClearInternal()
+		// which will delete this ScriptPointer
 		pVar->type = variableType_e::None;
 		*pVar = var;
+	}
+
+	delete this;
+}
+
+void ScriptPointer::setValueRef(ScriptVariable& var, const ScriptVariable& ignoredVar)
+{
+	if (list.NumObjects() == 2)
+	{
+		ScriptVariable* const pVars[] =
+		{
+			list[0],
+			list[1]
+		};
+
+		pVars[0]->type = pVars[1]->type = variableType_e::None;
+
+		if (pVars[0] == &ignoredVar) {
+			*pVars[1] = std::move(var);
+		}
+		else if (pVars[1] == &ignoredVar) {
+			*pVars[0] = std::move(var);
+		}
+		else {
+			*pVars[0] = *pVars[1] = var;
+		}
+	}
+	else
+	{
+		for (uintptr_t i = list.NumObjects(); i > 0; i--)
+		{
+			ScriptVariable* const pVar = list.ObjectAt(i);
+
+			// since they're holding this script pointer, set it to none
+			// because otherwise it would call ClearInternal()
+			// which will delete this ScriptPointer
+			pVar->type = variableType_e::None;
+			*pVar = const_cast<const ScriptVariable&>(var);
+		}
 	}
 
 	delete this;
@@ -1337,6 +1393,14 @@ void ScriptVariable::newPointer()
 	m_data.pointerValue->add(this);
 }
 
+void ScriptVariable::newPointer(size_t initialSize)
+{
+	type = variableType_e::Pointer;
+
+	m_data.pointerValue = new ScriptPointer(initialSize);
+	m_data.pointerValue->add(this);
+}
+
 str ScriptVariable::stringValue() const
 {
 	str string;
@@ -1364,22 +1428,14 @@ str ScriptVariable::stringValue() const
 	case variableType_e::Listener:
 		if (m_data.listenerValue->Pointer())
 		{
-			/*
-			if (m_data.listenerValue->Pointer()->isSubclassOf(SimpleEntity))
-			{
-				SimpleEntity *s = (SimpleEntity *)m_data.listenerValue->Pointer();
-				return s->targetname;
-			}
-			else
-			*/
-			{
-				string = "class '" + str(m_data.listenerValue->Pointer()->Class::GetClassname()) + "'";
-				return string;
-			}
+			// FIXME: return listener name (for entities with targetname?)
+
+			string = "class '" + str(m_data.listenerValue->Pointer()->Class::GetClassname()) + "'";
+			return string;
 		}
 		else
 		{
-			return "nullptr";
+			return "NULL";
 		}
 
 	case variableType_e::Vector:
@@ -1651,6 +1707,13 @@ void ScriptVariable::setPointer(const ScriptVariable& newvalue)
 {
 	if (type == variableType_e::Pointer) {
 		m_data.pointerValue->setValue(newvalue);
+	}
+}
+
+void ScriptVariable::setPointerRef(ScriptVariable& newvalue)
+{
+	if (type == variableType_e::Pointer) {
+		m_data.pointerValue->setValueRef(newvalue, *this);
 	}
 }
 
