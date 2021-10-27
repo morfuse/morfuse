@@ -360,6 +360,16 @@ void ScriptVM::End(const ScriptVariable& returnValue)
 	LeaveFunction();
 }
 
+void ScriptVM::EndRef(ScriptVariable& returnValue)
+{
+	// if possible, the return value will be moved instead of being copied
+	// the purpose of m_ReturnValue is to hold the lifetime of ScriptPointer
+	// otherwise it isn't used
+	m_ReturnValue.setPointerRef(returnValue);
+
+	LeaveFunction();
+}
+
 void ScriptVM::End()
 {
 	m_ReturnValue.ClearPointer();
