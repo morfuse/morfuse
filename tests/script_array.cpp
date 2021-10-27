@@ -18,15 +18,28 @@ const char scriptData1[] =
 "println group.test[1][1]\n"
 "end";
 
+const char scriptData2[] =
+"local.test[0] = 0\n"
+"local.test[1] = spawn NULL\n"
+"if (local.test[1]) println \"test\"\n"
+"end";
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
 	director.ExecuteThread(script);
 }
 
+void level2(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level2", scriptData2);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
-	"level1", &level1
+	"level1", &level1,
+	"level2", &level2
 };
 
 int main()
