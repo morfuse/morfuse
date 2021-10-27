@@ -29,7 +29,7 @@ public:
 	const char* getValue(uintptr_t index);
 	void operator=(SpawnArgs& a);
 
-	const ClassDef* getClassDef();
+	const ClassDef* getClassDef(const rawchar_t** foundClassName);
 	Listener* Spawn(void);
 	Listener* SpawnInternal(void);
 
@@ -43,6 +43,18 @@ private:
 namespace SpawnErrors
 {
 	class Base : public ScriptExceptionBase {};
+
+	class InvalidClassName : public Base, public Messageable
+	{
+	public:
+		InvalidClassName(const str& classNameRef);
+
+		const str& getClassName() const;
+		const char* what() const noexcept override;
+
+	private:
+		str className;
+	};
 
 	class NoSpawnFunction : public Base
 	{

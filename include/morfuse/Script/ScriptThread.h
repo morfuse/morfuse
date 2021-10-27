@@ -261,17 +261,5 @@ namespace mfuse
 	namespace ScriptErrors
 	{
 		class Base : public ScriptExceptionBase {};
-
-		class InvalidClassName : public Base, public Messageable
-		{
-		public:
-			InvalidClassName(const str& classNameRef);
-
-			const str& getClassName() const;
-			const char* what() const noexcept override;
-
-		private:
-			str className;
-		};
 	}
 }
