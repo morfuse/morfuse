@@ -469,11 +469,19 @@ ScriptVariable Listener::ProcessEventReturn(Event& ev)
 		return returnValue;
 	}
 
+	const EventContext& context = EventContext::Get();
+	const EventDef* eventDef = EventSystem::Get().GetEventDef(ev.Num());
+	const NamespaceManager& nspaceMan = context.GetNamespaceManager();
+	if (!nspaceMan.IsObjectInNamespaceAllowed(*eventDef))
+	{
+		// if the object is not present in allowed namespaces then an error can be thrown
+		throw ListenerErrors::EventNotFound(*this);
+	}
+
 	responses = c.GetResponse(ev.Num());
 
-	if (responses == NULL)
+	if (!responses)
 	{
-
 		return returnValue;
 	}
 
@@ -536,17 +544,26 @@ void Listener::ProcessScriptEvent(Event* ev)
 void Listener::ProcessScriptEvent(Event& ev)
 {
 	const ClassDef& c = classinfo();
-	const ResponseDefClass *responses = NULL;
-	Response response = NULL;
+	const ResponseDefClass *responses = nullptr;
+	Response response = nullptr;
 
 	if (!ev.Num())
 	{
 		throw ListenerErrors::EventNotFound(*this);
 	}
 
+	const EventContext& context = EventContext::Get();
+	const EventDef* eventDef = EventSystem::Get().GetEventDef(ev.Num());
+	const NamespaceManager& nspaceMan = context.GetNamespaceManager();
+	if (!nspaceMan.IsObjectInNamespaceAllowed(*eventDef))
+	{
+		// if the object is not present in allowed namespaces then an error can be thrown
+		throw ListenerErrors::EventNotFound(*this);
+	}
+
 	responses = c.GetResponse(ev.Num());
 
-	if (responses == NULL)
+	if (!responses)
 	{
 		throw ListenerErrors::EventListenerFailed(*this, ev.Num());
 	}
