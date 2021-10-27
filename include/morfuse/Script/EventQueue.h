@@ -2,6 +2,7 @@
 
 #include "../Global.h"
 #include "EventQueueNode.h"
+#include "Archiver.h"
 
 namespace mfuse
 {
@@ -17,9 +18,11 @@ namespace mfuse
 	public:
 		EventQueue();
 
+		mfuse_EXPORTS void Archive(Archiver& arc);
 		mfuse_EXPORTS void ProcessPendingEvents();
 		mfuse_EXPORTS void ClearEventList();
 		mfuse_EXPORTS bool HasPendingEvents() const;
+		mfuse_EXPORTS size_t GetNumPendingEvents() const;
 
 		mfuse_EXPORTS bool IsEventPending(Listener* l, const EventDef& ev);
 		mfuse_EXPORTS void CancelEventsOfType(Listener* l, const EventDef& ev);
@@ -32,7 +35,6 @@ namespace mfuse
 		mfuse_EXPORTS bool PostponeEvent(Listener* l, Event& ev, inttime_t time);
 
 	private:
-		//EventQueueNode Node;
 		using List = LinkedList<EventQueueNode*, &EventQueueNode::next, &EventQueueNode::prev>;
 		List Node;
 	};

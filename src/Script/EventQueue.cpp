@@ -268,3 +268,64 @@ bool EventQueue::HasPendingEvents() const
 {
 	return !Node.IsEmpty();
 }
+
+size_t EventQueue::GetNumPendingEvents() const
+{
+	size_t num = 0;
+	// count the number of pending events
+	for (List::iterator event = Node.CreateConstIterator(); event; event = event.Next())
+	{
+		Listener* const obj = event->GetSourceObject();
+		assert(obj);
+
+		num++;
+	}
+
+	return num;
+}
+
+void EventQueue::Archive(Archiver& arc)
+{
+	if (!arc.Loading())
+	{
+		uint32_t numEvents = static_cast<uint32_t>(GetNumPendingEvents());
+
+		arc.ArchiveUInt32(numEvents);
+		for (List::iterator event = Node.CreateIterator(); event; event = event.Next())
+		{
+			Listener* obj;
+
+			assert(event);
+
+			obj = event->GetSourceObject();
+
+			assert(obj);
+
+			event->event->Archive(arc);
+			arc.ArchiveInt64(event->time);
+			arc.ArchiveUInt32(event->flags);
+			arc.ArchiveSafePointer(event->m_sourceobject);
+		}
+	}
+	else
+	{
+		// the event list may be already allocated at this time
+		// clear out any events that may exist
+		ClearEventList();
+
+		uint32_t numEvents;
+		arc.ArchiveUInt32(numEvents);
+		for (uint32_t i = 0; i < numEvents; i++)
+		{
+			EventQueueNode* const node = new EventQueueNode();
+			Event* const e = new Event();
+			e->Archive(arc);
+
+			arc.ArchiveInt64(node->time);
+			arc.ArchiveUInt32(node->flags);
+			arc.ArchiveSafePointer(node->m_sourceobject);
+
+			Node.Add(node);
+		}
+	}
+}
