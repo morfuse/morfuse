@@ -94,7 +94,7 @@ void ScriptVM::transferVarsToEvent(Event& ev, ScriptVariable* fromVar, op_parmNu
 {
 	for (uint16_t i = 0; i < count; i++)
 	{
-		ev.AddValue(std::move(fromVar[i]));
+		ev.AddValue(fromVar[i]);
 	}
 }
 
@@ -298,7 +298,7 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 	{
 		if (a.IsConstArray())
 		{
-			for (uintptr_t i = arraysize; i > 0; i--)
+			for (uintptr_t i = 1; i <= arraysize; i++)
 			{
 				Listener* const listener = a.listenerAt(i);
 				// if the listener is NULL, don't throw an exception
