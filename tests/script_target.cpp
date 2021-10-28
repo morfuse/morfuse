@@ -23,6 +23,15 @@ static const char scriptContent_level2[] =
 "println $test[0].targetname\n"
 "end";
 
+static const char scriptContent_level3[] =
+"main:\n"
+"for (local.i = 0; local.i <= 20; local.i++) {\n"
+"local.p = spawn SimpleEntity targetname \"entity\"\n"
+"}\n"
+"$entity target \"other\"\n"
+"end";
+
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptContent_level1);
@@ -47,10 +56,17 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level3(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level3", scriptContent_level3);
+	director.ExecuteThread(script);
+}
+
 const handler_t handlers[] =
 {
 	{ "level1", &level1 },
-	{ "level2", &level2 }
+	{ "level2", &level2 },
+	{ "level3", &level3 }
 };
 
 int main()
