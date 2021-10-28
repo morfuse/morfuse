@@ -119,4 +119,6 @@ namespace mfuse
 		DefaultScriptAllocator scriptAllocator;
 		ScriptSettings settings;
 	};
+
+	mfuse_TEMPLATE template class mfuse_EXPORTS ThreadCastSingleton<EventContext, ScriptContext>;
 };

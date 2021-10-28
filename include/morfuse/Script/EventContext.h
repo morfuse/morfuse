@@ -58,4 +58,6 @@ namespace mfuse
 		EventQueue eventQueue;
 		NamespaceManager namespaceManager;
 	};
+
+	mfuse_TEMPLATE template class mfuse_EXPORTS ThreadSingleton<EventContext>;
 }

@@ -65,5 +65,4 @@ namespace mfuse
 	{
 		ThreadSingleton<OldT>::Set(static_cast<OldT*>(newInst));
 	}
-
 }
