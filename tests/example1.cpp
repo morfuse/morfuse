@@ -23,7 +23,7 @@ int main()
 	// Instantiate a memory buffer stream (implementation of std::istream)
 	// It will be used to read and parse the script from a memory buffer.
 	mfuse::imemstream membuf(sampleScript, sizeof(sampleScript));
-
+	
 	// This will parse and compile the script into a program buffer (opcodes) that the interpreter will execute
 	// The parser will read the script using the buffer above
 	const mfuse::ProgramScript* const script = director.GetProgramScript("example", membuf);
