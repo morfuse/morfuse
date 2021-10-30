@@ -141,6 +141,7 @@ namespace mfuse
 		void		freeAll();
 		const lengthInfo_t& lengthInfo() const;
 		char*		alloc(size_t s);
+		char*		alloc(size_t s, size_t alignment);
 		void		free(void* ptr);
 
 		int			node_compare(void* pe1, void* pe2);

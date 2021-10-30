@@ -64,7 +64,7 @@ mfuse::sval_t ParseTree::node_pos(location loc)
 {
 	sval_t val;
 
-	val.sourceLocValue = (sourceLocation_t*)alloc(sizeof(sourceLocation_t));
+	val.sourceLocValue = (sourceLocation_t*)alloc(sizeof(sourceLocation_t), alignof(sourceLocation_t));
 	val.sourceLocValue->sourcePos = loc.sourcePos;
 	val.sourceLocValue->line = loc.begin.line;
 	val.sourceLocValue->column = loc.begin.column;
@@ -90,7 +90,7 @@ sval_t ParseTree::node0(statementType_e type)
 	}
 	else
 	{
-		sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 1);
+		sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 1, alignof(sval_t));
 		node->type = type;
 		return node;
 	}
@@ -98,7 +98,7 @@ sval_t ParseTree::node0(statementType_e type)
 
 sval_t ParseTree::node1(statementType_e type, sval_t val1)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2, alignof(sval_t));
 
 	node[0].type = type;
 	node[1] = val1;
@@ -108,7 +108,7 @@ sval_t ParseTree::node1(statementType_e type, sval_t val1)
 
 sval_t ParseTree::node2(statementType_e type, sval_t val1, sval_t val2)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 3);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 3, alignof(sval_t));
 
 	node[0].type = type;
 	node[1] = val1;
@@ -119,7 +119,7 @@ sval_t ParseTree::node2(statementType_e type, sval_t val1, sval_t val2)
 
 sval_t ParseTree::node3(statementType_e type, sval_t val1, sval_t val2, sval_t val3)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 4);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 4, alignof(sval_t));
 
 	node[0].type = type;
 	node[1] = val1;
@@ -131,7 +131,7 @@ sval_t ParseTree::node3(statementType_e type, sval_t val1, sval_t val2, sval_t v
 
 sval_t ParseTree::node4(statementType_e type, sval_t val1, sval_t val2, sval_t val3, sval_t val4)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 5);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 5, alignof(sval_t));
 
 	node[0].type = type;
 	node[1] = val1;
@@ -144,7 +144,7 @@ sval_t ParseTree::node4(statementType_e type, sval_t val1, sval_t val2, sval_t v
 
 sval_t ParseTree::node5(statementType_e type, sval_t val1, sval_t val2, sval_t val3, sval_t val4, sval_t val5)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 6);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 6, alignof(sval_t));
 
 	node[0].type = type;
 	node[1] = val1;
@@ -158,7 +158,7 @@ sval_t ParseTree::node5(statementType_e type, sval_t val1, sval_t val2, sval_t v
 
 sval_t ParseTree::node6(statementType_e type, sval_t val1, sval_t val2, sval_t val3, sval_t val4, sval_t val5, sval_t val6)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 7);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 7, alignof(sval_t));
 
 	node[0].type = type;
 	node[1] = val1;
@@ -173,13 +173,13 @@ sval_t ParseTree::node6(statementType_e type, sval_t val1, sval_t val2, sval_t v
 
 sval_t ParseTree::linked_list_end(sval_t val)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2, alignof(sval_t));
 
 	// set the prev value of the node
 	// and also nullify the next value of the node
 	node[0] = val;
 	node[1].node = nullptr;
-	sval_t* const end = (sval_t*)alloc(sizeof(sval_t) * 2);
+	sval_t* const end = (sval_t*)alloc(sizeof(sval_t) * 2, alignof(sval_t));
 	end[0].node = node;
 	end[1].node = node;
 
@@ -200,7 +200,7 @@ sval_t ParseTree::linked_list_end(sval_t val)
 
 sval_t ParseTree::prepend_node(sval_t val1, sval_t val2)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2, alignof(sval_t));
 
 	// set the first and the second node
 	node[0].node = val1.node;
@@ -211,7 +211,7 @@ sval_t ParseTree::prepend_node(sval_t val1, sval_t val2)
 
 sval_t ParseTree::append_node(sval_t val1, sval_t val2)
 {
-	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2);
+	sval_t* const node = (sval_t*)alloc(sizeof(sval_t) * 2, alignof(sval_t));
 
 	node[0].node = val2.node;
 	node[1].node = nullptr;
@@ -243,6 +243,11 @@ sval_t ParseTree::ParseTree::append_lists(sval_t val1, sval_t val2)
 char* ParseTree::alloc(size_t s)
 {
 	return (char*)parsetree_allocator.Alloc(s);
+}
+
+char* ParseTree::alloc(size_t s, size_t alignment)
+{
+	return (char*)parsetree_allocator.Alloc(s, alignment);
 }
 
 void ParseTree::free(void* ptr)

@@ -28,8 +28,12 @@ namespace MEM
 		~TempAlloc();
 
 		void* Alloc(size_t len);
+		void* Alloc(size_t len, size_t alignment);
 		void Free(void* ptr);
 		void FreeAll();
+
+	private:
+		void* CreateBlock(size_t len);
 
 	private:
 		tempBlock_t* m_CurrentMemoryBlock;

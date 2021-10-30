@@ -55,14 +55,28 @@ void* MEM::TempAlloc::Alloc(size_t len)
 	}
 	else
 	{
-		m_CurrentMemoryPos = len;
-
-		// allocate a new block
-		tempBlock_t* prev_block = m_CurrentMemoryBlock;
-		m_CurrentMemoryBlock = (tempBlock_t*)malloc(sizeof(tempBlock_t) + std::max(m_BlockSize, len));
-		m_CurrentMemoryBlock->prev = prev_block;
-		return m_CurrentMemoryBlock->GetData();
+		return CreateBlock(len);
 	}
+}
+
+void* MEM::TempAlloc::Alloc(size_t len, size_t alignment)
+{
+	if (m_CurrentMemoryBlock)
+	{
+		if (m_CurrentMemoryPos % alignment != 0) {
+			m_CurrentMemoryPos += alignment - m_CurrentMemoryPos % alignment;
+		}
+
+		if (m_CurrentMemoryPos + len <= m_BlockSize)
+		{
+			void* data = m_CurrentMemoryBlock->GetData(m_CurrentMemoryPos);
+			m_LastPos = m_CurrentMemoryPos;
+			m_CurrentMemoryPos += len;
+			return data;
+		}
+	}
+
+	return CreateBlock(len);
 }
 
 void MEM::TempAlloc::Free(void* ptr)
@@ -81,6 +95,17 @@ void MEM::TempAlloc::FreeAll(void)
 		free(m_CurrentMemoryBlock);
 		m_CurrentMemoryBlock = prev_block;
 	}
+}
+
+void* MEM::TempAlloc::CreateBlock(size_t len)
+{
+	m_CurrentMemoryPos = len;
+
+	// allocate a new block
+	tempBlock_t* prev_block = m_CurrentMemoryBlock;
+	m_CurrentMemoryBlock = (tempBlock_t*)malloc(sizeof(tempBlock_t) + std::max(m_BlockSize, len));
+	m_CurrentMemoryBlock->prev = prev_block;
+	return m_CurrentMemoryBlock->GetData();
 }
 
 void* MEM::tempBlock_t::GetData()
