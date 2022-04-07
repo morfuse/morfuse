@@ -1,3 +1,5 @@
+#pragma once
+
 #include <morfuse/Script/Context.h>
 #include <morfuse/Common/OutputInfo.h>
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <morfuse/Common/membuf.h>
 #include <morfuse/Script/Archiver.h>
 
