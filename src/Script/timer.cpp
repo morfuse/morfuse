@@ -42,7 +42,7 @@ void con::timer::RemoveElement(Class*e)
 Class* con::timer::GetNextElement(uint64_t& foundtime)
 {
 	uintptr_t foundIndex = 0;
-	const Element* foundElement = nullptr;
+	Class* foundElement = nullptr;
 	uinttime_t best_time = m_time;
 
 	for (intptr_t i = m_Elements.NumObjects(); i > 0; i--)
@@ -52,7 +52,7 @@ Class* con::timer::GetNextElement(uint64_t& foundtime)
 		{
 			best_time = e.time;
 			foundIndex = i;
-			foundElement = &e;
+			foundElement = e.obj;
 		}
 	}
 
@@ -60,7 +60,7 @@ Class* con::timer::GetNextElement(uint64_t& foundtime)
 	{
 		m_Elements.RemoveObjectAt(foundIndex);
 		foundtime = best_time;
-		return foundElement->obj;
+		return foundElement;
 	}
 	else
 	{
