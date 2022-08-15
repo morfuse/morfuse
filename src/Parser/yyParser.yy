@@ -43,7 +43,7 @@
 	#define yylex lexer.yylex
 }
 
-%expect 125
+%expect 127
 
 %precedence TOKEN_EOF 0 "end of file"
 %precedence TOKEN_EOL
@@ -107,6 +107,8 @@
 %type <val> prim_expr
 %type <val> nonident_prim_expr
 %type <val> number
+%type <val> const_array_list
+%type <val> const_array
 %type <val.stringValue> identifier_prim
 
 %start program
@@ -216,9 +218,26 @@ func_prim_expr:
 	| TOKEN_NEG func_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
 	| TOKEN_COMPLEMENT func_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
 	| TOKEN_NOT func_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
-	| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON prim_expr { $$ = pt.node3(statementType_e::ConstArrayExpr, pt.node2(statementType_e::String, $1, TOKPOS(@1)), $3, TOKPOS(@2)); }
-	| nonident_prim_expr TOKEN_DOUBLE_COLON prim_expr { $$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2)); }
-	| TOKEN_MAKEARRAY makearray_statement_list[stmt] TOKEN_ENDARRAY { $$ = pt.node2(statementType_e::MakeArray, $stmt, TOKPOS(@1)); }
+	//| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON prim_expr
+	//	{
+	//		$$ = pt.node3(statementType_e::ConstArrayExpr, pt.node2(statementType_e::String, $1, TOKPOS(@1)), $3, TOKPOS(@2));
+	//	}
+	//| nonident_prim_expr TOKEN_DOUBLE_COLON prim_expr
+	//	{
+	//		$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
+	//	}
+	| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON const_array_list
+		{
+			$$ = pt.node3(statementType_e::ConstArrayExpr, pt.node2(statementType_e::String, $1, TOKPOS(@1)), $3, TOKPOS(@2));
+		}
+	| nonident_prim_expr TOKEN_DOUBLE_COLON const_array_list
+		{
+			$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
+		}
+	| TOKEN_MAKEARRAY makearray_statement_list[stmt] TOKEN_ENDARRAY
+		{
+			$$ = pt.node2(statementType_e::MakeArray, $stmt, TOKPOS(@1));
+		}
 	;
 
 event_parameter_list
@@ -235,10 +254,27 @@ event_parameter
 	| event_parameter prim_expr { $$ = pt.append_node($1, $2); }
 	;
 
+const_array_list
+	: const_array { $$ = pt.linked_list_end($1); }
+	| const_array_list TOKEN_DOUBLE_COLON const_array { $$ = pt.append_node($1, $3); }
+	;
+
+const_array
+	: nonident_prim_expr
+	| identifier_prim { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
+	;
+
 prim_expr
 	: nonident_prim_expr
 	| identifier_prim { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
-	| prim_expr TOKEN_DOUBLE_COLON prim_expr { $$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2)); }
+	//| prim_expr TOKEN_DOUBLE_COLON prim_expr
+	//	{
+	//		$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
+	//	}
+	| prim_expr TOKEN_DOUBLE_COLON const_array_list
+		{
+			$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
+		}
 	;
 
 nonident_prim_expr

@@ -930,11 +930,17 @@ void ScriptEmitter::EmitCommandScriptRet(const prchar_t* commandName, sval_t par
 
 void ScriptEmitter::EmitConstArray(sval_t lhs, sval_t rhs, sourceLocation_t sourceLoc)
 {
-	uint32_t iCount = 2;
+	uint32_t iCount = 1;
 
 	EmitValue(lhs);
 
-	while (rhs.node->type == statementType_e::ConstArrayExpr)
+	for (const sval_t* node = rhs.node[0].node; node; node = node[1].node, iCount++)
+	{
+		EmitValue(*node);
+	}
+	
+	/*
+	while (rhs.node->type == statementType_e::Next)
 	{
 		lhs = rhs.node[1];
 		rhs = rhs.node[2];
@@ -944,6 +950,7 @@ void ScriptEmitter::EmitConstArray(sval_t lhs, sval_t rhs, sourceLocation_t sour
 	}
 
 	EmitValue(rhs);
+	*/
 	EmitConstArrayOpcode(iCount, sourceLoc);
 }
 

@@ -2317,15 +2317,20 @@ ScriptVariable &ScriptVariable::operator[](const ScriptVariable& index)
 
 ScriptVariable& ScriptVariable::operator[](uintptr_t index) const
 {
-	assert(GetType() == variableType_e::ConstArray);
-	assert(m_data.constArrayValue);
-	assert(index > 0 && index <= m_data.constArrayValue->size);
-	return m_data.constArrayValue->constArrayValue[index];
+	return constArrayElement(index);
 }
 
 ScriptVariable *ScriptVariable::operator*()
 {
 	return m_data.refValue;
+}
+
+ScriptVariable& ScriptVariable::constArrayElement(uintptr_t index) const
+{
+	assert(GetType() == variableType_e::ConstArray);
+	assert(m_data.constArrayValue);
+	assert(index > 0 && index <= m_data.constArrayValue->size);
+	return m_data.constArrayValue->constArrayValue[index];
 }
 
 void ScriptVariable::complement()
