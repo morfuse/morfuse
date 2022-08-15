@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 # install dev tools
 RUN apt update && apt install -y ninja-build cmake make clang-12 lld-12 flex bison
