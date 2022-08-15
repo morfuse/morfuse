@@ -2,6 +2,7 @@
 
 #include <new>
 #include <cstdint>
+#include <cstddef>
 
 namespace mfuse
 {
