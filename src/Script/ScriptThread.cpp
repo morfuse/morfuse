@@ -75,7 +75,7 @@ EventDef EV_ScriptThread_Assert
 (
 	"assert",
 	EV_DEFAULT,
-	"f",
+	"b",
 	"value",
 	"Assert if value is 0.",
 	evType_e::Normal
@@ -394,6 +394,16 @@ EventDef EV_ScriptThread_VectorWithin
 	"position1 position2 distance",
 	"returns 1 if the two points are <= distance apart, or 0 if they are greater than distance apart.",
 	evType_e::Return
+);
+
+EventDef EV_ScriptThread_Pause
+(
+	"pause",
+	EV_DEFAULT,
+	nullptr,
+	nullptr,
+	"Pauses the thread.",
+	evType_e::Normal
 );
 
 EventDef EV_ScriptThread_Wait
@@ -2779,8 +2789,7 @@ void ScriptThread::Angles_ToUp(Event& ev)
 
 void ScriptThread::Assert(Event& ev)
 {
-	(void)ev;
-	assert(ev.GetFloat(1));
+	assert(ev.GetBoolean(1));
 }
 
 void ScriptThread::Cache(Event&)
@@ -2929,6 +2938,11 @@ void ScriptThread::EventThrow(Event& ev)
 			delete this;
 		}
 	}
+}
+
+void ScriptThread::EventPause(Event& ev)
+{
+	Pause();
 }
 
 void ScriptThread::EventWait(Event& ev)
@@ -3436,6 +3450,7 @@ MFUS_CLASS_DECLARATION(Listener, ScriptThread, NULL)
 	{ &EV_ScriptThread_VectorSubtract,			&ScriptThread::EventVectorSubtract },
 	{ &EV_ScriptThread_VectorToAngles,			&ScriptThread::EventVectorToAngles },
 	{ &EV_ScriptThread_VectorWithin,			&ScriptThread::EventVectorWithin },
+	{ &EV_ScriptThread_Pause,					&ScriptThread::EventPause },
 	{ &EV_ScriptThread_Wait,					&ScriptThread::EventWait },
 	{ &EV_ScriptThread_WaitFrame,				&ScriptThread::EventWaitFrame },
 	{ &EV_ScriptThread_IsArray,					&ScriptThread::EventIsArray },

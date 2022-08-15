@@ -152,6 +152,7 @@ namespace mfuse
 		void EventSightTrace(Event& ev);
 		void EventTrace(Event& ev);
 		void EventThrow(Event& ev);
+		void EventPause(Event& ev);
 		void EventWait(Event& ev);
 		void EventWaitFrame(Event& ev);
 
