@@ -63,12 +63,8 @@ int Lexer::LexerInput(char* buf, int max_size)
 		{
 			eof_reached = true;
 
-			// append EOF
-			if (buf[gcount - 1] == 0)
-			{
-				buf[gcount - 1] = '\n';
-				buf[gcount] = 0;
-				++gcount;
+			if (buf[gcount - 1]) {
+				buf[gcount++] = 0;
 			}
 		}
 	}
