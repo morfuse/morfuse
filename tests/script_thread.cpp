@@ -27,9 +27,9 @@ static const char scriptContent_level2[] =
 "\n\n\n\n\n\n"
 "{\n"
 "println \"Hello, world 2\\n\"\n"
-//"local createListener\n"
 "local.i = 1\n\n"
-"local.j = \tslash/dot.ccc\t + test\t\n"
+"local.j = \tùùù¨slash/dot.ccc\t + test\t\n"
+"println local.j\n"
 "if(1)\n { }\n else\n {\n \n}\n"
 "}\n"
 "end local.j\n\n\n";
@@ -138,7 +138,7 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	const str retVal = parms.GetString(1);
-	assertTest(!retVal.icmp("slash/dot.ccctest"));
+	assertTest(!str::cmp(retVal.c_str(), "ùùù¨slash/dot.ccctest"));
 }
 
 void level3(ScriptMaster& director)
@@ -162,6 +162,8 @@ void level4(ScriptMaster& director)
 	ScriptVariable& var = parms.GetValue(1);
 	ScriptVariable* row1 = var.constArrayValue()[1].constArrayValue();
 	ScriptVariable* row2 = var.constArrayValue()[2].constArrayValue();
+	assertTest(row1[1].GetType() == variableType_e::Integer && row1[2].GetType() == variableType_e::Integer && row1[3].GetType() == variableType_e::Integer);
+	assertTest(row2[1].GetType() == variableType_e::Integer && row2[2].GetType() == variableType_e::Integer && row2[3].GetType() == variableType_e::Integer);
 	assertTest(row1[1].intValue() == 10 && row1[2].intValue() == 11 && row1[3].intValue() == 12);
 	assertTest(row2[1].intValue() == 20 && row2[2].intValue() == 21 && row2[3].intValue() == 22);
 }
