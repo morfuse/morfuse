@@ -64,7 +64,7 @@ void script2(ScriptMaster& director)
 		ctx.Execute();
 	}
 
-	assert(parms.GetInteger(1) == 1);
+	assertTest(parms.GetInteger(1) == 1);
 }
 
 const handler_t list[] =

@@ -21,7 +21,7 @@ const char scriptData3[] =
 const char scriptData4[] =
 "println a::b::c::d\n"
 "println \"a\"::b::2\n"
-"end local.a";
+"end";
 
 void level1(ScriptMaster& director)
 {
@@ -30,11 +30,11 @@ void level1(ScriptMaster& director)
 	Event parms;
 	director.ExecuteThread(script, parms);
 
-	assert(parms.NumArgs() == 1);
+	assertTest(parms.NumArgs() == 1);
 	const ScriptVariable& constArray = parms.GetValue(1);
 
-	assert(constArray.constArrayElement(1).intValue() == 1);
-	assert(constArray.constArrayElement(2).intValue() == 2);
+	assertTest(constArray.constArrayElement(1).intValue() == 1);
+	assertTest(constArray.constArrayElement(2).intValue() == 2);
 }
 
 void level2(ScriptMaster& director)
@@ -44,12 +44,12 @@ void level2(ScriptMaster& director)
 	Event parms;
 	director.ExecuteThread(script, parms);
 
-	assert(parms.NumArgs() == 1);
+	assertTest(parms.NumArgs() == 1);
 	const ScriptVariable& constArray = parms.GetValue(1);
 
-	assert(constArray.constArrayElement(1).intValue() == 1);
-	assert(constArray.constArrayElement(2).intValue() == 2);
-	assert(constArray.constArrayElement(3).intValue() == 3);
+	assertTest(constArray.constArrayElement(1).intValue() == 1);
+	assertTest(constArray.constArrayElement(2).intValue() == 2);
+	assertTest(constArray.constArrayElement(3).intValue() == 3);
 }
 
 void level3(ScriptMaster& director)
@@ -59,10 +59,10 @@ void level3(ScriptMaster& director)
 	Event parms;
 	director.ExecuteThread(script, parms);
 
-	assert(parms.NumArgs() == 1);
+	assertTest(parms.NumArgs() == 1);
 
 	const ScriptVariable& constArray = parms.GetValue(1);
-	assert(constArray.GetType() == variableType_e::ConstArray);
+	assertTest(constArray.GetType() == variableType_e::ConstArray);
 
 	const ScriptVariable* subArray[] =
 	{
@@ -71,20 +71,20 @@ void level3(ScriptMaster& director)
 		&constArray.constArrayElement(3)
 	};
 
-	assert(subArray[0]->size() == 3);
-	assert(subArray[0]->constArrayElement(1).intValue() == 1);
-	assert(subArray[0]->constArrayElement(2).intValue() == 2);
-	assert(subArray[0]->constArrayElement(3).intValue() == 3);
+	assertTest(subArray[0]->size() == 3);
+	assertTest(subArray[0]->constArrayElement(1).intValue() == 1);
+	assertTest(subArray[0]->constArrayElement(2).intValue() == 2);
+	assertTest(subArray[0]->constArrayElement(3).intValue() == 3);
 
-	assert(subArray[1]->size() == 3);
-	assert(subArray[1]->constArrayElement(1).intValue() == 4);
-	assert(subArray[1]->constArrayElement(2).intValue() == 5);
-	assert(subArray[1]->constArrayElement(3).intValue() == 6);
+	assertTest(subArray[1]->size() == 3);
+	assertTest(subArray[1]->constArrayElement(1).intValue() == 4);
+	assertTest(subArray[1]->constArrayElement(2).intValue() == 5);
+	assertTest(subArray[1]->constArrayElement(3).intValue() == 6);
 
-	assert(subArray[2]->size() == 3);
-	assert(subArray[2]->constArrayElement(1).intValue() == 7);
-	assert(subArray[2]->constArrayElement(2).intValue() == 8);
-	assert(subArray[2]->constArrayElement(3).intValue() == 9);
+	assertTest(subArray[2]->size() == 3);
+	assertTest(subArray[2]->constArrayElement(1).intValue() == 7);
+	assertTest(subArray[2]->constArrayElement(2).intValue() == 8);
+	assertTest(subArray[2]->constArrayElement(3).intValue() == 9);
 }
 
 void level4(ScriptMaster& director)
