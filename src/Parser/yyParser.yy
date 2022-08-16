@@ -127,7 +127,7 @@ statement_list
 
 statement
 	: line_opt statement_declaration[stmt_decl] line_opt { $$ = $stmt_decl; }
-;
+	;
 
 statement_declaration
 	: TOKEN_IDENTIFIER event_parameter_list TOKEN_COLON { $$ = pt.node3(statementType_e::Labeled, $1, $2, TOKPOS(@1)); }
@@ -205,7 +205,6 @@ expr
 	| expr[left] TOKEN_MODULUS[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_PERCENTAGE), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_SHIFT_LEFT[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_LEFT), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_SHIFT_RIGHT[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_RIGHT), $left, $right, TOKPOS(@tok)); }
-	| expr[left] TOKEN_TERNARY[tok] expr TOKEN_COLON expr { $$ = pt.node4(statementType_e::IfElse, $1, $3, $5, TOKPOS(@tok)); }
 	| TOKEN_EOL expr[exp] { $$ = $exp; }
 	| nonident_prim_expr
 	| func_prim_expr
@@ -218,14 +217,6 @@ func_prim_expr:
 	| TOKEN_NEG func_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
 	| TOKEN_COMPLEMENT func_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
 	| TOKEN_NOT func_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
-	//| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON prim_expr
-	//	{
-	//		$$ = pt.node3(statementType_e::ConstArrayExpr, pt.node2(statementType_e::String, $1, TOKPOS(@1)), $3, TOKPOS(@2));
-	//	}
-	//| nonident_prim_expr TOKEN_DOUBLE_COLON prim_expr
-	//	{
-	//		$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
-	//	}
 	| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON const_array_list
 		{
 			$$ = pt.node3(statementType_e::ConstArrayExpr, pt.node2(statementType_e::String, $1, TOKPOS(@1)), $3, TOKPOS(@2));
@@ -267,10 +258,6 @@ const_array
 prim_expr
 	: nonident_prim_expr
 	| identifier_prim { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
-	//| prim_expr TOKEN_DOUBLE_COLON prim_expr
-	//	{
-	//		$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
-	//	}
 	| prim_expr TOKEN_DOUBLE_COLON const_array_list
 		{
 			$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
@@ -288,7 +275,6 @@ nonident_prim_expr
 	| TOKEN_LEFT_BRACKET expr[exp1] expr[exp2] expr[exp3] TOKEN_RIGHT_BRACKET { $$ = pt.node4(statementType_e::Vector, $exp1, $exp2, $exp3, TOKPOS(@1)); }
 	| TOKEN_LISTENER { $$ = pt.node2(statementType_e::Listener, $1, TOKPOS(@1)); }
 	| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = $2; }
-	//| TOKEN_LEFT_BRACKET TOKEN_RIGHT_BRACKET { $$ = pt.node0(statementType_e::None); }
 	| TOKEN_NEG nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
 	| TOKEN_COMPLEMENT nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
 	| TOKEN_NOT nonident_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
