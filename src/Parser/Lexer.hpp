@@ -25,6 +25,7 @@ namespace mfuse
 		Lexer(ParseTree& parsetree, std::istream& arg_yyin, std::ostream* arg_yyout = nullptr);
 		~Lexer();
 
+		int LexerInput(char* buf, int max_size) override;
 		int yylex() override;
 		int yylex(Parser::semantic_type* const lval, Parser::location_type* const loc);
 		void yylexerror(const char* msg);
@@ -45,5 +46,6 @@ namespace mfuse
 		uint32_t braces_count;
 		uint32_t pos;
 		int prev_yylex;
+		bool eof_reached;
 	};
 }

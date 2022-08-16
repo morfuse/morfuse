@@ -7,6 +7,7 @@ Lexer::Lexer(ParseTree& inParsetree, std::istream& arg_yyin, std::ostream* arg_y
 	, parsetree(inParsetree)
 	, braces_count(0)
 	, pos(0)
+	, eof_reached(false)
 {
 }
 
@@ -51,4 +52,20 @@ int Lexer::get_prev_lex()
 uint32_t Lexer::get_braces_count() const
 {
 	return braces_count;
+}
+
+int Lexer::LexerInput(char* buf, int max_size)
+{
+	int gcount = yyFlexLexer::LexerInput(buf, max_size);
+	if (gcount < max_size)
+	{
+		if (yyin.eof() && !eof_reached)
+		{
+			buf[gcount] = '\n';
+			++gcount;
+			eof_reached = true;
+		}
+	}
+
+	return gcount;
 }
