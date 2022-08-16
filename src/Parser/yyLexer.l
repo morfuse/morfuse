@@ -62,7 +62,7 @@
 %x IDENTIFIER
 
 string		([^\\\"]|\\.)*
-identifier	[^\{\}\(\)\[\]\r\n\,:; \t]*
+identifier	[^\{\}\(\)\[\]\r\n\,:; \t]
 alphanum	[a-zA-Z0-9_]+
 varname		[a-zA-Z0-9_\"]+
 
@@ -200,7 +200,7 @@ varname		[a-zA-Z0-9_\"]+
 											YYLEX(TOKEN_FLOAT);
 										}
 
-<IDENTIFIER>{identifier}		{
+<IDENTIFIER>{identifier}*		{
 									BEGIN(INITIAL);
 									TextEscapeValue(parsetree, yytext, yyleng);
 									YYLEX(TOKEN_IDENTIFIER);
@@ -220,10 +220,17 @@ varname		[a-zA-Z0-9_\"]+
 									YYLEXOFF(TOKEN_IDENTIFIER, 1);
 								}
 
-[a-zA-Z0-9_\\]					{
+{identifier}					{
 									BEGIN(IDENTIFIER);
 									yymore();
 								}
+
+[a-zA-Z0-9]+						{
+									BEGIN(IDENTIFIER);
+									yymore();
+								}
+
+<<EOF>>							{ YYLEX(TOKEN_EOF); }
 
 .								{ YY_FATAL_ERROR("bad token:\n"); }
 
@@ -231,84 +238,6 @@ varname		[a-zA-Z0-9_\"]+
 %}
 
 %%
-
-
-/*
-[a-zA-Z_]+						{
-									BEGIN(IDENTIFIER);
-									yymore();
-								}
-
-[a-zA-Z0-9_]+					{
-									if(!strcmp(yytext, "game"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_game);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else if(!strcmp(yytext, "group"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_group);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else if(!strcmp(yytext, "level"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_level);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else if (!strcmp(yytext, "local"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_local);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else if (!strcmp(yytext, "parm"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_parm);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else if (!strcmp(yytext, "owner"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_owner);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else if (!strcmp(yytext, "self"))
-									{
-										BEGIN(VARIABLES);
-										yylval->val = parsetree.node1_(method_self);
-										YYLEX(TOKEN_LISTENER);
-									}
-									else
-									{
-										BEGIN(IDENTIFIER);
-										yymore();
-									}
-								}
-
-[a-zA-Z_]+						{ TextEscapeValue(parsetree, yytext, yyleng); YYLEX(TOKEN_IDENTIFIER); }
-
-
-{alphanum}						{ TextValue(parsetree, yytext, yyleng); YYLEX(TOKEN_IDENTIFIER); }
-{identifier}					{ TextEscapeValue(parsetree, yytext, yyleng); YYLEX(TOKEN_IDENTIFIER); }
-
-[a-zA-Z0-9_\./\\-]*				{
-									if( UseField() )
-									{
-										parsetree.pos -= yyleng;
-										REJECT;
-									}
-									else
-									{
-										YYLLOCSET;
-										TextEscapeValue(parsetree, yytext, yyleng);
-										YYLEX(TOKEN_IDENTIFIER);
-									}
-								}
-*/
 
 void* mfuse_alloc_c(ParseTree& parsetree, yy_size_t size)
 {
