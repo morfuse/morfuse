@@ -225,7 +225,7 @@ varname		[a-zA-Z0-9_\"]+
 									yymore();
 								}
 
-[a-zA-Z0-9]+						{
+[a-zA-Z0-9]+					{
 									BEGIN(IDENTIFIER);
 									yymore();
 								}

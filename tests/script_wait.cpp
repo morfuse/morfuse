@@ -9,7 +9,7 @@ using namespace mfuse;
 
 const char scriptData1[] =
 "main:\n"
-"println \"Hello\"\n"
+"println \"Hello\"\n\n"
 "wait 1\n"
 "println \"Hello 2\"\n";
 

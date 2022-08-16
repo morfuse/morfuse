@@ -57,13 +57,19 @@ uint32_t Lexer::get_braces_count() const
 int Lexer::LexerInput(char* buf, int max_size)
 {
 	int gcount = yyFlexLexer::LexerInput(buf, max_size);
-	if (gcount < max_size)
+	if (yyin.eof() && !eof_reached)
 	{
-		if (yyin.eof() && !eof_reached)
+		if (gcount < max_size)
 		{
-			buf[gcount] = '\n';
-			++gcount;
 			eof_reached = true;
+
+			// append EOF
+			if (buf[gcount - 1] == 0)
+			{
+				buf[gcount - 1] = '\n';
+				buf[gcount] = 0;
+				++gcount;
+			}
 		}
 	}
 
