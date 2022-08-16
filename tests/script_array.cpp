@@ -16,7 +16,7 @@ const char scriptData1[] =
 "thread test\n"
 "test:\n"
 "println group.test[1][1]\n"
-"end";
+"end;";
 
 const char scriptData2[] =
 "local.test[0] = 0\n"
