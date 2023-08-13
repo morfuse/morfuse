@@ -169,7 +169,6 @@ varname		[a-zA-Z0-9_\"]+
 
 "."								{ YYLEX(TOKEN_PERIOD); }
 
-","								{ YYLEX(TOKEN_COMMA); }
 "#"								{ YYLEX(TOKEN_NUMBER); }
 
 "NULL"							{ YYLEX(TOKEN_NULL); }
