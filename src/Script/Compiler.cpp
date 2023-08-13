@@ -1065,7 +1065,7 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 	const eventName_t eventName = eventSystem.GetEventConstName(field_val.stringValue);
 	const eventNum_t getterNum = eventSystem.FindGetterEventNum(eventName);
 
-	const op_name_t prev_index = ReadOpValue<op_name_t>((intptr_t)sizeof(op_name_t));
+	const op_name_t prev_index = ReadOpValue<op_name_t>(sizeof(op_name_t) + sizeof(op_evName_t));
 
 	if (listener_val.node[0].type != statementType_e::Listener || (getterNum && BuiltinReadVariable(sourceLoc, listener_val.node[1].byteValue, field_val.stringValue, getterNum)))
 	{
@@ -1075,7 +1075,7 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 		WriteOpValue<op_name_t>(index);
 		WriteOpValue<op_evName_t>((op_evName_t)eventName);
 	}
-	else if (PrevOpcode() != (OP_LOAD_GAME_VAR + listener_val.node[1].byteValue) || (const_str)prev_index != index)
+	else if (PrevOpcode() != (OP_LOAD_GAME_VAR + listener_val.node[1].byteValue) || prev_index != index)
 	{
 		EmitOpcode(OP_STORE_GAME_VAR + listener_val.node[1].byteValue, sourceLoc);
 
@@ -1088,7 +1088,7 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 		EmitOpcode(OP_LOAD_STORE_GAME_VAR + listener_val.node[1].byteValue, sourceLoc);
 
 		// Move forward because the previous opcode was replaced
-		manager.MoveCodeForward(sizeof(op_name_t));
+		manager.MoveCodeForward(sizeof(op_name_t) + sizeof(op_evName_t));
 	}
 }
 
