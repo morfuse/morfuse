@@ -208,6 +208,7 @@ namespace mfuse
 
 		template<bool noTop = false> void loadTop(EventSystem& eventSystem, Listener* listener);
 		template<bool noTop = false> ScriptVariable* storeTop(EventSystem& eventSystem, Listener* listener);
+		void loadStoreTop(EventSystem& eventSystem, Listener* listener);
 		void storeField(op_name_t fieldName, Listener* listener);
 		void skipField();
 

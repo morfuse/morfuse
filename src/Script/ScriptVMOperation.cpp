@@ -261,6 +261,38 @@ ScriptVariable* ScriptVM::storeTop(EventSystem& eventSystem, Listener* listener)
 	return listenerVar;
 }
 
+void ScriptVM::loadStoreTop(EventSystem& eventSystem, Listener* listener)
+{
+	// This method copy the pTop variable instead of moving it
+
+	const const_str variable = ReadOpcodeValue<op_name_t>();
+	const op_evName_t eventName = ReadOpcodeValue<op_evName_t>();
+#ifdef _DEBUG
+	const str varName = ScriptContext::Get().GetDirector().GetDictionary().Get(variable);
+	const char* pVarName = varName.c_str();
+#endif
+
+	if (!eventName || !executeSetter(eventSystem, listener, eventName))
+	{
+		// just set the variable
+		const uintptr_t varIndex = m_Stack.GetIndex();
+		ScriptVariable& pTop = m_Stack.GetTop();
+		if (varIndex < m_Stack.GetStackSize())
+		{
+			ScriptVariable* const listenerVar = m_Stack.GetListenerVar(varIndex);
+			if (!listenerVar || listenerVar->GetKey() != variable) {
+				listener->Vars()->SetVariable(variable, pTop);
+			} else {
+				*listenerVar = pTop;
+			}
+		}
+		else
+		{
+			listener->Vars()->SetVariable(variable, pTop);
+		}
+	}
+}
+
 void ScriptVM::storeField(op_name_t fieldName, Listener* listener)
 {
 	const uintptr_t varIndex = m_Stack.GetIndex();
@@ -1078,25 +1110,25 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
 		case OP_LOAD_STORE_GAME_VAR:
 		{
-			loadTop<true>(eventSystem, context.GetGame());
+			loadStoreTop(eventSystem, context.GetGame());
 			break;
 		}
 
 		case OP_LOAD_STORE_GROUP_VAR:
 		{
-			loadTop<true>(eventSystem, GetScriptClass());
+			loadStoreTop(eventSystem, GetScriptClass());
 			break;
 		}
 
 		case OP_LOAD_STORE_LEVEL_VAR:
 		{
-			loadTop<true>(eventSystem, context.GetLevel());
+			loadStoreTop(eventSystem, context.GetLevel());
 			break;
 		}
 
 		case OP_LOAD_STORE_LOCAL_VAR:
 		{
-			loadTop<true>(eventSystem, GetScriptThread());
+			loadStoreTop(eventSystem, GetScriptThread());
 			break;
 		}
 
@@ -1114,13 +1146,13 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 				throw ScriptException("self.owner is NULL");
 			}
 
-			loadTop<true>(eventSystem, GetScriptClass()->GetSelf()->GetScriptOwner());
+			loadStoreTop(eventSystem, GetScriptClass()->GetSelf()->GetScriptOwner());
 			break;
 		}
 
 		case OP_LOAD_STORE_PARM_VAR:
 		{
-			loadTop<true>(eventSystem, &Director.GetParm());
+			loadStoreTop(eventSystem, &Director.GetParm());
 			break;
 		}
 
@@ -1131,7 +1163,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 				throw ScriptException("self is NULL");
 			}
 
-			loadTop<true>(eventSystem, GetScriptClass()->GetSelf());
+			loadStoreTop(eventSystem, GetScriptClass()->GetSelf());
 			break;
 		}
 
