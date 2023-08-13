@@ -1301,6 +1301,9 @@ void ScriptEmitter::EmitLabel(const prchar_t* name, sourceLocation_t sourceLoc)
 			throw CompileException::DuplicateLabel(name, sourceLoc);
 		}
 	}
+
+	// Always clear the previous opcode when a new label is emitted
+	ClearPrevOpcode();
 }
 
 void ScriptEmitter::EmitLabel(unsigned int number, sourceLocation_t sourceLoc)
@@ -1309,6 +1312,9 @@ void ScriptEmitter::EmitLabel(unsigned int number, sourceLocation_t sourceLoc)
 	std::to_chars(name, name + sizeof(name), number);
 
 	EmitLabel(name, sourceLoc);
+
+	// Always clear the previous opcode when a new label is emitted
+	ClearPrevOpcode();
 }
 
 void ScriptEmitter::EmitLabelParameterList(sval_t parameter_list, sourceLocation_t sourceLoc)
