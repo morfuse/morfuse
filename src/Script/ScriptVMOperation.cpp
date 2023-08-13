@@ -200,6 +200,10 @@ void ScriptVM::loadTop(EventSystem& eventSystem, Listener* listener)
 {
 	const const_str variable = ReadOpcodeValue<op_name_t>();
 	const op_evName_t eventName = ReadOpcodeValue<op_evName_t>();
+#ifdef _DEBUG
+	const str varName = ScriptContext::Get().GetDirector().GetDictionary().Get(variable);
+	const char* pVarName = varName.c_str();
+#endif
 
 	if (!eventName || !executeSetter(eventSystem, listener, eventName))
 	{
@@ -231,6 +235,10 @@ ScriptVariable* ScriptVM::storeTop(EventSystem& eventSystem, Listener* listener)
 	const const_str variable = ReadOpcodeValue<op_name_t>();
 	const op_evName_t eventName = ReadOpcodeValue<op_evName_t>();
 	ScriptVariable* listenerVar;
+#ifdef _DEBUG
+	const str varName = ScriptContext::Get().GetDirector().GetDictionary().Get(variable);
+	const char* pVarName = varName.c_str();
+#endif
 
 	if constexpr (!noTop) m_Stack.Push();
 
