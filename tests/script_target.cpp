@@ -20,6 +20,10 @@ static const char scriptContent_level2[] =
 "local.ent1.targetname = \"test\"\n"
 "local.ent2 = spawn SimpleEntity\n"
 "local.ent2.targetname = \"test\"\n"
+"local.ent3 = spawn SimpleEntity\n"
+"local.ent3.targetname = \"test\"\n"
+"println $test[1].targetname\n"
+"println $test[2].targetname\n"
 "println $test[0].targetname\n"
 "end";
 
@@ -31,6 +35,17 @@ static const char scriptContent_level3[] =
 "$entity target \"other\"\n"
 "end";
 
+static const char scriptContent_level4[] =
+"// -----------------------------------------------\n"
+"//\n"
+"// Random comment\n"
+"local.p = spawn SimpleEntity targetname \"targetent\"\n"
+"local.\"string\" = targetent\n"
+//"$a::b = 1\n"
+//"$(\"targetent\").value = 1\n"
+"($(local.string)).value = 1\n"
+//"$(local.string).value = 1\n"
+"end";
 
 void level1(ScriptMaster& director)
 {
@@ -62,11 +77,20 @@ void level3(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level4(ScriptMaster& director)
+{
+	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
+
+	const ProgramScript* const script = compile(director, "level4", scriptContent_level4);
+	director.ExecuteThread(script);
+}
+
 const handler_t handlers[] =
 {
 	{ "level1", &level1 },
 	{ "level2", &level2 },
-	{ "level3", &level3 }
+	{ "level3", &level3 },
+	{ "level4", &level4 }
 };
 
 int main()
