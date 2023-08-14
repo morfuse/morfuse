@@ -1094,13 +1094,6 @@ void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocat
 
 void ScriptEmitter::EmitFloat(float value, sourceLocation_t sourceLoc)
 {
-	if (value == (float)(int32_t)value)
-	{
-		// if the float value is the same as an int value
-		// then make it an integer directly
-		return EmitInteger((uint32_t)value, sourceLoc);
-	}
-
 	EmitOpcode(OP_STORE_FLOAT, sourceLoc);
 
 	WriteOpValue<float>(value);
