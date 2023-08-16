@@ -47,7 +47,7 @@
 %precedence TOKEN_EOL
 
 %precedence TOKEN_IF
-%right TOKEN_ELSE
+%right THEN TOKEN_ELSE
 %precedence TOKEN_WHILE TOKEN_FOR TOKEN_DO
 %precedence <val.stringValue> TOKEN_IDENTIFIER
 
@@ -165,9 +165,9 @@ compound_statement
 	| TOKEN_LEFT_BRACES line_opt TOKEN_RIGHT_BRACES { $$ = pt.node0(statementType_e::None); }
 	| line_opt compound_statement[comp_stmt] line_opt { $$ = $comp_stmt; }
 	;
-
+	
 selection_statement
-	: TOKEN_IF prim_expr[exp] statement[stmt] { $$ = pt.node3(statementType_e::If, $exp, $stmt, TOKPOS(@1)); }
+	: TOKEN_IF prim_expr[exp] statement[stmt] %prec THEN { $$ = pt.node3(statementType_e::If, $exp, $stmt, TOKPOS(@1)); }
 	| TOKEN_IF prim_expr[exp] statement[if_stmt] TOKEN_ELSE statement[else_stmt] { $$ = pt.node4(statementType_e::IfElse, $exp, $if_stmt, $else_stmt, TOKPOS(@1)); }
 	| TOKEN_SWITCH prim_expr[exp] compound_statement[comp_stmt] { $$ = pt.node3(statementType_e::Switch, $exp, $comp_stmt, TOKPOS(@1)); }
 	;
