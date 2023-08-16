@@ -40,6 +40,7 @@ static const char scriptContent_level3[] =
 "end";
 
 static const char scriptContent_level4[] =
+"break_parameter:\n"
 "// -----------------------------------------------\n"
 "//\n"
 "// Random comment\n"
