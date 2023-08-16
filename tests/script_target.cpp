@@ -46,9 +46,10 @@ static const char scriptContent_level4[] =
 "local.p = spawn SimpleEntity targetname \"targetent\"\n"
 "local.\"string\" = targetent\n"
 //"$a::b = 1\n"
-//"$(\"targetent\").value = 1\n"
-"($(local.string)).value = 1\n"
-//"$(local.string).value = 1\n"
+"$(\"targetent\").value = 1\n"
+"($(local.string)).value = 2\n"
+"$(local.string).value = 3\n"
+"$(\"target\" + \"ent\").value = 4\n"
 "end";
 
 void level1(ScriptMaster& director)
@@ -83,7 +84,7 @@ void level3(ScriptMaster& director)
 
 void level4(ScriptMaster& director)
 {
-	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
+	//ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
 
 	const ProgramScript* const script = compile(director, "level4", scriptContent_level4);
 	director.ExecuteThread(script);

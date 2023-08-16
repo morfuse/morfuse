@@ -103,6 +103,7 @@
 %type <val> expr
 %type <val> func_prim_expr
 %type <val> prim_expr
+%type <val> listener_identifier
 %type <val> nonident_prim_expr
 %type <val> func_expr
 %type <val> const_array_list
@@ -271,8 +272,13 @@ identifier
 	| TOKEN_STRING { $$ = $1; @$ = @1; }
 	;
 
+listener_identifier
+	: identifier_prim { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
+	| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = $2; }
+	;
+
 nonident_prim_expr
-	: TOKEN_DOLLAR prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_TARGETNAME), $2, TOKPOS(@1)); }
+	: TOKEN_DOLLAR listener_identifier { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_TARGETNAME), $2, TOKPOS(@1)); }
 	| nonident_prim_expr TOKEN_PERIOD identifier { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
 	| nonident_prim_expr TOKEN_PERIOD TOKEN_SIZE { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_SIZE), $1, TOKPOS(@3)); }
 	| nonident_prim_expr TOKEN_LEFT_SQUARE_BRACKET expr TOKEN_RIGHT_SQUARE_BRACKET { $$ = pt.node3(statementType_e::ArrayExpr, $1, $3, TOKPOS(@2)); }
