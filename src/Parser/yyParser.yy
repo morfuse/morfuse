@@ -288,6 +288,7 @@ nonident_prim_expr
 	| TOKEN_LEFT_BRACKET expr[exp1] expr[exp2] expr[exp3] TOKEN_RIGHT_BRACKET { $$ = pt.node4(statementType_e::Vector, $exp1, $exp2, $exp3, TOKPOS(@1)); }
 	| TOKEN_LISTENER { $$ = pt.node2(statementType_e::Listener, $1, TOKPOS(@1)); }
 	| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = $2; }
+	| TOKEN_LEFT_BRACKET expr TOKEN_EOL TOKEN_RIGHT_BRACKET { $$ = $2; }
 	| func_expr nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, $1, $2, TOKPOS(@1)); }
 	| TOKEN_NOT nonident_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
 	| TOKEN_NULL { $$ = pt.node1(statementType_e::NULLPTR, TOKPOS(@1)); }
