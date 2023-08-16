@@ -155,7 +155,7 @@ statement_declaration
 	| nonident_prim_expr TOKEN_SHIFT_RIGHT_EQUALS expr { $$ = pt.node3(statementType_e::Assignment, $1, pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_RIGHT), $1, $3, TOKPOS(@2)), TOKPOS(@2)); }
 	| nonident_prim_expr TOKEN_INCREMENT { $$ = pt.node3(statementType_e::Assignment, $1, pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_INC), $1, TOKPOS(@2)), TOKPOS(@2)); }
 	| nonident_prim_expr TOKEN_DECREMENT { $$ = pt.node3(statementType_e::Assignment, $1, pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_DEC), $1, TOKPOS(@2)), TOKPOS(@2)); }
-	| TOKEN_SEMICOLON { $$ = pt.node0(statementType_e::None); }
+	| statement_declaration TOKEN_SEMICOLON { $$ = $1; }
 	//| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node3( statementType_e::MethodEvent, pt.node_string( parsetree_string( str( $1.stringValue ) + "::" + $3.stringValue ) ), pt.node1( statementType_e::none, $4 ), TOKPOS(@1) ); }
 	//| nonident_prim_expr TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node4( statementType_e::MethodEvent, $1, pt.node_string( parsetree_string( str( $2.stringValue ) + "::" + $4.stringValue ) ), pt.node1( statementType_e::none, $5 ), TOKPOS(@2) ); }
 	;

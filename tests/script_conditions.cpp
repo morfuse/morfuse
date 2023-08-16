@@ -28,15 +28,32 @@ const char scriptData1[] =
 "if (local.value == 10) println \"test3\"\n"
 ;
 
+const char scriptData2[] =
+"local.value = 3\n"
+"if ( local . value != 3 )\n"
+"  local.value = 4;\n"
+"else\n"
+"{\n"
+"  local.value = 5\n"
+"}\n"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
 	director.ExecuteThread(script);
 }
 
+void level2(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level2", scriptData2);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
+	"level2", &level2,
 };
 
 int main()
