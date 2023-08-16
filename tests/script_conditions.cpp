@@ -29,12 +29,12 @@ const char scriptData1[] =
 ;
 
 const char scriptData2[] =
-"local.value = 3\n"
+"local.value = 4;local.value = 3\n"
 "if ( local . value != 3 )\n"
 "  local.value = 4;\n"
 "else\n"
 "{\n"
-"  local.value = 5\n"
+"  local.value = 5;\n"
 "}\n"
 ;
 

@@ -98,7 +98,7 @@
 				TOKEN_MAKEARRAY TOKEN_ENDARRAY
 
 %type <val> event_parameter_list event_parameter_list_need event_parameter
-%type <val> statement_list statement statement_declaration makearray_statement_list makearray_statement
+%type <val> statement_list statement statement_declaration makearray_statement_list makearray_statement statement_for_condition
 %type <val> compound_statement selection_statement iteration_statement
 %type <val> expr
 %type <val> func_prim_expr
@@ -155,9 +155,14 @@ statement_declaration
 	| nonident_prim_expr TOKEN_SHIFT_RIGHT_EQUALS expr { $$ = pt.node3(statementType_e::Assignment, $1, pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_RIGHT), $1, $3, TOKPOS(@2)), TOKPOS(@2)); }
 	| nonident_prim_expr TOKEN_INCREMENT { $$ = pt.node3(statementType_e::Assignment, $1, pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_INC), $1, TOKPOS(@2)), TOKPOS(@2)); }
 	| nonident_prim_expr TOKEN_DECREMENT { $$ = pt.node3(statementType_e::Assignment, $1, pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_DEC), $1, TOKPOS(@2)), TOKPOS(@2)); }
-	| statement_declaration TOKEN_SEMICOLON { $$ = $1; }
+	| TOKEN_SEMICOLON { $$ = pt.node0(statementType_e::None); }
 	//| TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node3( statementType_e::MethodEvent, pt.node_string( parsetree_string( str( $1.stringValue ) + "::" + $3.stringValue ) ), pt.node1( statementType_e::none, $4 ), TOKPOS(@1) ); }
 	//| nonident_prim_expr TOKEN_IDENTIFIER TOKEN_DOUBLE_COLON TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node4( statementType_e::MethodEvent, $1, pt.node_string( parsetree_string( str( $2.stringValue ) + "::" + $4.stringValue ) ), pt.node1( statementType_e::none, $5 ), TOKPOS(@2) ); }
+	;
+
+statement_for_condition
+	: line_opt statement_declaration[stmt_decl] line_opt { $$ = $stmt_decl; }
+	| line_opt statement_declaration[stmt_decl] TOKEN_SEMICOLON line_opt { $$ = $stmt_decl; }
 	;
 
 compound_statement
@@ -167,23 +172,23 @@ compound_statement
 	;
 	
 selection_statement
-	: TOKEN_IF prim_expr[exp] statement[stmt] %prec THEN { $$ = pt.node3(statementType_e::If, $exp, $stmt, TOKPOS(@1)); }
-	| TOKEN_IF prim_expr[exp] statement[if_stmt] TOKEN_ELSE statement[else_stmt] { $$ = pt.node4(statementType_e::IfElse, $exp, $if_stmt, $else_stmt, TOKPOS(@1)); }
+	: TOKEN_IF prim_expr[exp] statement_for_condition[stmt] %prec THEN { $$ = pt.node3(statementType_e::If, $exp, $stmt, TOKPOS(@1)); }
+	| TOKEN_IF prim_expr[exp] statement_for_condition[if_stmt] TOKEN_ELSE statement_for_condition[else_stmt] { $$ = pt.node4(statementType_e::IfElse, $exp, $if_stmt, $else_stmt, TOKPOS(@1)); }
 	| TOKEN_SWITCH prim_expr[exp] compound_statement[comp_stmt] { $$ = pt.node3(statementType_e::Switch, $exp, $comp_stmt, TOKPOS(@1)); }
 	;
 
 iteration_statement
-	: TOKEN_WHILE prim_expr[exp] statement[stmt]{ $$ = pt.node4(statementType_e::While, $exp, $stmt, pt.node0(statementType_e::None), TOKPOS(@1)); }
-	| TOKEN_FOR TOKEN_LEFT_BRACKET statement[init_stmt] TOKEN_SEMICOLON expr[exp] TOKEN_SEMICOLON statement_list[inc_stmt] TOKEN_RIGHT_BRACKET statement[stmt]
+	: TOKEN_WHILE prim_expr[exp] statement_for_condition[stmt]{ $$ = pt.node4(statementType_e::While, $exp, $stmt, pt.node0(statementType_e::None), TOKPOS(@1)); }
+	| TOKEN_FOR TOKEN_LEFT_BRACKET statement[init_stmt] TOKEN_SEMICOLON expr[exp] TOKEN_SEMICOLON statement_list[inc_stmt] TOKEN_RIGHT_BRACKET statement_for_condition[stmt]
 	{
 		sval_t while_stmt = pt.node4(statementType_e::While, $exp, $stmt, pt.node1(statementType_e::StatementList, $inc_stmt), TOKPOS(@1));
 		$$ = pt.node1(statementType_e::StatementList, pt.append_node(pt.linked_list_end($init_stmt), while_stmt));
 	}
-	| TOKEN_FOR TOKEN_LEFT_BRACKET TOKEN_SEMICOLON expr[exp] TOKEN_SEMICOLON statement_list[inc_stmt] TOKEN_RIGHT_BRACKET statement[stmt]
+	| TOKEN_FOR TOKEN_LEFT_BRACKET TOKEN_SEMICOLON expr[exp] TOKEN_SEMICOLON statement_list[inc_stmt] TOKEN_RIGHT_BRACKET statement_for_condition[stmt]
 	{
 		$$ = pt.node4(statementType_e::While, $exp, $stmt, pt.node1(statementType_e::StatementList, $inc_stmt), TOKPOS(@1));
 	}
-	| TOKEN_DO statement[stmt] TOKEN_WHILE prim_expr[exp]{ $$ = pt.node3(statementType_e::Do, $stmt, $exp, TOKPOS(@1)); }
+	| TOKEN_DO statement_for_condition[stmt] TOKEN_WHILE prim_expr[exp]{ $$ = pt.node3(statementType_e::Do, $stmt, $exp, TOKPOS(@1)); }
 	;
 
 expr
