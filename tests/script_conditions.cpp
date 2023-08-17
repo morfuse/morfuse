@@ -38,6 +38,13 @@ const char scriptData2[] =
 "}\n"
 ;
 
+const char scriptData3[] =
+"local.arr[0] = \"/\"\n"
+"if (!local.arr[2]) {\n"
+"println \"nonexistent\"\n"
+"}\n"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -50,10 +57,17 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level3(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level3", scriptData3);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
 	"level2", &level2,
+	"level3", &level3,
 };
 
 int main()
