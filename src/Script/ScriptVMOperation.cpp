@@ -342,6 +342,7 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 			// because if it's a targetlist, the container object can be modified
 			// while iterating
 			ScriptVariable array = a;
+			array.CastConstArrayValue();
 
 			for (uintptr_t i = 1; i <= arraysize; i++)
 			{
