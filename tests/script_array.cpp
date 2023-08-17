@@ -24,6 +24,18 @@ const char scriptData2[] =
 "if (local.test[1]) println \"test\"\n"
 "end";
 
+const char scriptData3[] =
+"local.value = 0\n"
+"local.test[local.value + 1][1] = teststr\n"
+"local.test[local.value + 1][2] = 1\n"
+"local.test[local.value + 1][3] = local\n"
+"local.test[local.value + 1][4] = 3.4\n"
+"local.test[local.value + 1][5] = \"value\"\n"
+"for(local.i = 1; local.i <= local.test.size; local.i++) {\n"
+"println local.test[local.i][5]\n"
+"}\n"
+"end";
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -36,10 +48,17 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level3(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level3", scriptData3);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
-	"level2", &level2
+	"level2", &level2,
+	"level3", &level3
 };
 
 int main()
