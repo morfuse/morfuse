@@ -47,8 +47,6 @@ ScriptStack::ScriptStack(size_t stackSize)
 	localStack = new (data) ScriptVariable[stackSize];
 	data += sizeof(ScriptVariable) * stackSize;
 
-	listenerVarPtr = new (data) ScriptVariable * [stackSize]();
-
 	pTop = localStack;
 	stackBottom = localStack + stackSize;
 }
@@ -57,11 +55,9 @@ ScriptStack::ScriptStack(ScriptStack&& other)
 	: localStack(other.localStack)
 	, stackBottom(other.stackBottom)
 	, pTop(other.pTop)
-	, listenerVarPtr(other.listenerVarPtr)
 {
 	other.localStack = other.stackBottom = nullptr;
 	other.pTop = nullptr;
-	other.listenerVarPtr = nullptr;
 }
 
 ScriptStack& ScriptStack::operator=(ScriptStack&& other)
@@ -69,10 +65,8 @@ ScriptStack& ScriptStack::operator=(ScriptStack&& other)
 	localStack = other.localStack;
 	stackBottom = other.stackBottom;
 	pTop = other.pTop;
-	listenerVarPtr = other.listenerVarPtr;
 	other.localStack = other.stackBottom = nullptr;
 	other.pTop = nullptr;
-	other.listenerVarPtr = nullptr;
 
 	return *this;
 }
@@ -199,16 +193,6 @@ void ScriptStack::Archive(Archiver& arc)
 	for (uint32_t i = 0; i < stackSize; i++) {
 		localStack[i].ArchiveInternal(arc);
 	}
-}
-
-ScriptVariable* ScriptStack::GetListenerVar(uintptr_t index)
-{
-	return listenerVarPtr[index];
-}
-
-void ScriptStack::SetListenerVar(uintptr_t index, ScriptVariable* newVar)
-{
-	listenerVarPtr[index] = newVar;
 }
 
 ScriptVM::ScriptVM()

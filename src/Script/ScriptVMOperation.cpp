@@ -208,22 +208,8 @@ void ScriptVM::loadTop(EventSystem& eventSystem, Listener* listener)
 	if (!eventName || !executeSetter(eventSystem, listener, eventName))
 	{
 		// just set the variable
-		const uintptr_t varIndex = m_Stack.GetIndex();
 		ScriptVariable& pTop = m_Stack.GetTop();
-		if (varIndex < m_Stack.GetStackSize())
-		{
-			ScriptVariable* const listenerVar = m_Stack.GetListenerVar(varIndex);
-			if (!listenerVar || listenerVar->GetKey() != variable) {
-				listener->Vars()->SetVariable(variable, std::move(pTop));
-			}
-			else {
-				*listenerVar = std::move(pTop);
-			}
-		}
-		else
-		{
-			listener->Vars()->SetVariable(variable, std::move(pTop));
-		}
+		listener->Vars()->SetVariable(variable, std::move(pTop));
 	}
 
 	if constexpr (!noTop) m_Stack.Pop();
@@ -244,14 +230,8 @@ ScriptVariable* ScriptVM::storeTop(EventSystem& eventSystem, Listener* listener)
 
 	if (!eventName || !executeGetter(eventSystem, listener, eventName))
 	{
-		const uintptr_t varIndex = m_Stack.GetIndex();
 		ScriptVariable& pTop = m_Stack.GetTop();
-		listenerVar = m_Stack.GetListenerVar(varIndex);
-		if (!listenerVar || listenerVar->GetKey() != variable)
-		{
-			listenerVar = listener->Vars()->GetOrCreateVariable(variable);
-			m_Stack.SetListenerVar(varIndex, listenerVar);
-		}
+		listenerVar = listener->Vars()->GetOrCreateVariable(variable);
 
 		pTop = *listenerVar;
 	} else {
@@ -275,33 +255,14 @@ void ScriptVM::loadStoreTop(EventSystem& eventSystem, Listener* listener)
 	if (!eventName || !executeSetter(eventSystem, listener, eventName))
 	{
 		// just set the variable
-		const uintptr_t varIndex = m_Stack.GetIndex();
 		ScriptVariable& pTop = m_Stack.GetTop();
-		if (varIndex < m_Stack.GetStackSize())
-		{
-			ScriptVariable* const listenerVar = m_Stack.GetListenerVar(varIndex);
-			if (!listenerVar || listenerVar->GetKey() != variable) {
-				listener->Vars()->SetVariable(variable, pTop);
-			} else {
-				*listenerVar = pTop;
-			}
-		}
-		else
-		{
-			listener->Vars()->SetVariable(variable, pTop);
-		}
+		listener->Vars()->SetVariable(variable, pTop);
 	}
 }
 
 void ScriptVM::storeField(op_name_t fieldName, Listener* listener)
 {
-	const uintptr_t varIndex = m_Stack.GetIndex();
-	ScriptVariable* listenerVar = m_Stack.GetListenerVar(varIndex);
-	if (!listenerVar || listenerVar->GetKey() != fieldName)
-	{
-		listenerVar = listener->Vars()->GetOrCreateVariable(fieldName);
-		m_Stack.SetListenerVar(varIndex, listenerVar);
-	}
+	ScriptVariable* listenerVar = listener->Vars()->GetOrCreateVariable(fieldName);
 
 	ScriptVariable& pTop = m_Stack.GetTop();
 	pTop = *listenerVar;
