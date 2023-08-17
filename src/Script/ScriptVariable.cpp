@@ -802,11 +802,19 @@ void ScriptVariable::ClearInternal()
 		break;
 
 	case variableType_e::Listener:
-	case variableType_e::SafeContainer:
 		if (m_data.listenerValue)
 		{
 			delete m_data.listenerValue;
 			m_data.listenerValue = nullptr;
+		}
+
+		break;
+
+	case variableType_e::SafeContainer:
+		if (m_data.safeContainerValue)
+		{
+			delete m_data.safeContainerValue;
+			m_data.safeContainerValue = nullptr;
 		}
 
 		break;
@@ -1260,7 +1268,7 @@ void ScriptVariable::evalArrayAt(const ScriptVariable &var)
 	case variableType_e::Container:
 		index = (size_t)var.longValue();
 
-		if (!index || index > m_data.constArrayValue->size)
+		if (!index || index > m_data.containerValue->NumObjects())
 		{
 			throw ScriptVariableErrors::TypeIndexOutOfRange("array", index);
 		}
@@ -2593,7 +2601,8 @@ void ScriptVariable::setDataInternal(const ScriptVariable& variable)
 		break;
 
 	case variableType_e::Container:
-		m_data.containerValue = new con::Container<SafePtr<Listener>>(*variable.m_data.containerValue);
+		// it mustn't be deleted afterwards
+		m_data.containerValue = variable.m_data.containerValue;
 		break;
 
 	case variableType_e::SafeContainer:
