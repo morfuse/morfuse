@@ -45,6 +45,12 @@ const char scriptData3[] =
 "}\n"
 ;
 
+const char scriptData4[] =
+"local.a = ( -1::3)::(3::2) \n"
+"if(local.a[1][1] == 0 || local.a[1][1] < 0) { println \"test\" }\n"
+"end"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -63,11 +69,18 @@ void level3(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level4(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level4", scriptData4);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
 	"level2", &level2,
 	"level3", &level3,
+	"level4", &level4,
 };
 
 int main()
