@@ -41,15 +41,30 @@ const char scriptData1[] =
 "println string (\"value: \" + level.string_value)\n"
 ;
 
+const char scriptData2[] =
+"local.origin[0] = ( -123 456 -789 )\n"
+"local.origin[1] = ( -456 789 -123 )\n"
+"local.origin[2] = ( 789 -123 -456 )\n"
+"local.test_coord = local.origin[2]\n"
+"println local.test_coord\n"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
 	director.ExecuteThread(script);
 }
 
+void level2(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level2", scriptData2);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
+	"level2", &level2,
 };
 
 int main()
