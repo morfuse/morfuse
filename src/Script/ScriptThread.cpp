@@ -2858,9 +2858,7 @@ void ScriptThread::EventEnd(Event& ev)
 {
 	if (ev.NumArgs() > 0)
 	{
-		ScriptVariable& value = ev.GetValue(1);
-
-		m_ScriptVM->EndRef(value);
+		m_ScriptVM->EndRef(ev.GetValue(1));
 	}
 	else
 	{

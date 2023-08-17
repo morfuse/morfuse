@@ -288,7 +288,7 @@ void ScriptPointer::remove(ScriptVariable *var)
 {
 	list.RemoveObject(var);
 
-	if (!list.NumObjects())
+	if (list.NumObjects() == 0)
 	{
 		delete this;
 	}
@@ -296,15 +296,26 @@ void ScriptPointer::remove(ScriptVariable *var)
 
 void ScriptPointer::setValue(const ScriptVariable& var)
 {
-	for (uintptr_t i = list.NumObjects(); i > 0; i--)
+	if (var.type == variableType_e::Pointer)
 	{
-		ScriptVariable* pVar = list.ObjectAt(i);
+		for (uintptr_t i = list.NumObjects(); i > 0; i--) {
+			ScriptVariable* pVar = list.ObjectAt(i);
 
-		// since they're holding this script pointer, set it to none
-		// because otherwise it would call ClearInternal()
-		// which will delete this ScriptPointer
-		pVar->type = variableType_e::None;
-		*pVar = var;
+			pVar->m_data.pointerValue = var.m_data.pointerValue;
+			var.m_data.pointerValue->add(pVar);
+		}
+	}
+	else
+	{
+		for (uintptr_t i = list.NumObjects(); i > 0; i--) {
+			ScriptVariable* pVar = list.ObjectAt(i);
+
+			// since they're holding this script pointer, set it to none
+			// because otherwise it would call ClearInternal()
+			// which will delete this ScriptPointer
+			pVar->type = variableType_e::None;
+			*pVar = var;
+		}
 	}
 
 	delete this;
@@ -524,6 +535,14 @@ ScriptVariable& ScriptVariable::operator=(ScriptVariable&& variable)
 	type = variable.type;
 	variable.type = variableType_e::None;
 	m_data = variable.m_data;
+
+	if (type == variableType_e::Pointer)
+	{
+		// if it's a pointer, make sure to properly point
+		m_data.pointerValue->add(this);
+		m_data.pointerValue->remove(&variable);
+	}
+
 	return *this;
 }
 
