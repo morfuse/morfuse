@@ -23,6 +23,12 @@ const char scriptData4[] =
 "println \"a\"::b::2\n"
 "end";
 
+const char scriptData5[] =
+"local.constarr = -0.334:: -0.8\n"
+"println local.constarr[1]\n"
+"end\n"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -89,10 +95,18 @@ void level3(ScriptMaster& director)
 
 void level4(ScriptMaster& director)
 {
-	const ProgramScript* const script = compile(director, "level4", scriptData1);
+	const ProgramScript* const script = compile(director, "level4", scriptData4);
 
 	Event parms;
 	director.ExecuteThread(script, parms);
+}
+
+void level5(ScriptMaster& director)
+{
+	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
+
+	const ProgramScript* const script = compile(director, "level5", scriptData5);
+	director.ExecuteThread(script);
 }
 
 handler_t handlers[] =
@@ -100,7 +114,8 @@ handler_t handlers[] =
 	"level1", &level1,
 	"level2", &level2,
 	"level3", &level3,
-	"level4", &level4
+	"level4", &level4,
+	"level5", &level5
 };
 
 int main()
