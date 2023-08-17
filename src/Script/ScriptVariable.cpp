@@ -2837,7 +2837,7 @@ const rawchar_t* ScriptVariableErrors::InvalidAppliedType::getTypeName() const n
 
 const char* ScriptVariableErrors::InvalidAppliedType::what() const noexcept
 {
-	if (filled()) {
+	if (!filled()) {
 		fill(str(op) + " applied to invalid type: '" + str(typeName) + "'");
 	}
 
