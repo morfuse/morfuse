@@ -338,9 +338,14 @@ void ScriptVM::ExecCmdMethodCommon(op_parmNum_t param)
 	{
 		if (a.IsConstArray())
 		{
+			// copy the variable
+			// because if it's a targetlist, the container object can be modified
+			// while iterating
+			ScriptVariable array = a;
+
 			for (uintptr_t i = 1; i <= arraysize; i++)
 			{
-				Listener* const listener = a.listenerAt(i);
+				Listener* const listener = array.listenerAt(i);
 				// if the listener is NULL, don't throw an exception
 				// it would be unfair if the other listeners executed the command
 				if (listener) {
