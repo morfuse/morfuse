@@ -36,6 +36,12 @@ const char scriptData3[] =
 "}\n"
 "end";
 
+const char scriptData4[] =
+"level.map_bsp[0] = spawn Listener\n"
+"level.map_bsp[0].pa = -0.688:: -0.749\n"
+"println level.map_bsp[0].pa[1]\n"
+"end";
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -54,11 +60,18 @@ void level3(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level4(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level4", scriptData4);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
 	"level2", &level2,
-	"level3", &level3
+	"level3", &level3,
+	"level4", &level4
 };
 
 int main()
