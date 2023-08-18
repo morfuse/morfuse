@@ -51,6 +51,21 @@ const char scriptData4[] =
 "end"
 ;
 
+const char scriptData5[] =
+"local.value = 3\n"
+"switch(local.value)\n"
+"{\n"
+"case 1:\n"
+"println \"HELLO\"\n"
+"break\n"
+"default:\n"
+"println \"DEFAULT\"\n"
+"break\n"
+"}\,"
+"end"
+;
+
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -75,12 +90,19 @@ void level4(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level5(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level5", scriptData5);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
 	"level2", &level2,
 	"level3", &level3,
 	"level4", &level4,
+	"level5", &level5,
 };
 
 int main()
