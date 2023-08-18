@@ -3111,7 +3111,7 @@ void ScriptThread::EventVectorDot(Event& ev)
 {
 	Vector vector1 = ev.GetVector(1), vector2 = ev.GetVector(2);
 
-	ev.AddVector(Vector(vector1.x * vector2.x, vector1.y * vector2.y, vector1.z * vector2.z));
+	ev.AddFloat(Vector::Dot(vector1, vector2));
 }
 
 void ScriptThread::EventVectorLength(Event& ev)
@@ -3150,7 +3150,7 @@ void ScriptThread::EventVectorToAngles(Event& ev)
 void ScriptThread::EventVectorWithin(Event& ev)
 {
 	Vector delta;
-	float dist = ev.GetFloat(2);
+	float dist = ev.GetFloat(3);
 
 	delta = ev.GetVector(1) - ev.GetVector(2);
 
