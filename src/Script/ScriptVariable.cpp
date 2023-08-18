@@ -2376,26 +2376,32 @@ void ScriptVariable::greaterthan(const ScriptVariable &variable)
 		Clear();
 		throw ScriptVariableErrors::IncompatibleOperator(">", GetTypeName(), variable.GetTypeName());
 
-	// ( int ) <= ( int )
+	// ( int ) > ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value > variable.m_data.long64Value;
 		break;
 
-	// ( int ) <= ( float )
+	// ( int ) > ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value > variable.m_data.floatValue;
 		break;
 
-	// ( float ) <= ( float )
+	// ( float ) > ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue > variable.m_data.floatValue;
 		break;
 
-	// ( float ) <= ( int )
+	// ( float ) > ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue > variable.m_data.long64Value;
+		break;
+
+	// ( char ) <= ( char )
+	case uint32_t(variableType_e::Char + variableType_e::Char * variableType_e::Max):
+		type = variableType_e::Integer;
+		m_data.long64Value = m_data.charValue > variable.m_data.charValue;
 		break;
 	}
 }
@@ -2408,26 +2414,32 @@ void ScriptVariable::greaterthanorequal(const ScriptVariable &variable)
 		Clear();
 		throw ScriptVariableErrors::IncompatibleOperator(">>", GetTypeName(), variable.GetTypeName());
 
-	// ( int ) <= ( int )
+	// ( int ) >= ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value >= variable.m_data.long64Value;
 		break;
 
-	// ( int ) <= ( float )
+	// ( int ) >= ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value >= variable.m_data.floatValue;
 		break;
 
-	// ( float ) <= ( float )
+	// ( float ) >= ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue >= variable.m_data.floatValue;
 		break;
 
-	// ( float ) <= ( int )
+	// ( float ) >= ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue >= variable.m_data.long64Value;
+		break;
+
+	// ( char ) >= ( char )
+	case uint32_t(variableType_e::Char + variableType_e::Char * variableType_e::Max):
+		type = variableType_e::Integer;
+		m_data.long64Value = m_data.charValue >= variable.m_data.charValue;
 		break;
 	}
 }
@@ -2440,26 +2452,32 @@ void ScriptVariable::lessthan(const ScriptVariable &variable)
 		Clear();
 		throw ScriptVariableErrors::IncompatibleOperator("<", GetTypeName(), variable.GetTypeName());
 
-	// ( int ) <= ( int )
+	// ( int ) < ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value < variable.m_data.long64Value;
 		break;
 
-	// ( int ) <= ( float )
+	// ( int ) < ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
 		m_data.long64Value = m_data.long64Value < variable.m_data.floatValue;
 		break;
 
-	// ( float ) <= ( float )
+	// ( float ) < ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue < variable.m_data.floatValue;
 		break;
 
-	// ( float ) <= ( int )
+	// ( float ) < ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue < variable.m_data.long64Value;
+		break;
+
+	// ( char ) < ( char )
+	case uint32_t(variableType_e::Char + variableType_e::Char * variableType_e::Max):
+		type = variableType_e::Integer;
+		m_data.long64Value = m_data.charValue < variable.m_data.charValue;
 		break;
 	}
 }
@@ -2492,6 +2510,12 @@ void ScriptVariable::lessthanorequal(const ScriptVariable &variable)
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
 		m_data.long64Value = m_data.floatValue <= variable.m_data.long64Value;
+		break;
+
+	// ( char ) <= ( char )
+	case uint32_t(variableType_e::Char + variableType_e::Char * variableType_e::Max):
+		type = variableType_e::Integer;
+		m_data.long64Value = m_data.charValue <= variable.m_data.charValue;
 		break;
 	}
 }
