@@ -308,7 +308,7 @@ namespace mfuse
 
 	private:
 		void ClearInternal();
-		void ClearPointerInternal();
+		void ClearPointerInternal() const;
 
 	private:
 		scriptData_u m_data;

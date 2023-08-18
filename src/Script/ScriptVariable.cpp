@@ -841,12 +841,9 @@ void ScriptVariable::ClearPointer()
 	}
 }
 
-void ScriptVariable::ClearPointerInternal()
+void ScriptVariable::ClearPointerInternal() const
 {
-	type = variableType_e::None;
-
 	m_data.pointerValue->Clear();
-	m_data.pointerValue = nullptr;
 }
 
 const rawchar_t *ScriptVariable::GetTypeName() const
@@ -1008,6 +1005,9 @@ size_t ScriptVariable::arraysize() const
 {
 	switch (type)
 	{
+	case variableType_e::None:
+		return -1;
+
 	case variableType_e::String:
 	case variableType_e::Integer:
 	case variableType_e::Float:
@@ -1017,9 +1017,6 @@ size_t ScriptVariable::arraysize() const
 	case variableType_e::Ref:
 	case variableType_e::Vector:
 		return 1;
-
-	case variableType_e::None:
-		return -1;
 
 	case variableType_e::Array:
 		return m_data.arrayValue->arrayValue.size();
@@ -1039,9 +1036,7 @@ size_t ScriptVariable::arraysize() const
 		}
 
 	case variableType_e::Pointer:
-		m_data.pointerValue->Clear();
-		delete m_data.pointerValue;
-
+		ClearPointerInternal();
 		return -1;
 
 	default:
@@ -1055,10 +1050,7 @@ size_t ScriptVariable::size() const
 {
 	switch (type)
 	{
-	case variableType_e::Pointer:
-		m_data.pointerValue->Clear();
-		delete m_data.pointerValue;
-
+	case variableType_e::None:
 		return -1;
 
 	case variableType_e::ConstString:
@@ -1084,6 +1076,10 @@ size_t ScriptVariable::size() const
 		else {
 			return 0;
 		}
+
+	case variableType_e::Pointer:
+		ClearPointerInternal();
+		return -1;
 
 	default:
 		return 1;
