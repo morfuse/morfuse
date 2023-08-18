@@ -23,6 +23,12 @@
 
 using namespace mfuse;
 
+namespace mfuse::ConstStrings
+{
+	// for switch labels
+	const PredefinedString Default("default");
+}
+
 /** The maximum number of thread execution depth. */
 constexpr unsigned int MAX_STACK_DEPTH_DEFAULT = 20;
 
@@ -481,7 +487,7 @@ bool ScriptVM::Switch(const StateScript *stateScript, ScriptVariable& var)
 
 	if (!s)
 	{
-		s = stateScript->FindLabel(STRING_EMPTY);
+		s = stateScript->FindLabel(ConstStrings::Default);
 
 		if (!s) {
 			return false;
