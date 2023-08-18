@@ -24,7 +24,7 @@ const_str StringDictionary::Add(strview s)
 const_str StringDictionary::Get(const rawchar_t* s) const
 {
 	const_str cs = (const_str)stringDict.findKeyIndex(s);
-	return cs ? cs : STRING_EMPTY;
+	return cs ? cs : const_str_e::NONE;
 }
 
 const str& StringDictionary::Get(const_str s) const

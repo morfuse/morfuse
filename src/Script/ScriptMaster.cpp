@@ -149,7 +149,7 @@ ScriptThread* ScriptMaster::PreviousThread() noexcept
 
 const ProgramScript* ScriptMaster::GetTempScript(std::istream& stream)
 {
-	ProgramScript* const scr = new ProgramScript(STRING_EMPTY);
+	ProgramScript* const scr = new ProgramScript(ConstStrings::Empty);
 
 	scr->Load(stream);
 

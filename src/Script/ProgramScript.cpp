@@ -4,6 +4,7 @@
 #include <morfuse/Script/SourceException.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/Archiver.h>
+#include <morfuse/Script/PredefinedString.h>
 
 #include "Compiler.h"
 
@@ -555,7 +556,7 @@ size_t ProgramScript::GetRequiredStackSize() const
 bool ProgramScript::labelExists(const_str labelName)
 {
 	// if we got passed a nullptr than that means just run the script so of course it exists
-	if (!labelName || labelName == const_str_e::STRING_EMPTY)
+	if (!labelName || labelName == ConstStrings::Empty)
 	{
 		return true;
 	}

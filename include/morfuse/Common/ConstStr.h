@@ -7,10 +7,10 @@
 namespace mfuse
 {
 
-enum const_str_e
+typedef enum
 {
-	STRING_EMPTY = 1,
-};
+	NONE = 0,
+} const_str_e;
 
 /**
  * This class holds an index to a string in the string table.

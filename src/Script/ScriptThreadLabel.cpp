@@ -9,13 +9,14 @@
 #include <morfuse/Script/StateScript.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptMaster.h>
+#include <morfuse/Script/PredefinedString.h>
 
 using namespace mfuse;
 
 ScriptThreadLabel::ScriptThreadLabel()
 {
 	m_Script = nullptr;
-	m_Label = STRING_EMPTY;
+	m_Label = ConstStrings::Empty;
 }
 
 ScriptThread *ScriptThreadLabel::Create(Listener *listener)
@@ -69,7 +70,7 @@ void ScriptThreadLabel::Set(const rawchar_t *label)
 	if (!label || !*label)
 	{
 		m_Script = NULL;
-		m_Label = STRING_EMPTY;
+		m_Label = ConstStrings::Empty;
 		return;
 	}
 
@@ -107,7 +108,7 @@ void ScriptThreadLabel::Set(const rawchar_t *label)
 		const str& l = director.GetDictionary().Get(m_Label);
 
 		m_Script = NULL;
-		m_Label = STRING_EMPTY;
+		m_Label = ConstStrings::Empty;
 
 		throw ScriptException("^~^~^ Could not find label '" + l + "' in '" + script + "'");
 	}
@@ -118,7 +119,7 @@ void ScriptThreadLabel::SetScript(const ScriptVariable& label)
 	if (label.GetType() == variableType_e::String || label.GetType() == variableType_e::ConstString)
 	{
 		m_Script = ScriptContext::Get().GetDirector().GetProgramScript(label.stringValue());
-		m_Label = STRING_EMPTY;
+		m_Label = ConstStrings::Empty;
 	}
 	else if (label.GetType() == variableType_e::ConstArray && label.arraysize() > 1)
 	{
@@ -131,7 +132,7 @@ void ScriptThreadLabel::SetScript(const ScriptVariable& label)
 		if (!m_Script->GetStateScript().FindLabel(m_Label))
 		{
 			m_Script = nullptr;
-			m_Label = STRING_EMPTY;
+			m_Label = ConstStrings::Empty;
 
 			throw ScriptException("^~^~^ Could not find label '" + labelname.stringValue() + "' in '" + script.stringValue() + "'");
 		}
@@ -165,7 +166,7 @@ void ScriptThreadLabel::SetThread(const ScriptVariable& label)
 		if (!m_Script->GetStateScript().FindLabel(m_Label))
 		{
 			m_Script = nullptr;
-			m_Label = STRING_EMPTY;
+			m_Label = ConstStrings::Empty;
 
 			throw ScriptException("^~^~^ Could not find label '" + labelname.stringValue() + "' in '" + script.stringValue() + "'");
 		}

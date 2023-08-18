@@ -6,6 +6,7 @@
 #include <morfuse/Script/Archiver.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/ScriptMaster.h>
+#include <morfuse/Script/PredefinedString.h>
 #include <morfuse/Container/set_archive.h>
 #include <morfuse/Container/Container_archive.h>
 
@@ -1138,7 +1139,7 @@ bool ScriptVariable::booleanValue() const
 		return fabs(m_data.floatValue) >= 0.00009999999747378752;
 
 	case variableType_e::ConstString:
-		return m_data.long64Value != STRING_EMPTY;
+		return m_data.constStringValue != ConstStrings::Empty.GetIndex();
 
 	case variableType_e::Listener:
 		return (*m_data.listenerValue) != nullptr;

@@ -3688,7 +3688,7 @@ void Flag::Set()
 		ScriptVM *Thread = m_WaitList[i];
 
 		if (Thread->State() != vmState_e::Destroyed && Thread->GetScriptThread() != NULL) {
-			Thread->GetScriptThread()->StoppedWaitFor(STRING_EMPTY, false);
+			Thread->GetScriptThread()->StoppedWaitFor(ConstStrings::Empty, false);
 		}
 	}
 

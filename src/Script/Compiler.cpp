@@ -12,6 +12,7 @@
 #include <morfuse/Script/ScriptMaster.h>
 #include <morfuse/Script/Context.h>
 #include <morfuse/Script/SourceException.h>
+#include <morfuse/Script/PredefinedString.h>
 #include <morfuse/Common/short3.h>
 #include <morfuse/Common/OutputInfo.h>
 #include <Parser/yyParser.hpp>
@@ -832,7 +833,7 @@ void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandNa
 		EmitFunction(iParamCount, commandName, sourceLoc);
 		EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
 
-		WriteOpValue<op_name_t>(STRING_EMPTY);
+		WriteOpValue<op_name_t>(ConstStrings::Empty.GetIndex());
 	}
 	else
 	{
@@ -890,7 +891,7 @@ void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parame
 		EmitFunction(iParamCount, commandName, sourceLoc);
 		EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
 
-		WriteOpValue<op_name_t>(STRING_EMPTY);
+		WriteOpValue<op_name_t>(ConstStrings::Empty.GetIndex());
 	}
 	else
 	{
