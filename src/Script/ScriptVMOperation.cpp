@@ -355,6 +355,8 @@ void ScriptVM::ExecMethodCommon(op_parmNum_t param)
 	Listener* const listener = a.listenerValue();
 	if (!listener)
 	{
+		// clear the return value
+		m_Stack.GetTop().Clear();
 		throw ScriptVMErrors::NullListenerCommand(eventNum);
 	}
 
