@@ -12,14 +12,14 @@ jobs:
     # well on Windows or Mac.  You can convert this to a matrix build if you need
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     # build the 2 environments
     strategy:
       matrix:
         build-type: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install required tools
       run: sudo apt update && sudo apt install -y cmake make clang-15 lld-15 ninja-build flex bison libfl-dev
