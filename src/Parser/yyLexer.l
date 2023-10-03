@@ -61,7 +61,7 @@
 %x VARIABLES
 %x IDENTIFIER
 
-string		([^\\\"]|\\.)*
+string		([^\\\"\r\n]|\\.)*
 identifier	[^\{\}\(\)\[\]\r\n\,:; \t]
 alphanum	[a-zA-Z0-9_]+
 varname		[a-zA-Z0-9_\"]+
