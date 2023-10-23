@@ -3305,8 +3305,8 @@ void ScriptThread::ScriptExecute(const VarListView& data, ScriptVariable& return
 void ScriptThread::ScriptExecuteInternal(const VarListView& data)
 {
 	ScriptMaster& Director = ScriptContext::Get().GetDirector();
-	const SafePtr<ScriptThread> previousThread = Director.PreviousThread();
 	const SafePtr<ScriptThread> currentThread = Director.CurrentThread();
+	const SafePtr<ScriptThread> previousThread = this;
 
 	// assign us as the current thread
 	Director.m_PreviousThread = currentThread;
