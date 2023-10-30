@@ -648,6 +648,7 @@ bool Listener::BroadcastEvent(Event &event, ConList *listeners)
 
 		if (listener) {
 			listener->ProcessEvent(event);
+			return true;
 		}
 
 		return false;
