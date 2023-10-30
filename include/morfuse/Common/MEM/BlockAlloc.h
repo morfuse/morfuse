@@ -41,6 +41,8 @@ namespace MEM
 		bool freeDataAvailable() const;
 #endif
 
+		static constexpr size_t getHeaderSize();
+
 	public:
 		template<size_t bits>
 		struct selectType_t;
@@ -77,7 +79,7 @@ namespace MEM
 		block_s<aclass, blocksize>* next_block;
 
 	public:
-		static constexpr size_t headersize = offsetof(info_t, data);
+		//static constexpr size_t headersize = offsetof(info_t, data); // so annoying, why it suddently stopped working in clang wtf?
 		static constexpr size_t dataoffset = 0;
 		static constexpr size_t datasize = sizeof(info_t);
 	};
@@ -130,6 +132,12 @@ namespace MEM
 		return has_free_data;
 	}
 #endif
+
+    template<typename aclass, size_t blocksize>
+	constexpr size_t block_s<aclass, blocksize>::getHeaderSize()
+    {
+        return (size_t)(&((info_t*)NULL)->data);
+    }
 
 	template<typename aclass, size_t blocksize = DefaultBlock>
 	class BlockAlloc
@@ -330,7 +338,7 @@ namespace MEM
 		MEM::Free(block);
 #else
 		// get the header of the pointer
-		typename block_t::info_t* header = reinterpret_cast<typename block_t::info_t*>(static_cast<unsigned char*>(ptr) - block_t::headersize);
+		typename block_t::info_t* header = reinterpret_cast<typename block_t::info_t*>(static_cast<unsigned char*>(ptr) - block_t::getHeaderSize());
 		const block_offset_t used_data = header->index;
 		// get the block from the header
 		block_t* const block = (block_t*)((uint8_t*)header - used_data * block_t::datasize - block_t::dataoffset);
