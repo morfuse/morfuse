@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #undef mfuse_EXPORTS
 
 #ifdef mfuse_DLL

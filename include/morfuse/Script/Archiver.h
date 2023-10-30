@@ -8,6 +8,8 @@
 #include "MessageableException.h"
 
 #include <cstdint>
+#include <ostream>
+#include <istream>
 
 namespace mfuse
 {
