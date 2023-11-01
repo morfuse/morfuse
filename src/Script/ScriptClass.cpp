@@ -55,6 +55,11 @@ ScriptClass::~ScriptClass()
 	}
 }
 
+void ScriptClass::StoppedNotify()
+{
+	delete this;
+}
+
 void* ScriptClass::operator new(size_t)
 {
 	return ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Alloc();

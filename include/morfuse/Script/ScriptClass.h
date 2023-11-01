@@ -28,6 +28,7 @@ namespace mfuse
 		void* operator new(size_t size);
 		void operator delete(void* ptr);
 
+        void StoppedNotify() override;
 		mfuse_EXPORTS const_str Filename() const;
 		mfuse_EXPORTS const script_label_t* FindLabel(const_str label) const;
 		mfuse_EXPORTS Listener* GetSelf() const;
