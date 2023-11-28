@@ -518,8 +518,9 @@ namespace mfuse
 	bool set<KeyT, ValueT, HashT, KeyEqT, AllocatorT>::remove(const KeyT& key)
 	{
 		intptr_t index = HashT()(key) % tableLength;
+		uintptr_t i;
 		Entry<KeyT, ValueT> *prev = nullptr;
-		Entry<KeyT, ValueT> *entry;
+		Entry<KeyT, ValueT> *entry, *e;
 
 		for (entry = table[index]; entry; entry = entry->Next())
 		{
@@ -532,7 +533,15 @@ namespace mfuse
 
 			if (defaultEntry == entry)
 			{
-				defaultEntry = prev;
+				defaultEntry = prev ? prev : table[index];
+				// find a default entry
+				for (i = 0; i < tableLength && !defaultEntry; i++) {
+					for (e = table[i]; e; e = e->Next()) {
+						if (e == entry) { continue; }
+						defaultEntry = e;
+						break;
+					}
+				}
 			}
 
 			if (prev)
