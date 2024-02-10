@@ -117,6 +117,13 @@ static const char scriptContent_level12[] =
 static const char scriptContent_level13[] =
 "";
 
+static const char scriptContent_level14[] =
+"main:\n"
+"local.var = 1\n"
+"local.type = typeof local.var\n"
+"println local.type\n"
+"end\n";
+
 void level1(ScriptMaster& director)
 {
 	// Compile the script and return the game script object
@@ -243,6 +250,12 @@ void level13(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level14(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level14", scriptContent_level14);
+	director.ExecuteThread(script);
+}
+
 void m3l1a(ScriptMaster& director)
 {
 	std::fstream stream("m3l1a.scr", std::ios_base::in | std::ios_base::binary);
@@ -281,6 +294,7 @@ const handler_t list[] =
 	{ "level11", &level11 },
 	{ "level12", &level12 },
 	{ "level13", &level13 },
+	{ "level14", &level14 },
 	{ "m3l1a", &m3l1a },
 };
 
