@@ -430,7 +430,7 @@ opval_t ScriptEmitter::PrevOpcode()
 	return prev_opcodes[prev_opcode_pos].opcode;
 }
 
-prchar_t ScriptEmitter::PrevVarStackOffset()
+int8_t ScriptEmitter::PrevVarStackOffset()
 {
 	return prev_opcodes[prev_opcode_pos].VarStackOffset;
 }

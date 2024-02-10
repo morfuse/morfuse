@@ -119,7 +119,7 @@ namespace mfuse
 		void CompileError(sourceLocation_t sourceLoc, const rawchar_t* format, Args&& ...args);
 
 		opval_t PrevOpcode();
-		rawchar_t PrevVarStackOffset();
+		int8_t PrevVarStackOffset();
 		void AbsorbPrevOpcode();
 		void ClearPrevOpcode();
 		void AccumulatePrevOpcode(opval_t op, int32_t iVarStackOffset);

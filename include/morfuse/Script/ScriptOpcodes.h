@@ -29,7 +29,7 @@ namespace mfuse
 
 	struct opcode_info_t {
 		opval_t opcode;
-		char VarStackOffset;
+		int8_t VarStackOffset;
 	};
 
 	enum opcode_e
