@@ -36,7 +36,7 @@ jobs:
     - name: Configure CMake
       working-directory: ${{github.workspace}}\cmake
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build-type}} -DFLEX_EXECUTABLE="${env:ProgramFiles(x86)}\winflexbison\win_flex.exe" -DBISON_EXECUTABLE="${env:ProgramFiles(x86)}\winflexbison\win_bison.exe" -DFLEX_INCLUDE_DIR="${env:ProgramFiles(x86)}\winflexbison" ..\
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build-type}} -DFLEX_EXECUTABLE="${env:ProgramFiles(x86)}\winflexbison\win_flex.exe" -DBISON_EXECUTABLE="${env:ProgramFiles(x86)}\winflexbison\win_bison.exe" -DFLEX_INCLUDE_DIR="${env:ProgramFiles(x86)}\winflexbison" -DCMAKE_INSTALL_PREFIX='${{github.workspace}}/install' ..\
  
     - name: Build
       # Build program with the generated make
@@ -49,3 +49,16 @@ jobs:
       run: |
         xcopy /Y ${{github.workspace}}\cmake\src\${{matrix.build-type}} ${{github.workspace}}\cmake\tests
         ctest -C ${{matrix.build-type}}
+
+    - name: Install
+      working-directory: ${{github.workspace}}\cmake
+      # Install to the directory defined in CMAKE_INSTALL_PREFIX
+      run: |
+        cmake --install . --config ${{matrix.build-type}}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: out-windows-${{matrix.build-type}}-x64
+        if-no-files-found: error
+        path: |
+          ${{github.workspace}}/install
