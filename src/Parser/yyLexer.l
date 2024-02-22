@@ -188,7 +188,7 @@ varname		[a-zA-Z0-9_\"]+
 [\r\n]*							{ if (prev_yylex != mfuse::Parser::token::TOKEN_EOL) YYLEX(TOKEN_EOL); }
 [ \t]							{ ; }
 
-[0-9]+									{
+[0-9^`]+								{
 											char* p = nullptr;
 											yylval->val.longValue = std::strtoll(yytext, &p, 10);
 											YYLEX(TOKEN_INTEGER);
