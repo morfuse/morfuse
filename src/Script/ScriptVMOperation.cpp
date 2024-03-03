@@ -1235,6 +1235,7 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 			catch (...)
 			{
 				skipField();
+				m_Stack.GetTop().Clear();
 				throw;
 			}
 
