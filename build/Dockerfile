@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM debian:12
 
 # install dev tools
 RUN apt update && apt install -y ninja-build cmake make clang-15 lld-15 flex bison
