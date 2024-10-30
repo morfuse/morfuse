@@ -124,6 +124,32 @@ static const char scriptContent_level14[] =
 "println local.type\n"
 "end\n";
 
+static const char scriptContent_level15[] =
+"main:\n"
+"local.listener = local CreateListener\n"
+"local .listener.1value = .85\n"
+"local.test = test\n"
+"println (local.listener.1value)\n"
+"end\n";
+
+static const char scriptContent_level16[] =
+"main:\n"
+"local.value = local CreateListener\n"
+"for ( local.i=1;local.i<= 5;local.i++ ) {}\n"
+"thread test (value1 + (local.value)) .75 .65\n"
+"end\n"
+"test local.str local.num1 local.num2:\n"
+"println (\"str: \" + local.str + \" num: \" + local.num1 + \" num2: \" + local.num2)\n"
+"end\n";
+
+static const char scriptContent_level17[] =
+"main:\n"
+"thread test2 (0 0 -170) .3\n"
+"end\n"
+"test2 local.vec local.num:\n"
+"println (\"vec: \" + local.vec + \" num: \" + local.num)\n"
+"end\n";
+
 void level1(ScriptMaster& director)
 {
 	// Compile the script and return the game script object
@@ -256,6 +282,28 @@ void level14(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level15(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level15", scriptContent_level15);
+	director.ExecuteThread(script);
+}
+
+void level16(ScriptMaster& director)
+{
+	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
+
+	const ProgramScript* const script = compile(director, "level16", scriptContent_level16);
+	director.ExecuteThread(script);
+}
+
+void level17(ScriptMaster& director)
+{
+	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
+
+	const ProgramScript* const script = compile(director, "level17", scriptContent_level17);
+	director.ExecuteThread(script);
+}
+
 void m3l1a(ScriptMaster& director)
 {
 	std::fstream stream("m3l1a.scr", std::ios_base::in | std::ios_base::binary);
@@ -295,6 +343,9 @@ const handler_t list[] =
 	{ "level12", &level12 },
 	{ "level13", &level13 },
 	{ "level14", &level14 },
+	{ "level15", &level15 },
+	{ "level16", &level16 },
+	{ "level17", &level17 },
 	{ "m3l1a", &m3l1a },
 };
 
