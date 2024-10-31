@@ -94,6 +94,8 @@
 %right TOKEN_INCREMENT TOKEN_DECREMENT TOKEN_NEG TOKEN_NOT TOKEN_COMPLEMENT
 %left TOKEN_LEFT_SQUARE_BRACKET TOKEN_RIGHT_SQUARE_BRACKET TOKEN_PERIOD
 
+%precedence UNARY
+
 %precedence		TOKEN_CATCH TOKEN_TRY
 				TOKEN_SWITCH TOKEN_CASE
 				TOKEN_BREAK TOKEN_CONTINUE
@@ -109,6 +111,7 @@
 %type <val> prim_expr
 %type <val> listener_identifier
 %type <val> nonident_prim_expr
+%type <val> nonident_prim_expr_base
 %type <val> const_array_list
 %type <val> const_array
 %type <val.stringValue> identifier_prim
@@ -194,34 +197,35 @@ iteration_statement
 	| TOKEN_DO statement_for_condition[stmt] TOKEN_WHILE prim_expr[exp]{ $$ = pt.node3(statementType_e::Do, $stmt, $exp, TOKPOS(@1)); }
 	;
 
+
 expr
-	: expr[left] TOKEN_LOGICAL_AND[tok] expr[right] { $$ = pt.node3(statementType_e::LogicalAnd, $left, $right, TOKPOS(@tok)); }
-	| expr[left] TOKEN_LOGICAL_OR[tok] expr[right] { $$ = pt.node3(statementType_e::LogicalOr, $left, $right, TOKPOS(@tok)); }
-	| expr[left] TOKEN_BITWISE_AND[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_AND), $left, $right, TOKPOS(@tok)); }
-	| expr[left] TOKEN_BITWISE_EXCL_OR[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_EXCL_OR), $left, $right, TOKPOS(@tok)); }
+	: expr[left] TOKEN_LOGICAL_OR[tok] expr[right] { $$ = pt.node3(statementType_e::LogicalOr, $left, $right, TOKPOS(@tok)); }
+	| expr[left] TOKEN_LOGICAL_AND[tok] expr[right] { $$ = pt.node3(statementType_e::LogicalAnd, $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_BITWISE_OR[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_OR), $left, $right, TOKPOS(@tok)); }
+	| expr[left] TOKEN_BITWISE_EXCL_OR[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_EXCL_OR), $left, $right, TOKPOS(@tok)); }
+	| expr[left] TOKEN_BITWISE_AND[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_AND), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_EQUALITY[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_EQUALITY), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_INEQUALITY[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_INEQUALITY), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_LESS_THAN[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_LESS_THAN), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_GREATER_THAN[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_GREATER_THAN), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_LESS_THAN_OR_EQUAL[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_LESS_THAN_OR_EQUAL), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_GREATER_THAN_OR_EQUAL[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_GREATER_THAN_OR_EQUAL), $left, $right, TOKPOS(@tok)); }
+	| expr[left] TOKEN_SHIFT_LEFT[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_LEFT), $left, $right, TOKPOS(@tok)); }
+	| expr[left] TOKEN_SHIFT_RIGHT[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_RIGHT), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_PLUS[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_PLUS), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_MINUS[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_MINUS), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_MULTIPLY[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_MULTIPLY), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_DIVIDE[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_DIVIDE), $left, $right, TOKPOS(@tok)); }
 	| expr[left] TOKEN_MODULUS[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_PERCENTAGE), $left, $right, TOKPOS(@tok)); }
-	| expr[left] TOKEN_SHIFT_LEFT[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_LEFT), $left, $right, TOKPOS(@tok)); }
-	| expr[left] TOKEN_SHIFT_RIGHT[tok] expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_RIGHT), $left, $right, TOKPOS(@tok)); }
 	| TOKEN_EOL expr[exp] { $$ = $exp; }
 	| nonident_prim_expr
 	| func_prim_expr
 	| TOKEN_IDENTIFIER { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
 	;
 
-func_prim_expr:
-	TOKEN_IDENTIFIER event_parameter_list_need { $$ = pt.node3(statementType_e::CmdEventExpr, $1, $2, TOKPOS(@1)); }
-	| nonident_prim_expr TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node4(statementType_e::MethodEventExpr, $1, $2, $3, TOKPOS(@2)); }
+func_prim_expr
+	: TOKEN_IDENTIFIER event_parameter_list_need { $$ = pt.node3(statementType_e::CmdEventExpr, $1, $2, TOKPOS(@1)); }
+	| nonident_prim_expr_base TOKEN_IDENTIFIER event_parameter_list { $$ = pt.node4(statementType_e::MethodEventExpr, $1, $2, $3, TOKPOS(@2)); }
 	| TOKEN_NEG func_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
 	| TOKEN_COMPLEMENT func_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
 	| TOKEN_NOT func_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
@@ -287,10 +291,17 @@ listener_identifier
 	;
 
 nonident_prim_expr
+	: nonident_prim_expr_base
+	| TOKEN_NEG nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
+	| TOKEN_COMPLEMENT nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
+	| TOKEN_NOT nonident_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
+	;
+
+nonident_prim_expr_base
 	: TOKEN_DOLLAR listener_identifier { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_TARGETNAME), $2, TOKPOS(@1)); }
-	| nonident_prim_expr TOKEN_PERIOD identifier { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
-	| nonident_prim_expr TOKEN_PERIOD TOKEN_SIZE { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_SIZE), $1, TOKPOS(@3)); }
-	| nonident_prim_expr TOKEN_LEFT_SQUARE_BRACKET expr TOKEN_RIGHT_SQUARE_BRACKET { $$ = pt.node3(statementType_e::ArrayExpr, $1, $3, TOKPOS(@2)); }
+	| nonident_prim_expr_base TOKEN_PERIOD identifier { $$ = pt.node3(statementType_e::Field, $1, $3, TOKPOS(@3)); }
+	| nonident_prim_expr_base TOKEN_PERIOD TOKEN_SIZE { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_SIZE), $1, TOKPOS(@3)); }
+	| nonident_prim_expr_base TOKEN_LEFT_SQUARE_BRACKET expr TOKEN_RIGHT_SQUARE_BRACKET { $$ = pt.node3(statementType_e::ArrayExpr, $1, $3, TOKPOS(@2)); }
 	| TOKEN_STRING { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
 	| TOKEN_INTEGER { $$ = pt.node2(statementType_e::Integer, $1, TOKPOS(@1)); }
 	| TOKEN_FLOAT { $$ = pt.node2(statementType_e::Float, $1, TOKPOS(@1)); }
@@ -298,9 +309,6 @@ nonident_prim_expr
 	| TOKEN_LISTENER { $$ = pt.node2(statementType_e::Listener, $1, TOKPOS(@1)); }
 	| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = $2; }
 	| TOKEN_LEFT_BRACKET expr TOKEN_EOL TOKEN_RIGHT_BRACKET { $$ = $2; }
-	| TOKEN_NEG nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_MINUS), $2, TOKPOS(@1)); }
-	| TOKEN_COMPLEMENT nonident_prim_expr { $$ = pt.node3(statementType_e::Func1Expr, pt.node1b(OP_UN_COMPLEMENT), $2, TOKPOS(@1)); }
-	| TOKEN_NOT nonident_prim_expr { $$ = pt.node2(statementType_e::BoolNot, $2, TOKPOS(@1)); }
 	| TOKEN_NULL { $$ = pt.node1(statementType_e::NULLPTR, TOKPOS(@1)); }
 	| TOKEN_NIL { $$ = pt.node1(statementType_e::NIL, TOKPOS(@1)); }
 	;

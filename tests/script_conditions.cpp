@@ -65,6 +65,18 @@ const char scriptData5[] =
 "end"
 ;
 
+const char scriptData6[] =
+"main:\n"
+"thread obj\n"
+"end\n"
+"test:\n"
+"end (self.value != 1)\n"
+"obj:\n"
+"local.object = local CreateListener\n"
+"local.object.value = 1\n"
+"assert (!local.object waitthread test)\n"
+;
+
 
 void level1(ScriptMaster& director)
 {
@@ -96,6 +108,12 @@ void level5(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level6(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level6", scriptData6);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
@@ -103,6 +121,7 @@ handler_t handlers[] =
 	"level3", &level3,
 	"level4", &level4,
 	"level5", &level5,
+	"level6", &level6,
 };
 
 int main()

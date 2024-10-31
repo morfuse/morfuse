@@ -1,0 +1,83 @@
+Expressions can be refactored like this to avoid ambiguity:
+
+%type <val> expr_or
+%type <val> expr_and
+%type <val> expr_bor
+%type <val> expr_bxor
+%type <val> expr_band
+%type <val> expr_eq
+%type <val> expr_rel
+%type <val> expr_shift
+%type <val> expr_add
+%type <val> expr_mul
+%type <val> expr_ident_expr
+
+
+expr
+	: expr_or
+	| TOKEN_EOL expr[exp] { $$ = $exp; }
+	;
+
+expr_or
+	: expr_and
+	| expr_or[left] TOKEN_LOGICAL_OR[tok] expr_and[right] { $$ = pt.node3(statementType_e::LogicalOr, $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_and
+	: expr_bor
+	| expr_and[left] TOKEN_LOGICAL_AND[tok] expr_bor[right] { $$ = pt.node3(statementType_e::LogicalAnd, $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_bor
+	: expr_bxor
+	| expr_bor[left] TOKEN_BITWISE_OR[tok] expr_bxor[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_OR), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_bxor
+	: expr_band
+	| expr_bxor[left] TOKEN_BITWISE_EXCL_OR[tok] expr_band[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_EXCL_OR), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_band
+	: expr_eq
+	| expr_band[left] TOKEN_BITWISE_AND[tok] expr_eq[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_BITWISE_AND), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_eq
+	: expr_rel
+	| expr_eq[left] TOKEN_EQUALITY[tok] expr_rel[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_EQUALITY), $left, $right, TOKPOS(@tok)); }
+	| expr_eq[left] TOKEN_INEQUALITY[tok] expr_rel[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_INEQUALITY), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_rel
+	: expr_shift
+	| expr_rel[left] TOKEN_LESS_THAN[tok] expr_shift[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_LESS_THAN), $left, $right, TOKPOS(@tok)); }
+	| expr_rel[left] TOKEN_GREATER_THAN[tok] expr_shift[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_GREATER_THAN), $left, $right, TOKPOS(@tok)); }
+	| expr_rel[left] TOKEN_LESS_THAN_OR_EQUAL[tok] expr_shift[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_LESS_THAN_OR_EQUAL), $left, $right, TOKPOS(@tok)); }
+	| expr_rel[left] TOKEN_GREATER_THAN_OR_EQUAL[tok] expr_shift[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_GREATER_THAN_OR_EQUAL), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_shift
+	: expr_add
+	| expr_shift[left] TOKEN_SHIFT_LEFT[tok] expr_add[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_LEFT), $left, $right, TOKPOS(@tok)); }
+	| expr_shift[left] TOKEN_SHIFT_RIGHT[tok] expr_add[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_SHIFT_RIGHT), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_add
+	: expr_mul
+	| expr_add[left] TOKEN_PLUS[tok] expr_mul[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_PLUS), $left, $right, TOKPOS(@tok)); }
+	| expr_add[left] TOKEN_MINUS[tok] expr_mul[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_MINUS), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_mul
+	: expr_ident_expr
+	| expr_mul[left] TOKEN_MULTIPLY[tok] expr_ident_expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_MULTIPLY), $left, $right, TOKPOS(@tok)); }
+	| expr_mul[left] TOKEN_DIVIDE[tok] expr_ident_expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_DIVIDE), $left, $right, TOKPOS(@tok)); }
+	| expr_mul[left] TOKEN_MODULUS[tok] expr_ident_expr[right] { $$ = pt.node4(statementType_e::Func2Expr, pt.node1b(OP_BIN_PERCENTAGE), $left, $right, TOKPOS(@tok)); }
+	;
+
+expr_ident_expr
+	: nonident_prim_expr
+	| func_prim_expr
+	| TOKEN_IDENTIFIER { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
+	;
