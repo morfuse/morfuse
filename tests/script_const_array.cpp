@@ -29,6 +29,22 @@ const char scriptData5[] =
 "end\n"
 ;
 
+const char scriptData6[] =
+"local.constarr = waitthread test param1::param2::param3::param4\n"
+"assert(local.constarr[1] == 1)\n"
+"assert(local.constarr[2] == test)\n"
+"assert(local.constarr[3] == value3)\n"
+"assert(local.constarr[4] == testvalue4)\n"
+"end\n"
+"test local.constarr:\n"
+"local.value1 = 1\n"
+"local.value2 = test\n"
+"local.value3 = value3\n"
+"local.value4 = testvalue4\n"
+"println local.constarr[1]\n"
+"end local.value1::local.value2::local.value3::local.value4"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -103,9 +119,13 @@ void level4(ScriptMaster& director)
 
 void level5(ScriptMaster& director)
 {
-	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
-
 	const ProgramScript* const script = compile(director, "level5", scriptData5);
+	director.ExecuteThread(script);
+}
+
+void level6(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level6", scriptData6);
 	director.ExecuteThread(script);
 }
 
@@ -115,7 +135,8 @@ handler_t handlers[] =
 	"level2", &level2,
 	"level3", &level3,
 	"level4", &level4,
-	"level5", &level5
+	"level5", &level5,
+	"level6", &level6
 };
 
 int main()

@@ -266,7 +266,7 @@ const_array
 prim_expr
 	: nonident_prim_expr { $$ = $1; }
 	| identifier_prim { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
-	| prim_expr TOKEN_DOUBLE_COLON const_array_list
+	| const_array TOKEN_DOUBLE_COLON const_array_list
 		{
 			$$ = pt.node3(statementType_e::ConstArrayExpr, $1, $3, TOKPOS(@2));
 		}
