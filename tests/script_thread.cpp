@@ -150,6 +150,12 @@ static const char scriptContent_level17[] =
 "println (\"vec: \" + local.vec + \" num: \" + local.num)\n"
 "end\n";
 
+static const char scriptContent_level18[] =
+"main:\n"
+"local.88varwith_num = \"test\"\n"
+"println local.88varwith_num\n"
+"end\n";
+
 void level1(ScriptMaster& director)
 {
 	// Compile the script and return the game script object
@@ -290,18 +296,20 @@ void level15(ScriptMaster& director)
 
 void level16(ScriptMaster& director)
 {
-	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
-
 	const ProgramScript* const script = compile(director, "level16", scriptContent_level16);
 	director.ExecuteThread(script);
 }
 
 void level17(ScriptMaster& director)
 {
-	ScriptContext::Get().GetOutputInfo().SetOutputStream(mfuse::outputLevel_e::Verbose, &std::cout);
-
 	const ProgramScript* const script = compile(director, "level17", scriptContent_level17);
 	director.ExecuteThread(script);
+}
+
+void level18(ScriptMaster& director)
+{
+    const ProgramScript* const script = compile(director, "level18", scriptContent_level18);
+    director.ExecuteThread(script);
 }
 
 void m3l1a(ScriptMaster& director)
@@ -346,6 +354,7 @@ const handler_t list[] =
 	{ "level15", &level15 },
 	{ "level16", &level16 },
 	{ "level17", &level17 },
+	{ "level18", &level18 },
 	{ "m3l1a", &m3l1a },
 };
 

@@ -83,7 +83,7 @@ varname		[a-zA-Z0-9_\"]+
 "//"[^\r\n]*					{ if (prev_yylex != mfuse::Parser::token::TOKEN_EOL) YYLEX(TOKEN_EOL); }
 
 <VARIABLES>"size"					{ BEGIN(INITIAL); YYLEX(TOKEN_SIZE); }
-<VARIABLES>[ ]*\./([0-9]?[^0-9[:space:]])	{ YYLEX(TOKEN_PERIOD); }
+<VARIABLES>[ ]*\./([0-9]*[^0-9[:space:]])	{ YYLEX(TOKEN_PERIOD); }
 <VARIABLES>\"{string}\"						{ BEGIN(INITIAL); TextEscapeValue(parsetree, yytext + 1, strlen( yytext ) - 2 ); YYLEX(TOKEN_STRING); }
 <VARIABLES>{varname}						{
 												TextValue(parsetree, yytext, strlen(yytext));
