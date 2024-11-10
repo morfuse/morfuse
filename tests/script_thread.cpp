@@ -148,6 +148,8 @@ static const char scriptContent_level17[] =
 "end\n"
 "test2 local.vec local.num:\n"
 "println (\"vec: \" + local.vec + \" num: \" + local.num)\n"
+"assert (local.vec == (0 0 -170))\n"
+"assert (local.num == .3)\n"
 "end\n";
 
 static const char scriptContent_level18[] =
