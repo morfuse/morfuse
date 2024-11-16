@@ -286,7 +286,7 @@ identifier
 	;
 
 listener_identifier
-	: identifier_prim { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
+	: identifier { $$ = pt.node2(statementType_e::String, $1, TOKPOS(@1)); }
 	| TOKEN_LEFT_BRACKET expr TOKEN_RIGHT_BRACKET { $$ = $2; }
 	;
 

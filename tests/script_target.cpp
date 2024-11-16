@@ -53,6 +53,12 @@ static const char scriptContent_level4[] =
 "$(\"target\" + \"ent\").value = 4\n"
 "end";
 
+static const char scriptContent_level5[] =
+"main:\n"
+"local.p = spawn SimpleEntity targetname \"test\"\n"
+"$\"test\" remove\n"
+"end\n";
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptContent_level1);
@@ -91,12 +97,19 @@ void level4(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level5(ScriptMaster& director)
+{
+    const ProgramScript* const script = compile(director, "level5", scriptContent_level5);
+    director.ExecuteThread(script);
+}
+
 const handler_t handlers[] =
 {
 	{ "level1", &level1 },
 	{ "level2", &level2 },
 	{ "level3", &level3 },
-	{ "level4", &level4 }
+	{ "level4", &level4 },
+	{ "level5", &level5 }
 };
 
 int main()
