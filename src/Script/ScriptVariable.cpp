@@ -1774,11 +1774,16 @@ void ScriptVariable::setVectorValue(const Vector &newvector)
 
 void ScriptVariable::operator+=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("+", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("+", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) + ( int )
 		m_data.long64Value = m_data.long64Value + value.m_data.long64Value;
@@ -1831,11 +1836,16 @@ void ScriptVariable::operator+=(const ScriptVariable& value)
 
 void ScriptVariable::operator-=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("-", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("-", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) - ( int )
 		m_data.long64Value = m_data.long64Value - value.m_data.long64Value;
@@ -1861,11 +1871,16 @@ void ScriptVariable::operator-=(const ScriptVariable& value)
 
 void ScriptVariable::operator*=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("*", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("*", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) * ( int )
 		m_data.long64Value = m_data.long64Value * value.m_data.long64Value;
@@ -1909,11 +1924,16 @@ void ScriptVariable::operator*=(const ScriptVariable& value)
 
 void ScriptVariable::operator/=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("/", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("/", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) / ( int )
 		if (value.m_data.long64Value == 0) {
@@ -2002,12 +2022,16 @@ void ScriptVariable::operator/=(const ScriptVariable& value)
 void ScriptVariable::operator%=(const ScriptVariable& value)
 {
 	float mult = 0.0f;
+	const rawchar_t *type1, *type2;
 
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("%", GetTypeName(), value.GetTypeName());
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("%", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) % ( int )
 		if (value.m_data.long64Value == 0) {
@@ -2110,11 +2134,16 @@ void ScriptVariable::operator%=(const ScriptVariable& value)
 
 void ScriptVariable::operator&=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("&", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("&", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) &= ( int )
 		m_data.long64Value &= value.m_data.long64Value;
@@ -2124,11 +2153,16 @@ void ScriptVariable::operator&=(const ScriptVariable& value)
 
 void ScriptVariable::operator^=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("^", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("^", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) ^= ( int )
 		m_data.long64Value ^= value.m_data.long64Value;
@@ -2138,11 +2172,16 @@ void ScriptVariable::operator^=(const ScriptVariable& value)
 
 void ScriptVariable::operator|=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("|", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("|", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) |= ( int )
 		m_data.long64Value |= value.m_data.long64Value;
@@ -2152,11 +2191,16 @@ void ScriptVariable::operator|=(const ScriptVariable& value)
 
 void ScriptVariable::operator<<=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("<<", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator("<<", type1, type2);
 
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max): // ( int ) <<= ( int )
 		m_data.long64Value <<= value.m_data.long64Value;
@@ -2166,11 +2210,16 @@ void ScriptVariable::operator<<=(const ScriptVariable& value)
 
 void ScriptVariable::operator>>=(const ScriptVariable& value)
 {
-	switch (uint32_t(type + value.type * variableType_e::Max))
-	{
-	default:
-		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator(">>", GetTypeName(), value.GetTypeName());
+	const rawchar_t *type1, *type2;
+
+    switch (uint32_t(type + value.type * variableType_e::Max))
+    {
+    default:
+		type1 = GetTypeName();
+		type2 = value.GetTypeName();
+
+        Clear();
+        throw ScriptVariableErrors::IncompatibleOperator(">>", type1, type2);
 
 	// ( int ) >>= ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
@@ -2370,11 +2419,16 @@ void ScriptVariable::complement()
 
 void ScriptVariable::greaterthan(const ScriptVariable &variable)
 {
+	const rawchar_t *type1, *type2;
+
 	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
+		type1 = GetTypeName();
+		type2 = variable.GetTypeName();
+
 		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator(">", GetTypeName(), variable.GetTypeName());
+		throw ScriptVariableErrors::IncompatibleOperator(">", type1, type2);
 
 	// ( int ) > ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
@@ -2408,11 +2462,16 @@ void ScriptVariable::greaterthan(const ScriptVariable &variable)
 
 void ScriptVariable::greaterthanorequal(const ScriptVariable &variable)
 {
+	const rawchar_t *type1, *type2;
+
 	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
+		type1 = GetTypeName();
+		type2 = variable.GetTypeName();
+
 		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator(">>", GetTypeName(), variable.GetTypeName());
+		throw ScriptVariableErrors::IncompatibleOperator(">=", type1, type2);
 
 	// ( int ) >= ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
@@ -2446,11 +2505,16 @@ void ScriptVariable::greaterthanorequal(const ScriptVariable &variable)
 
 void ScriptVariable::lessthan(const ScriptVariable &variable)
 {
+	const rawchar_t *type1, *type2;
+
 	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
+		type1 = GetTypeName();
+		type2 = variable.GetTypeName();
+
 		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("<", GetTypeName(), variable.GetTypeName());
+		throw ScriptVariableErrors::IncompatibleOperator("<", type1, type2);
 
 	// ( int ) < ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
@@ -2484,11 +2548,16 @@ void ScriptVariable::lessthan(const ScriptVariable &variable)
 
 void ScriptVariable::lessthanorequal(const ScriptVariable &variable)
 {
+	const rawchar_t *type1, *type2;
+
 	switch (uint32_t(type + variable.type * variableType_e::Max))
 	{
 	default:
+		type1 = GetTypeName();
+		type2 = variable.GetTypeName();
+
 		Clear();
-		throw ScriptVariableErrors::IncompatibleOperator("<=", GetTypeName(), variable.GetTypeName());
+		throw ScriptVariableErrors::IncompatibleOperator("<=", type1, type2);
 
 	// ( int ) <= ( int )
 	case uint32_t(variableType_e::Integer + variableType_e::Integer * variableType_e::Max):
