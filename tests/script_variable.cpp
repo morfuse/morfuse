@@ -49,6 +49,15 @@ const char scriptData2[] =
 "println local.test_coord\n"
 ;
 
+const char scriptData3[] =
+"main:\n"
+"local.time = 100\n"
+"local.triggertime = 150\n"
+"if(local.time -	local.lasttriggertime	<= 0.2) //0.20\n"
+"  println test\n"
+"end"
+;
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -61,10 +70,17 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level3(ScriptMaster& director)
+{
+    const ProgramScript* const script = compile(director, "level3", scriptData3);
+    director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
 	"level2", &level2,
+	"level3", &level3,
 };
 
 int main()
