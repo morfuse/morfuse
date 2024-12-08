@@ -63,7 +63,8 @@
 
 string		([^\\\"\r\n]|\\.)*
 identifier	[^\{\}\(\)\[\]\r\n\,:; \t]
-nonnumeric	[a-zA-Z_\"'?@#`\x80-\xff]
+nonexpr		[0-9a-zA-Z_\"'?@#`\.\x80-\xff]
+nonnumeric	[a-zA-Z_\"'?@#`\.\x80-\xff]
 alphanum	[a-zA-Z0-9_]+
 varname		[a-zA-Z0-9_\"]+
 
@@ -100,8 +101,6 @@ varname		[a-zA-Z0-9_\"]+
 												unput(yytext[yyleng - 1]);
 												yyreducepos(1);
 											}
-
-\"{string}\"					{ TextEscapeValue(parsetree, yytext + 1, strlen( yytext ) - 2 ); YYLEX(TOKEN_STRING); }
 
 
 "?"								{ YYLEX(TOKEN_TERNARY); }
@@ -189,6 +188,12 @@ varname		[a-zA-Z0-9_\"]+
 [\r\n]*							{ if (prev_yylex != mfuse::Parser::token::TOKEN_EOL) YYLEX(TOKEN_EOL); }
 [ \t]							{ ; }
 
+\"{string}\"{nonexpr}			{
+									BEGIN(IDENTIFIER);
+									yymore();
+								}
+
+\"{string}\"					{ TextEscapeValue(parsetree, yytext + 1, strlen( yytext ) - 2 ); YYLEX(TOKEN_STRING); }
 
 [0-9]+									{
 											char* p = nullptr;

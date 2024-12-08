@@ -160,7 +160,9 @@ static const char scriptContent_level17[] =
 static const char scriptContent_level18[] =
 "main:\n"
 "local.88varwith_num = \"test\"\n"
-"println local.88varwith_num\n"
+"println (\"Test value \"+local.88varwith_num+\" value test\")\n"
+"local.sz = (\"test string\")\n"
+"println local.sz\n"
 "end\n";
 
 void level1(ScriptMaster& director)
