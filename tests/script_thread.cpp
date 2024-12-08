@@ -17,7 +17,8 @@ static const char scriptContent_level1[] =
 "{ println \"Hello, world\\n\"\n }\n"
 "\t\tmain:\n\n\n\n"
 "local.var = 1000\n"
-"local.var += 200\n"
+"local.var += 100\n"
+"local.var += int(1e+2)\n"
 "local.var >>= 1\n"
 "local.var = (local.var + 1) * 2 / 3 * 4 + 5\n"
 "end local.var";
@@ -145,6 +146,10 @@ static const char scriptContent_level16[] =
 static const char scriptContent_level17[] =
 "main:\n"
 "thread test2 (0 0 -170) .3\n"
+"local.value = 50a\n"
+"local.value = 0.50b\n"
+"local.value = 0.90`\n"
+"println local.value\n"
 "end\n"
 "test2 local.vec local.num:\n"
 "println (\"vec: \" + local.vec + \" num: \" + local.num)\n"

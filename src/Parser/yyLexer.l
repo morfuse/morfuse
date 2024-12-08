@@ -63,6 +63,7 @@
 
 string		([^\\\"\r\n]|\\.)*
 identifier	[^\{\}\(\)\[\]\r\n\,:; \t]
+nonnumeric	[a-zA-Z_\"'?@#`\x80-\xff]
 alphanum	[a-zA-Z0-9_]+
 varname		[a-zA-Z0-9_\"]+
 
@@ -188,11 +189,18 @@ varname		[a-zA-Z0-9_\"]+
 [\r\n]*							{ if (prev_yylex != mfuse::Parser::token::TOKEN_EOL) YYLEX(TOKEN_EOL); }
 [ \t]							{ ; }
 
-[0-9^`]+								{
+
+[0-9]+									{
 											char* p = nullptr;
 											yylval->val.longValue = std::strtoll(yytext, &p, 10);
 											YYLEX(TOKEN_INTEGER);
 										}
+
+[0-9\.]+{nonnumeric}					{
+											BEGIN(IDENTIFIER);
+											yymore();
+										}
+
 [0-9\.]+|[0-9\.]+("e+"|"e-")+[0-9\.]	{
 											char* p = nullptr;
 											yylval->val.floatValue = std::strtof(yytext, &p);
