@@ -322,8 +322,7 @@ namespace mfuse
 					new(objlist + i) Type();
 				}
 
-				objlist[arrayIndex] = obj;
-				return;
+				new(objlist + arrayIndex) Type(obj);
 			}
 			else
 			{
