@@ -347,7 +347,7 @@ namespace mfuse
 		}
 		else
 		{
-			for (int i = numobjects - 1; i > arrayIndex; i--) {
+			for (intptr_t i = numobjects - 1; i > arrayIndex; i--) {
 				objlist[i] = std::move_if_noexcept(objlist[i - 1]);
 			}
 			objlist[arrayIndex] = obj;
