@@ -19,7 +19,7 @@ jobs:
         build-type: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install required tools
       run: sudo apt update && sudo apt install -y cmake make clang-15 lld-15 ninja-build flex bison libfl-dev

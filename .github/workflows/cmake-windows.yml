@@ -16,7 +16,7 @@ jobs:
         build-type: [Debug, Release]
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - working-directory: ${{github.workspace}}
       run: mkdir cmake
 
@@ -56,7 +56,7 @@ jobs:
       run: |
         cmake --install . --config ${{matrix.build-type}}
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: out-windows-${{matrix.build-type}}-x64
         if-no-files-found: error
