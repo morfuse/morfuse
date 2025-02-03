@@ -201,11 +201,18 @@ namespace mfuse
 	template<class Type, class Allocator>
 	void Container<Type, Allocator>::AddObjectAt(size_t index, const Type& obj)
 	{
+		size_t i;
+
 		if (index > maxobjects)
 			Resize(index);
 
-		if (index > numobjects)
+		if (index > numobjects) {
+			for (i = numobjects; i < index; i++) {
+				new (objlist + i) Type();
+			}
+
 			numobjects = index;
+		}
 
 		SetObjectAt(index, obj);
 	}
