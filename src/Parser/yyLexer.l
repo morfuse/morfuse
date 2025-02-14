@@ -66,7 +66,7 @@ identifier	[^\{\}\(\)\[\]\r\n\,:; \t]
 nonexpr		[0-9a-zA-Z_\"'?@#`\.\x80-\xff]
 nonnumeric	[a-zA-Z_\"'?@#`\.\x80-\xff]
 alphanum	[a-zA-Z0-9_]+
-varname		[a-zA-Z0-9_\"]+
+varname		[a-zA-Z0-9_\"$\\]+
 
 %%
 
@@ -88,7 +88,7 @@ varname		[a-zA-Z0-9_\"]+
 <VARIABLES>[ \t]*\./([0-9]*[^0-9[:space:]])	{ YYLEX(TOKEN_PERIOD); }
 <VARIABLES>\"{string}\"						{ BEGIN(INITIAL); TextEscapeValue(parsetree, yytext + 1, strlen( yytext ) - 2 ); YYLEX(TOKEN_STRING); }
 <VARIABLES>{varname}						{
-												TextValue(parsetree, yytext, strlen(yytext));
+												TextEscapeValue(parsetree, yytext, strlen(yytext));
 												YYLEX(TOKEN_IDENTIFIER);
 											}
 <VARIABLES>[ \t\r\n]						{
