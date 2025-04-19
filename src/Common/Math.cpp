@@ -688,6 +688,14 @@ bool mfuse::VecCompare(const vec3_t veca, const vec3_t vecb)
 	return veca[0] == vecb[0] && veca[1] == vecb[1] && veca[2] == vecb[2];
 }
 
+bool mfuse::VecCompare(const vec4_t veca, const vec4_t vecb, float tolerance)
+{
+
+	return (veca[0] >= vecb[0] - tolerance && veca[0] <= vecb[0] + tolerance)
+		&& (veca[1] >= vecb[1] - tolerance && veca[1] <= vecb[1] + tolerance)
+		&& (veca[2] >= vecb[2] - tolerance && veca[2] <= vecb[2] + tolerance);
+}
+
 mfuse_EXPORTS bool mfuse::Vec4Compare(const vec4_t veca, const vec4_t vecb)
 {
 	return veca[0] == vecb[0] && veca[1] == vecb[1] && veca[2] == vecb[2] && veca[3] == vecb[3];

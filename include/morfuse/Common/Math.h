@@ -64,7 +64,8 @@ namespace mfuse
 	mfuse_EXPORTS void Vec4Copy(const vec4_t in, vec4_t out);
 	mfuse_EXPORTS void VecSubtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
 	mfuse_EXPORTS void VecAdd(const vec3_t veca, const vec3_t vecb, vec3_t out);
-	mfuse_EXPORTS bool VecCompare(const vec3_t veca, const vec3_t vecb);
+    mfuse_EXPORTS bool VecCompare(const vec3_t veca, const vec3_t vecb);
+    mfuse_EXPORTS bool VecCompare(const vec3_t veca, const vec3_t vecb, float tolerance);
 	mfuse_EXPORTS bool Vec4Compare(const vec4_t veca, const vec4_t vecb);
 	mfuse_EXPORTS bool Vec4Compare(const vec4_t veca, const vec4_t vecb, float tolerance);
 	mfuse_EXPORTS void VecMatrixInverse(void* DstMatrix, const void* SrcMatrix);
