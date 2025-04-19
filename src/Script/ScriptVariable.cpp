@@ -2274,16 +2274,16 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 		return m_data.long64Value == value.m_data.charValue;
 
 	// ( int ) == ( float )
-	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
-		return m_data.long64Value == value.m_data.floatValue;
+    case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
+        return fabs(m_data.long64Value - value.m_data.floatValue) < 0.0001;
 
 	// ( float ) == ( float )
-	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
-		return m_data.floatValue == value.m_data.floatValue;
+    case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
+        return fabs(m_data.floatValue - value.m_data.floatValue) < 0.0001;
 
 	// ( float ) == ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
-		return m_data.floatValue == value.m_data.long64Value;
+        return fabs(m_data.floatValue - value.m_data.long64Value) < 0.0001;
 
 	// ( char ) == ( int )
 	case uint32_t(variableType_e::Char + variableType_e::Integer * variableType_e::Max):
@@ -2327,7 +2327,7 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 	}
 
 	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) == ( vector )
-		return VecCompare(m_data.vectorValue, value.m_data.vectorValue) ? true : false;
+		return VecCompare(m_data.vectorValue, value.m_data.vectorValue, 0.0001f) ? true : false;
 	}
 }
 
