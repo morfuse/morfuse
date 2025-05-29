@@ -345,8 +345,8 @@ namespace mfuse
 				}
 
 				new(objlist + arrayIndex) Type(obj);
-				for (intptr_t i = arrayIndex + 1; i < numobjects; ++i) {
-					new(objlist + i) Type(std::move_if_noexcept(temp[i]));
+				for (intptr_t i = arrayIndex; i < numobjects - 1; ++i) {
+					new(objlist + i + 1) Type(std::move_if_noexcept(temp[i]));
 				}
 
 				Object_allocator.Free(temp);
