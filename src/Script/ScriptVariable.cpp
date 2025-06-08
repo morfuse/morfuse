@@ -2327,7 +2327,7 @@ bool ScriptVariable::operator==(const ScriptVariable &value) const
 	}
 
 	case uint32_t(variableType_e::Vector + variableType_e::Vector * variableType_e::Max): // ( vector ) == ( vector )
-		return VecCompare(m_data.vectorValue, value.m_data.vectorValue, 0.0001f) ? true : false;
+		return VecCompare(m_data.vectorValue, value.m_data.vectorValue, 0.0001) ? true : false;
 	}
 }
 
@@ -2437,19 +2437,19 @@ void ScriptVariable::greaterthan(const ScriptVariable &variable)
 
 	// ( int ) > ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
-		m_data.long64Value = m_data.long64Value > variable.m_data.floatValue;
+		m_data.long64Value = m_data.long64Value - variable.m_data.floatValue >= 0.0001;
 		break;
 
 	// ( float ) > ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue > variable.m_data.floatValue;
+		m_data.long64Value = m_data.floatValue - variable.m_data.floatValue >= 0.0001;
 		break;
 
 	// ( float ) > ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue > variable.m_data.long64Value;
+		m_data.long64Value = m_data.floatValue - variable.m_data.long64Value >= 0.0001;
 		break;
 
 	// ( char ) <= ( char )
@@ -2480,19 +2480,19 @@ void ScriptVariable::greaterthanorequal(const ScriptVariable &variable)
 
 	// ( int ) >= ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
-		m_data.long64Value = m_data.long64Value >= variable.m_data.floatValue;
+		m_data.long64Value = m_data.long64Value - variable.m_data.floatValue > -0.0001;
 		break;
 
 	// ( float ) >= ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue >= variable.m_data.floatValue;
+		m_data.long64Value = m_data.floatValue - variable.m_data.floatValue > -0.0001;
 		break;
 
 	// ( float ) >= ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue >= variable.m_data.long64Value;
+		m_data.long64Value = m_data.floatValue - variable.m_data.long64Value > -0.0001;
 		break;
 
 	// ( char ) >= ( char )
@@ -2523,19 +2523,19 @@ void ScriptVariable::lessthan(const ScriptVariable &variable)
 
 	// ( int ) < ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
-		m_data.long64Value = m_data.long64Value < variable.m_data.floatValue;
+		m_data.long64Value = m_data.long64Value - variable.m_data.floatValue <= -0.0001;
 		break;
 
 	// ( float ) < ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue < variable.m_data.floatValue;
+		m_data.long64Value = m_data.floatValue - variable.m_data.floatValue <= -0.0001;
 		break;
 
 	// ( float ) < ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue < variable.m_data.long64Value;
+		m_data.long64Value = m_data.floatValue - variable.m_data.long64Value <= -0.0001;
 		break;
 
 	// ( char ) < ( char )
@@ -2566,19 +2566,19 @@ void ScriptVariable::lessthanorequal(const ScriptVariable &variable)
 
 	// ( int ) <= ( float )
 	case uint32_t(variableType_e::Integer + variableType_e::Float * variableType_e::Max):
-		m_data.long64Value = m_data.long64Value <= variable.m_data.floatValue;
+		m_data.long64Value = m_data.long64Value - variable.m_data.floatValue < 0.0001;
 		break;
 
 	// ( float ) <= ( float )
 	case uint32_t(variableType_e::Float + variableType_e::Float * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue <= variable.m_data.floatValue;
+		m_data.long64Value = m_data.floatValue - variable.m_data.floatValue < 0.0001;
 		break;
 
 	// ( float ) <= ( int )
 	case uint32_t(variableType_e::Float + variableType_e::Integer * variableType_e::Max):
 		type = variableType_e::Integer;
-		m_data.long64Value = m_data.floatValue <= variable.m_data.long64Value;
+		m_data.long64Value = m_data.floatValue - variable.m_data.long64Value < 0.0001;
 		break;
 
 	// ( char ) <= ( char )
