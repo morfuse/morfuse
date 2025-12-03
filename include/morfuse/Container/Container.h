@@ -431,7 +431,7 @@ namespace mfuse
 	void Container<Type, Allocator>::RemoveObject(const Type* obj)
 	{
 		uintptr_t index = obj - objlist;
-		if (index > numobjects) {
+		if (index >= numobjects) {
 			return;
 		}
 
