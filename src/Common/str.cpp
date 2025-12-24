@@ -525,7 +525,7 @@ void base_str<CharT>::operator=(const CharT* text)
 
 	if (*text)
 	{
-		len = base_str::len(text);
+		len = base_str<CharT>::len(text);
 
 		unsigned char* buf = (unsigned char*)allocateMemory(sizeof(strdata<CharT>) + sizeof(CharT) * (len + 1));
 		//m_data = new strdata<CharT>;
@@ -540,7 +540,7 @@ void base_str<CharT>::operator=(const CharT* text)
 template<typename CharT>
 base_str<CharT> base_str<CharT>::operator+(const base_str& b)
 {
-	base_str result(*this);
+	base_str<CharT> result(*this);
 
 	result.append(b);
 
@@ -550,7 +550,7 @@ base_str<CharT> base_str<CharT>::operator+(const base_str& b)
 template<typename CharT>
 base_str<CharT> base_str<CharT>::operator+(const CharT* b)
 {
-	base_str result(*this);
+	base_str<CharT> result(*this);
 
 	result.append(b);
 
@@ -560,7 +560,7 @@ base_str<CharT> base_str<CharT>::operator+(const CharT* b)
 template<typename CharT>
 base_str<CharT> mfuse::operator+(const CharT* a, const base_str<CharT>& b)
 {
-	base_str result(a);
+	base_str<CharT> result(a);
 
 	result.append(b);
 
@@ -571,7 +571,7 @@ base_str<CharT> mfuse::operator+(const CharT* a, const base_str<CharT>& b)
 template<typename CharT>
 base_str<CharT> base_str<CharT>::operator+(const bool b)
 {
-	base_str result(*this);
+	base_str<CharT> result(*this);
 
 	result.append(b ? trueStr<CharT> : falseStr<CharT>);
 

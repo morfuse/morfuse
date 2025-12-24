@@ -110,17 +110,7 @@ void* operator new(size_t count, MEM::PreAllocator& allocator)
 	return allocator.Alloc(count);
 }
 
-void* operator new(size_t count, std::align_val_t, MEM::PreAllocator& allocator)
-{
-	return allocator.Alloc(count);
-}
-
 void* operator new[](size_t count, MEM::PreAllocator& allocator)
-{
-	return allocator.Alloc(count);
-}
-
-void* operator new[](size_t count, std::align_val_t, MEM::PreAllocator& allocator)
 {
 	return allocator.Alloc(count);
 }
@@ -130,12 +120,23 @@ void operator delete(void* ptr, MEM::PreAllocator& allocator)
 	return allocator.Free(ptr);
 }
 
-void operator delete(void* ptr, std::align_val_t, MEM::PreAllocator& allocator)
+void operator delete[](void* ptr, MEM::PreAllocator& allocator)
 {
 	return allocator.Free(ptr);
 }
 
-void operator delete[](void* ptr, MEM::PreAllocator& allocator)
+#if __cplusplus >= 201703L
+void* operator new(size_t count, std::align_val_t, MEM::PreAllocator& allocator)
+{
+	return allocator.Alloc(count);
+}
+
+void* operator new[](size_t count, std::align_val_t, MEM::PreAllocator& allocator)
+{
+	return allocator.Alloc(count);
+}
+
+void operator delete(void* ptr, std::align_val_t, MEM::PreAllocator& allocator)
 {
 	return allocator.Free(ptr);
 }
@@ -144,3 +145,4 @@ void operator delete[](void* ptr, std::align_val_t, MEM::PreAllocator& allocator
 {
 	return allocator.Free(ptr);
 }
+#endif

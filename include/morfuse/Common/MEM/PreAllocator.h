@@ -57,10 +57,18 @@ namespace MEM
 }
 
 void* operator new(size_t count, mfuse::MEM::PreAllocator& allocator);
-void* operator new(size_t count, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
 void* operator new[](size_t count, mfuse::MEM::PreAllocator& allocator);
-void* operator new[](size_t count, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
 void operator delete(void* ptr, mfuse::MEM::PreAllocator& allocator);
-void operator delete(void* ptr, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
 void operator delete[](void* ptr, mfuse::MEM::PreAllocator& allocator);
+
+#if __cplusplus >= 201402L
+void operator delete(void* ptr, std::size_t sz) noexcept;
+void operator delete[](void* ptr, std::size_t sz) noexcept;
+#endif
+
+#if __cplusplus >= 201703L
+void* operator new(size_t count, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
+void* operator new[](size_t count, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
+void operator delete(void* ptr, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
 void operator delete[](void* ptr, std::align_val_t, mfuse::MEM::PreAllocator& allocator);
+#endif
