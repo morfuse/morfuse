@@ -25,7 +25,17 @@ if(WIN32)
 elseif(UNIX)
 	target_compile_options(morfuse PRIVATE "-Wall" "-Wextra")
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-		target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete=force-hidden")
+		include(CheckCXXCompilerFlag)
+		check_cxx_compiler_flag("-fvisibility-global-new-delete=force-hidden" HAS_FORCE_HIDDEN)
+
+		if (HAS_FORCE_HIDDEN)
+			target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete=force-hidden")
+		else()
+			check_cxx_compiler_flag("-fvisibility-global-new-delete=force-hidden" HAS_OLD_FORCE_HIDDEN)
+			if (HAS_OLD_FORCE_HIDDEN)
+				target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete-hidden")
+			endif()
+		endif()
 	endif()
 	set_target_properties(morfuse PROPERTIES
 		C_VISIBILITY_PRESET hidden
