@@ -1196,6 +1196,7 @@ void ScriptVariable::evalArrayAt(const ScriptVariable &var)
 	size_t index;
 	str string;
 	ScriptVariable *array;
+	const char *typeName;
 
 	switch (type)
 	{
@@ -1284,8 +1285,9 @@ void ScriptVariable::evalArrayAt(const ScriptVariable &var)
 		break;
 
 	default:
+		typeName = GetTypeName();
 		Clear();
-		throw ScriptVariableErrors::InvalidAppliedType("[]", GetTypeName());
+		throw ScriptVariableErrors::InvalidAppliedType("[]", typeName);
 	}
 }
 

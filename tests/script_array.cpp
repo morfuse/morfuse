@@ -42,6 +42,13 @@ const char scriptData4[] =
 "println level.map_bsp[0].pa[1]\n"
 "end";
 
+const char scriptData5[] =
+"local.value1 = thread test\n"
+"end local.value1[2]\n"
+"test:\n"
+"wait 0.1\n"
+"end 2";
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptData1);
@@ -66,12 +73,19 @@ void level4(ScriptMaster& director)
 	director.ExecuteThread(script);
 }
 
+void level5(ScriptMaster& director)
+{
+	const ProgramScript* const script = compile(director, "level5", scriptData5);
+	director.ExecuteThread(script);
+}
+
 handler_t handlers[] =
 {
 	"level1", &level1,
 	"level2", &level2,
 	"level3", &level3,
-	"level4", &level4
+	"level4", &level4,
+	"level5", &level5
 };
 
 int main()
