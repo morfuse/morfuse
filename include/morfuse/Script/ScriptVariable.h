@@ -63,7 +63,7 @@ namespace mfuse
         return (variableType_e)((uintptr_t)lhs * (uintptr_t)rhs);
     }
 
-    static const rawchar_t *typenames[] =
+    static const rawchar_t *const typenames[] =
     {
         "none",
         "string",
@@ -81,60 +81,10 @@ namespace mfuse
         "vector"
     };
 
-    class ScriptArrayHolder
-    {
-    public:
-        ScriptArrayHolder();
-        ~ScriptArrayHolder();
+    class ScriptArrayHolder;
+    class ScriptConstArrayHolder;
+    class ScriptPointer;
 
-        void            Archive(Archiver& arc);
-        static void        Archive(Archiver& arc, ScriptArrayHolder*& arrayHolder);
-
-    public:
-        con::map<ScriptVariable, ScriptVariable> arrayValue;
-        unsigned int refCount;
-    };
-
-    class ScriptConstArrayHolder
-    {
-    public:
-        ScriptVariable* constArrayValue;
-        size_t size;
-        uint32_t refCount;
-
-    public:
-        void            Archive(Archiver& arc);
-        static void        Archive(Archiver& arc, ScriptConstArrayHolder *& arrayHolder);
-
-        ScriptConstArrayHolder(ScriptVariable* pVar, size_t size);
-        ScriptConstArrayHolder(size_t size);
-        ScriptConstArrayHolder();
-        ~ScriptConstArrayHolder();
-    };
-
-    /**
-     * The script pointer holds a list of variable to set value on at a later stage.
-     */
-    class ScriptPointer
-    {
-    public:
-        con::Container<ScriptVariable*> list;
-
-    public:
-        ScriptPointer();
-        ScriptPointer(size_t initialSize);
-        ~ScriptPointer();
-
-        void Archive(Archiver& arc);
-        static void Archive(Archiver& arc, ScriptPointer *& pointerHolder);
-
-        void Clear();
-
-        void add(ScriptVariable* var);
-        void remove(ScriptVariable* var);
-        void setValue(const ScriptVariable& var);
-        void setValueRef(ScriptVariable& var, const ScriptVariable& ignoredVar);
-    };
     using ConList = con::ContainerClass<SafePtr<Listener>>;
     using ConListPtr = SafePtr<ConList>;
 
@@ -316,6 +266,32 @@ namespace mfuse
         variableType_e type;
     };
 
+    template<>
+    class con::Entry<const_str, ScriptVariable> : public con::EntryBase<const_str, ScriptVariable>
+    {
+    public:
+        Entry()
+        {
+        }
+
+        Entry(const_str key)
+            : value(key, nullptr)
+        {
+        }
+
+        Entry(const_str key, const ScriptVariable& varValue)
+            : value(key, varValue)
+        {
+        }
+
+        const_str Key() const noexcept { return value.GetKey(); }
+        ScriptVariable& Value() noexcept { return value; }
+        const ScriptVariable& Value() const noexcept { return value; }
+
+    private:
+        ScriptVariable value;
+    };
+
     class ScriptVariableIterator
     {
     public:
@@ -383,6 +359,61 @@ namespace mfuse
 
     private:
         con::set<const_str, ScriptVariable> list;
+    };
+
+    class ScriptArrayHolder
+    {
+    public:
+        ScriptArrayHolder();
+        ~ScriptArrayHolder();
+
+        void            Archive(Archiver& arc);
+        static void        Archive(Archiver& arc, ScriptArrayHolder*& arrayHolder);
+
+    public:
+        con::map<ScriptVariable, ScriptVariable> arrayValue;
+        unsigned int refCount;
+    };
+
+    class ScriptConstArrayHolder
+    {
+    public:
+        ScriptVariable* constArrayValue;
+        size_t size;
+        uint32_t refCount;
+
+    public:
+        void            Archive(Archiver& arc);
+        static void        Archive(Archiver& arc, ScriptConstArrayHolder *& arrayHolder);
+
+        ScriptConstArrayHolder(ScriptVariable* pVar, size_t size);
+        ScriptConstArrayHolder(size_t size);
+        ScriptConstArrayHolder();
+        ~ScriptConstArrayHolder();
+    };
+
+    /**
+     * The script pointer holds a list of variable to set value on at a later stage.
+     */
+    class ScriptPointer
+    {
+    public:
+        con::Container<ScriptVariable*> list;
+
+    public:
+        ScriptPointer();
+        ScriptPointer(size_t initialSize);
+        ~ScriptPointer();
+
+        void Archive(Archiver& arc);
+        static void Archive(Archiver& arc, ScriptPointer *& pointerHolder);
+
+        void Clear();
+
+        void add(ScriptVariable* var);
+        void remove(ScriptVariable* var);
+        void setValue(const ScriptVariable& var);
+        void setValueRef(ScriptVariable& var, const ScriptVariable& ignoredVar);
     };
 
     namespace ScriptVariableErrors

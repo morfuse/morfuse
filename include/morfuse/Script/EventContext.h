@@ -13,22 +13,6 @@ namespace mfuse
     class EventAllocator
     {
     public:
-        template<typename T>
-        MEM::BlockAlloc<T, BlockSize>& GetBlock();
-
-        template<>
-        MEM::BlockAlloc<Event, BlockSize>& GetBlock<Event>()
-        {
-            return Event_allocator;
-        }
-
-        template<>
-        MEM::BlockAlloc<EventQueueNode, BlockSize>& GetBlock<EventQueueNode>()
-        {
-            return EventQueueNode_allocator;
-        }
-
-    private:
         MEM::BlockAlloc<Event, BlockSize> Event_allocator;
         MEM::BlockAlloc<EventQueueNode, BlockSize> EventQueueNode_allocator;
     };
@@ -59,5 +43,5 @@ namespace mfuse
         NamespaceManager namespaceManager;
     };
 
-    mfuse_TEMPLATE template class mfuse_EXPORTS ThreadSingleton<EventContext>;
+    //mfuse_TEMPLATE template class mfuse_EXPORTS ThreadSingleton<EventContext>;
 }

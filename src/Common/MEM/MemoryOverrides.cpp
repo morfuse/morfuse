@@ -24,12 +24,12 @@ void operator delete[](void* ptr) noexcept
 }
 
 #if __cplusplus >= 201402L
-void operator delete(void* ptr, std::size_t sz) noexcept
+void operator delete(void* ptr, std::size_t) noexcept
 {
     return IMemoryManager::get().free(ptr);
 }
 
-void operator delete[](void* ptr, std::size_t sz) noexcept
+void operator delete[](void* ptr, std::size_t) noexcept
 {
     return IMemoryManager::get().free(ptr);
 }

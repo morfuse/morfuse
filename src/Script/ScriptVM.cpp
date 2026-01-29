@@ -245,12 +245,12 @@ ScriptVM::~ScriptVM()
 
 void* ScriptVM::operator new(size_t)
 {
-    return ScriptContext::Get().GetAllocator().GetBlock<ScriptVM>().Alloc();
+    return ScriptContext::Get().GetAllocator().ScriptVM_allocator.Alloc();
 }
 
 void ScriptVM::operator delete(void* ptr)
 {
-    ScriptContext::Get().GetAllocator().GetBlock<ScriptVM>().Free(ptr);
+    ScriptContext::Get().GetAllocator().ScriptVM_allocator.Free(ptr);
 }
 
 /*

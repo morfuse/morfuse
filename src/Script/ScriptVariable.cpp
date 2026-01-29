@@ -13,32 +13,6 @@
 using namespace mfuse;
 
 template<>
-class con::Entry<const_str, ScriptVariable> : public con::EntryBase<const_str, ScriptVariable>
-{
-public:
-    Entry()
-    {
-    }
-
-    Entry(const_str key)
-        : value(key, nullptr)
-    {
-    }
-
-    Entry(const_str key, const ScriptVariable& varValue)
-        : value(key, varValue)
-    {
-    }
-
-    const_str Key() const noexcept { return value.GetKey(); }
-    ScriptVariable& Value() noexcept { return value; }
-    const ScriptVariable& Value() const noexcept { return value; }
-
-private:
-    ScriptVariable value;
-};
-
-template<>
 void con::Archive(Archiver& arc, con::Entry<const_str, ScriptVariable>& entry)
 {
     entry.Value().Archive(arc);

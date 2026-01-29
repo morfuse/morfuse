@@ -920,7 +920,7 @@ unsigned int mfuse::DirToByte(const vec3_t dir)
 
 void mfuse::ByteToDir(unsigned int b, vec3_t dir)
 {
-    if (b < 0 || b >= NUMVERTEXNORMALS)
+    if (b >= NUMVERTEXNORMALS)
     {
         VectorClear(dir);
         return;

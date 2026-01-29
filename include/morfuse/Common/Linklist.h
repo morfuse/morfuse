@@ -179,9 +179,11 @@ namespace mfuse
     private:
         Type* currentNode;
     };
+    template<typename T, auto next, auto prev>
+    class LinkedList;
 
-    template<typename T, std::remove_pointer_t<T>* std::remove_pointer_t<T>::* next, std::remove_pointer_t<T>* std::remove_pointer_t<T>::* prev>
-    class LinkedList
+    template<typename T, T* T::*next, T* T::*prev>
+    class LinkedList<T, next, prev>
     {
     public:
         using iterator = LinkListIterator<T, next, prev>;

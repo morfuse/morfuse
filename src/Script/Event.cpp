@@ -388,12 +388,12 @@ Event& Event::operator=(Event&& other)
 
 void* Event::operator new(size_t)
 {
-    return EventContext::Get().GetAllocator().GetBlock<Event>().Alloc();
+    return EventContext::Get().GetAllocator().Event_allocator.Alloc();
 }
 
 void Event::operator delete(void* ptr)
 {
-    return EventContext::Get().GetAllocator().GetBlock<Event>().Free(ptr);
+    return EventContext::Get().GetAllocator().Event_allocator.Free(ptr);
 }
 
 bool Event::operator==(const Event& ev)

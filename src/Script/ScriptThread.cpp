@@ -1130,12 +1130,12 @@ ScriptThread::~ScriptThread()
 
 void* ScriptThread::operator new(size_t)
 {
-    return ScriptContext::Get().GetAllocator().GetBlock<ScriptThread>().Alloc();
+    return ScriptContext::Get().GetAllocator().ScriptThread_allocator.Alloc();
 }
 
 void ScriptThread::operator delete(void* ptr)
 {
-    ScriptContext::Get().GetAllocator().GetBlock<ScriptThread>().Free(ptr);
+    ScriptContext::Get().GetAllocator().ScriptThread_allocator.Free(ptr);
 }
 
 void ScriptThread::CreateReturnThread(Event& ev)
@@ -2938,7 +2938,7 @@ void ScriptThread::EventThrow(Event& ev)
     }
 }
 
-void ScriptThread::EventPause(Event& ev)
+void ScriptThread::EventPause(Event&)
 {
     Pause();
 }

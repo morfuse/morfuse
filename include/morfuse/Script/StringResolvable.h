@@ -63,4 +63,13 @@ namespace mfuse
         str string;
         const_str constString;
     };
+
+    mfuse_EXPORTS bool operator==(const StringResolvable& left, const_str right);
+    mfuse_EXPORTS bool operator!=(const StringResolvable& left, const_str right);
+    mfuse_EXPORTS bool operator==(const_str left, const StringResolvable& right);
+    mfuse_EXPORTS bool operator!=(const_str left, const StringResolvable& right);
+    mfuse_EXPORTS bool operator==(const StringResolvable& left, const rawchar_t* right);
+    mfuse_EXPORTS bool operator!=(const StringResolvable& left, const rawchar_t* right);
+    mfuse_EXPORTS bool operator==(const rawchar_t* left, const StringResolvable& right);
+    mfuse_EXPORTS bool operator!=(const rawchar_t* left, const StringResolvable& right);
 }

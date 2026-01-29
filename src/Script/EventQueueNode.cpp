@@ -26,12 +26,12 @@ EventQueueNode::~EventQueueNode()
 
 void* EventQueueNode::operator new(size_t)
 {
-    return EventContext::Get().GetAllocator().GetBlock<EventQueueNode>().Alloc();
+    return EventContext::Get().GetAllocator().EventQueueNode_allocator.Alloc();
 }
 
 void EventQueueNode::operator delete(void* ptr)
 {
-    return EventContext::Get().GetAllocator().GetBlock<EventQueueNode>().Free(ptr);
+    return EventContext::Get().GetAllocator().EventQueueNode_allocator.Free(ptr);
 }
 
 Listener* EventQueueNode::GetSourceObject()

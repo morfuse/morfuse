@@ -553,7 +553,7 @@ bool Archiver::IsSaving() const
 
 void Archiver::CheckType(unsigned int type)
 {
-    assert(type >= 0 && type < dataType_e::Max);
+    assert(type < dataType_e::Max);
     const unsigned int t = ReadType();
     if (t != type)
     {

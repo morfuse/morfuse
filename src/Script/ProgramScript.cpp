@@ -389,7 +389,7 @@ void ProgramScript::ArchiveCodePos(Archiver& arc, const opval_t*& codePos) const
     if (!arc.Loading())
     {
         pos = uint32_t(codePos - m_ProgBuffer);
-        if (pos >= 0 && pos < m_ProgLength)
+        if (pos < m_ProgLength)
         {
             filename = dict.Get(Filename());
         }
@@ -524,7 +524,7 @@ bool ProgramScript::GetCodePos(opval_t *codePos, const_str& filename, uintptr_t&
 {
     pos = codePos - m_ProgBuffer;
 
-    if (pos >= 0 && pos < m_ProgLength)
+    if (pos < m_ProgLength)
     {
         filename = Filename();
         return true;

@@ -302,7 +302,7 @@ void ScriptMaster::CloseProgramScript()
 void ScriptMaster::ClearAll()
 {
     // Destroy and free all script class
-    ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().FreeAll();
+    ScriptContext::Get().GetAllocator().ScriptClass_allocator.FreeAll();
 
     CloseProgramScript();
     dict.Reset();
@@ -366,7 +366,7 @@ size_t ScriptMaster::GetNumScripts() const
 
 size_t ScriptMaster::GetNumRunningScripts() const
 {
-    return ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Count();
+    return ScriptContext::Get().GetAllocator().ScriptClass_allocator.Count();
 }
 
 StringDictionary& ScriptMaster::GetDictionary()

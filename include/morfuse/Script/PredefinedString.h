@@ -46,6 +46,9 @@ namespace mfuse
         static uintptr_t lastIndex;
     };
 
+    mfuse_EXPORTS bool operator==(const PredefinedString& left, const_str right);
+    mfuse_EXPORTS bool operator==(const_str left, const PredefinedString& right);
+
     namespace ConstStrings
     {
         mfuse_EXPORTS extern const PredefinedString Empty;

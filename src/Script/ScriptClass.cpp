@@ -62,12 +62,12 @@ void ScriptClass::StoppedNotify()
 
 void* ScriptClass::operator new(size_t)
 {
-    return ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Alloc();
+    return ScriptContext::Get().GetAllocator().ScriptClass_allocator.Alloc();
 }
 
 void ScriptClass::operator delete(void* ptr)
 {
-    ScriptContext::Get().GetAllocator().GetBlock<ScriptClass>().Free(ptr);
+    ScriptContext::Get().GetAllocator().ScriptClass_allocator.Free(ptr);
 }
 
 void ScriptClass::Archive(Archiver&)
