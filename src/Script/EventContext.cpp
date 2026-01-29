@@ -3,7 +3,7 @@
 using namespace mfuse;
 
 EventContext::EventContext()
-	: ThreadSingleton(this)
+    : ThreadSingleton(this)
 {
 }
 
@@ -13,45 +13,45 @@ EventContext::~EventContext()
 
 void EventContext::ProcessEvents(float timeScale)
 {
-	if (timeScale) {
-		timeManager.Frame();
-	} else {
-		timeManager.Frame(timeScale);
-	}
-	eventQueue.ProcessPendingEvents();
+    if (timeScale) {
+        timeManager.Frame();
+    } else {
+        timeManager.Frame(timeScale);
+    }
+    eventQueue.ProcessPendingEvents();
 }
 
 const TimeManager& EventContext::GetTimeManager() const
 {
-	return timeManager;
+    return timeManager;
 }
 
 TimeManager& EventContext::GetTimeManagerInternal()
 {
-	return timeManager;
+    return timeManager;
 }
 
 EventQueue& EventContext::GetEventQueue()
 {
-	return eventQueue;
+    return eventQueue;
 }
 
 const mfuse::EventQueue& EventContext::GetEventQueue() const
 {
-	return eventQueue;
+    return eventQueue;
 }
 
 DefaultEventAllocator& EventContext::GetAllocator()
 {
-	return allocator;
+    return allocator;
 }
 
 NamespaceManager& EventContext::GetNamespaceManager()
 {
-	return namespaceManager;
+    return namespaceManager;
 }
 
 const NamespaceManager& EventContext::GetNamespaceManager() const
 {
-	return namespaceManager;
+    return namespaceManager;
 }

@@ -6,19 +6,19 @@
 
 namespace mfuse
 {
-	class SimpleArchivedEntity;
+    class SimpleArchivedEntity;
 
-	class Level : public Listener
-	{
-		MFUS_CLASS_PROTOTYPE(Level);
+    class Level : public Listener
+    {
+        MFUS_CLASS_PROTOTYPE(Level);
 
-	public:
-		Level();
+    public:
+        Level();
 
-		const str& GetCurrentScript() const;
-		void SetCurrentScript(const rawchar_t* name);
+        const str& GetCurrentScript() const;
+        void SetCurrentScript(const rawchar_t* name);
 
-	private:
-		str currentScript;
-	};
+    private:
+        str currentScript;
+    };
 };

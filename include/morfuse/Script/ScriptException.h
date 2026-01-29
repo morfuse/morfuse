@@ -9,41 +9,41 @@
 
 namespace mfuse
 {
-	class ScriptExceptionBase : public std::exception
-	{
-	};
+    class ScriptExceptionBase : public std::exception
+    {
+    };
 
-	class ScriptAbortExceptionBase : public std::exception
-	{
-	};
+    class ScriptAbortExceptionBase : public std::exception
+    {
+    };
 
-	class ScriptException : public ScriptExceptionBase
-	{
-	public:
-		ScriptException(const str& text);
+    class ScriptException : public ScriptExceptionBase
+    {
+    public:
+        ScriptException(const str& text);
 
-		const char* what() const noexcept override;
+        const char* what() const noexcept override;
 
-	public:
-		str string;
-	};
+    public:
+        str string;
+    };
 
-	class ScriptAbortException : public ScriptAbortExceptionBase
-	{
-	public:
-		ScriptAbortException(const str& text);
+    class ScriptAbortException : public ScriptAbortExceptionBase
+    {
+    public:
+        ScriptAbortException(const str& text);
 
-		const char* what() const noexcept override;
+        const char* what() const noexcept override;
 
-	public:
-		str string;
-	};
+    public:
+        str string;
+    };
 
-	/*
-	template<typename...Args>
-	static constexpr void ScriptError(Args&&...args)
-	{
-		throw ScriptException(std::forward<Args>(args)...);
-	}
-	*/
+    /*
+    template<typename...Args>
+    static constexpr void ScriptError(Args&&...args)
+    {
+        throw ScriptException(std::forward<Args>(args)...);
+    }
+    */
 };

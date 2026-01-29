@@ -28,2328 +28,2328 @@
 
 namespace mfuse
 {
-	class ScriptCountManager;
-	class ScriptProgramManager;
+    class ScriptCountManager;
+    class ScriptProgramManager;
 }
 
 using namespace mfuse;
 
 void Parser::error(const location_type& loc, const std::string& msg)
 {
-	const prchar_t* text = lexer.YYText();
+    const prchar_t* text = lexer.YYText();
 
-	lexer.exception.text = text;
-	lexer.exception.msg = msg.c_str();
-	lexer.exception.loc.line = lexer.get_prev_lex() != token::TOKEN_EOL ? (loc.lineno - 1) : loc.begin.line;
-	lexer.exception.loc.column = loc.begin.column;
-	lexer.exception.loc.sourcePos = loc.sourcePos;
+    lexer.exception.text = text;
+    lexer.exception.msg = msg.c_str();
+    lexer.exception.loc.line = lexer.get_prev_lex() != token::TOKEN_EOL ? (loc.lineno - 1) : loc.begin.line;
+    lexer.exception.loc.column = loc.begin.column;
+    lexer.exception.loc.sourcePos = loc.sourcePos;
 }
 
 class mfuse::ScriptCountManager : public IScriptManager
 {
 public:
-	ScriptCountManager()
-		: prevop{0}
-	{
-		curop = prevop;
-	}
+    ScriptCountManager()
+        : prevop{0}
+    {
+        curop = prevop;
+    }
 
-	StateScript* CreateCatchStateScript(const opval_t*, const opval_t*, size_t) override
-	{
-		++info.numCatches;
-		return nullptr;
-	}
+    StateScript* CreateCatchStateScript(const opval_t*, const opval_t*, size_t) override
+    {
+        ++info.numCatches;
+        return nullptr;
+    }
 
-	StateScript* CreateSwitchStateScript(size_t) override
-	{
-		++info.numSwitches;
-		return nullptr;
-	}
+    StateScript* CreateSwitchStateScript(size_t) override
+    {
+        ++info.numSwitches;
+        return nullptr;
+    }
 
-	bool AddLabel(StateScript*, const prchar_t*, const opval_t*, bool) override
-	{
-		++info.numStrings;
-		++info.numLabels;
-		return true;
-	}
+    bool AddLabel(StateScript*, const prchar_t*, const opval_t*, bool) override
+    {
+        ++info.numStrings;
+        ++info.numLabels;
+        return true;
+    }
 
-	bool AddCaseLabel(StateScript*, const prchar_t*, const opval_t*) override
-	{
-		++info.numStrings;
-		++info.numCaseLabels;
-		return true;
-	}
+    bool AddCaseLabel(StateScript*, const prchar_t*, const opval_t*) override
+    {
+        ++info.numStrings;
+        ++info.numCaseLabels;
+        return true;
+    }
 
-	const_str AddString(const strview&) override
-	{
-		++info.numStrings;
-		return info.numStrings;
-	}
+    const_str AddString(const strview&) override
+    {
+        ++info.numStrings;
+        return info.numStrings;
+    }
 
-	size_t GetCodePosition() override
-	{
-		return 0;
-	}
+    size_t GetCodePosition() override
+    {
+        return 0;
+    }
 
-	opval_t* GetCodePositionPtr() override
-	{
-		return nullptr;
-	}
+    opval_t* GetCodePositionPtr() override
+    {
+        return nullptr;
+    }
 
-	size_t GetProgLength() override
-	{
-		return 0;
-	}
+    size_t GetProgLength() override
+    {
+        return 0;
+    }
 
-	opval_t* MoveCodeBack(size_t backCount) override
-	{
-		const size_t pos = curop - prevop;
+    opval_t* MoveCodeBack(size_t backCount) override
+    {
+        const size_t pos = curop - prevop;
 
-		size_t cback = backCount;
-		while (cback > prevopSize) {
-			cback -= prevopSize;
-		}
+        size_t cback = backCount;
+        while (cback > prevopSize) {
+            cback -= prevopSize;
+        }
 
-		opval_t* op = curop;
-		if (cback > pos) {
-			curop = prevop_last_ptr() - cback;
-		}
-		else {
-			curop -= cback;
-		}
+        opval_t* op = curop;
+        if (cback > pos) {
+            curop = prevop_last_ptr() - cback;
+        }
+        else {
+            curop -= cback;
+        }
 
-		return op;
-	}
+        return op;
+    }
 
-	opval_t* MoveCodeForward(size_t fwdCount) override
-	{
-		info.progLength += fwdCount;
+    opval_t* MoveCodeForward(size_t fwdCount) override
+    {
+        info.progLength += fwdCount;
 
-		opval_t* op = curop;
-		const size_t newPos = (curop + fwdCount) - prevop;
-		curop = prevop + (newPos % prevopSize);
-		return op;
-	}
+        opval_t* op = curop;
+        const size_t newPos = (curop + fwdCount) - prevop;
+        curop = prevop + (newPos % prevopSize);
+        return op;
+    }
 
-	void SetValueAtCodePosition(opval_t*, const void*, size_t) override
-	{
-	}
+    void SetValueAtCodePosition(opval_t*, const void*, size_t) override
+    {
+    }
 
-	void GetValueAt(uintptr_t backOffset, void* value, size_t size) override
-	{
-		size_t csize = size;
-		while (csize > prevopSize) {
-			csize -= prevopSize;
-		}
+    void GetValueAt(uintptr_t backOffset, void* value, size_t size) override
+    {
+        size_t csize = size;
+        while (csize > prevopSize) {
+            csize -= prevopSize;
+        }
 
-		const size_t cback = backOffset > prevopSize ? prevopSize : backOffset;
-		const size_t pos = curop - prevop;
-		opval_t* off = curop;
-		if (cback > pos) {
-			off = prevop_last_ptr() - cback;
-		} else {
-			off = curop - cback;
-		}
+        const size_t cback = backOffset > prevopSize ? prevopSize : backOffset;
+        const size_t pos = curop - prevop;
+        opval_t* off = curop;
+        if (cback > pos) {
+            off = prevop_last_ptr() - cback;
+        } else {
+            off = curop - cback;
+        }
 
-		const size_t remainingLast = prevopSize - pos;
-		if (csize > remainingLast)
-		{
-			memcpy(value, off, remainingLast);
-			memcpy(value, prevop, csize - remainingLast);
-		}
-		else {
-			memcpy(value, off, csize);
-		}
+        const size_t remainingLast = prevopSize - pos;
+        if (csize > remainingLast)
+        {
+            memcpy(value, off, remainingLast);
+            memcpy(value, prevop, csize - remainingLast);
+        }
+        else {
+            memcpy(value, off, csize);
+        }
 
-	}
+    }
 
-	void WriteOpcodeValue(const void* value, size_t size) override
-	{
-		info.progLength += size;
+    void WriteOpcodeValue(const void* value, size_t size) override
+    {
+        info.progLength += size;
 
-		size_t csize = size;
-		while (csize > 0)
-		{
-			const size_t bytesToWrite = size > prevopSize ? prevopSize : size;
-			memcpy(curop, value, bytesToWrite);
-			const size_t newPos = (curop + bytesToWrite) - prevop;
-			curop = prevop + (newPos % prevopSize);
-			csize -= bytesToWrite;
-		}
-	}
+        size_t csize = size;
+        while (csize > 0)
+        {
+            const size_t bytesToWrite = size > prevopSize ? prevopSize : size;
+            memcpy(curop, value, bytesToWrite);
+            const size_t newPos = (curop + bytesToWrite) - prevop;
+            curop = prevop + (newPos % prevopSize);
+            csize -= bytesToWrite;
+        }
+    }
 
-	void AddSourcePos(const opval_t*, sourceLocation_t) override
-	{
-	}
+    void AddSourcePos(const opval_t*, sourceLocation_t) override
+    {
+    }
 
-	const sizeInfo_t& getSizeInfo() const
-	{
-		return info;
-	}
+    const sizeInfo_t& getSizeInfo() const
+    {
+        return info;
+    }
 
-	opval_t* prevop_end_ptr()
-	{
-		return prevop + prevopSize;
-	}
+    opval_t* prevop_end_ptr()
+    {
+        return prevop + prevopSize;
+    }
 
-	opval_t* prevop_last_ptr()
-	{
-		return prevop + prevopSize - 1;
-	}
+    opval_t* prevop_last_ptr()
+    {
+        return prevop + prevopSize - 1;
+    }
 
 private:
-	sizeInfo_t info;
+    sizeInfo_t info;
 
-	static constexpr size_t prevopSize = sizeof(op_offset_t) * 8;
-	opval_t prevop[prevopSize];
-	opval_t* curop;
+    static constexpr size_t prevopSize = sizeof(op_offset_t) * 8;
+    opval_t prevop[prevopSize];
+    opval_t* curop;
 };
 
 class mfuse::ScriptProgramManager : public IScriptManager
 {
 public:
-	ScriptProgramManager(StringDictionary& dictRef, ProgramScript* scriptValue, opval_t* progBuffer, size_t progLength)
-		: dict(dictRef)
-		, script(scriptValue)
-		, code_pos(progBuffer)
-		, prog_ptr(progBuffer)
-		, prog_end_ptr(progBuffer + progLength)
-	{
-		// clear the program first
-		std::fill(prog_ptr, prog_ptr + progLength, 0);
-	}
+    ScriptProgramManager(StringDictionary& dictRef, ProgramScript* scriptValue, opval_t* progBuffer, size_t progLength)
+        : dict(dictRef)
+        , script(scriptValue)
+        , code_pos(progBuffer)
+        , prog_ptr(progBuffer)
+        , prog_end_ptr(progBuffer + progLength)
+    {
+        // clear the program first
+        std::fill(prog_ptr, prog_ptr + progLength, 0);
+    }
 
-	StateScript* CreateCatchStateScript(const opval_t* try_begin_code_pos, const opval_t* code_pos, size_t labelCount) override
-	{
-		StateScript* stateScript = script->CreateCatchStateScript(try_begin_code_pos, code_pos);
-		stateScript->Reserve(labelCount);
-		return stateScript;
-	}
+    StateScript* CreateCatchStateScript(const opval_t* try_begin_code_pos, const opval_t* code_pos, size_t labelCount) override
+    {
+        StateScript* stateScript = script->CreateCatchStateScript(try_begin_code_pos, code_pos);
+        stateScript->Reserve(labelCount);
+        return stateScript;
+    }
 
-	StateScript* CreateSwitchStateScript(size_t labelCount) override
-	{
-		StateScript* stateScript = script->CreateSwitchStateScript();
-		stateScript->Reserve(labelCount);
-		return stateScript;
-	}
+    StateScript* CreateSwitchStateScript(size_t labelCount) override
+    {
+        StateScript* stateScript = script->CreateSwitchStateScript();
+        stateScript->Reserve(labelCount);
+        return stateScript;
+    }
 
-	bool AddLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos, bool privateLabel) override
-	{
-		return stateScript->AddLabel(AddString(name), code_pos, privateLabel);
-	}
+    bool AddLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos, bool privateLabel) override
+    {
+        return stateScript->AddLabel(AddString(name), code_pos, privateLabel);
+    }
 
-	bool AddCaseLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos) override
-	{
-		return stateScript->AddLabel(AddString(name), code_pos);
-	}
+    bool AddCaseLabel(StateScript* stateScript, const prchar_t* name, const opval_t* code_pos) override
+    {
+        return stateScript->AddLabel(AddString(name), code_pos);
+    }
 
-	const_str AddString(const strview& value) override
-	{
-		return dict.Add(value);
-	}
+    const_str AddString(const strview& value) override
+    {
+        return dict.Add(value);
+    }
 
-	size_t GetCodePosition() override
-	{
-		return code_pos - prog_ptr;
-	}
+    size_t GetCodePosition() override
+    {
+        return code_pos - prog_ptr;
+    }
 
-	opval_t* GetCodePositionPtr() override
-	{
-		return code_pos;
-	}
+    opval_t* GetCodePositionPtr() override
+    {
+        return code_pos;
+    }
 
-	size_t GetProgLength() override
-	{
-		return prog_end_ptr - prog_ptr;
-	}
+    size_t GetProgLength() override
+    {
+        return prog_end_ptr - prog_ptr;
+    }
 
-	opval_t* MoveCodeBack(size_t backCount) override
-	{
-		opval_t* pos = code_pos;
-		code_pos -= backCount;
-		return pos;
-	}
+    opval_t* MoveCodeBack(size_t backCount) override
+    {
+        opval_t* pos = code_pos;
+        code_pos -= backCount;
+        return pos;
+    }
 
-	opval_t* MoveCodeForward(size_t fwdCount) override
-	{
-		opval_t* pos = code_pos;
-		code_pos += fwdCount;
-		return pos;
-	}
+    opval_t* MoveCodeForward(size_t fwdCount) override
+    {
+        opval_t* pos = code_pos;
+        code_pos += fwdCount;
+        return pos;
+    }
 
-	void SetValueAtCodePosition(opval_t* pos, const void* value, size_t size) override
-	{
-		memcpy(pos, value, size);
-	}
+    void SetValueAtCodePosition(opval_t* pos, const void* value, size_t size) override
+    {
+        memcpy(pos, value, size);
+    }
 
-	void GetValueAt(uintptr_t backOffset, void* value, size_t size) override
-	{
-		if (uintptr_t(code_pos - prog_ptr) >= backOffset) {
-			memcpy(value, code_pos - backOffset, size);
-		}
-		else {
-			memset(value, 0, size);
-		}
-	}
+    void GetValueAt(uintptr_t backOffset, void* value, size_t size) override
+    {
+        if (uintptr_t(code_pos - prog_ptr) >= backOffset) {
+            memcpy(value, code_pos - backOffset, size);
+        }
+        else {
+            memset(value, 0, size);
+        }
+    }
 
-	void WriteOpcodeValue(const void* value, size_t size) override
-	{
-		assert(code_pos + size <= prog_end_ptr);
-		memcpy(code_pos, value, size);
-		code_pos += size;
-	}
+    void WriteOpcodeValue(const void* value, size_t size) override
+    {
+        assert(code_pos + size <= prog_end_ptr);
+        memcpy(code_pos, value, size);
+        code_pos += size;
+    }
 
-	void AddSourcePos(const opval_t* code_pos, sourceLocation_t sourceLoc) override
-	{
-		script->AddSourcePos(code_pos - prog_ptr, sourceLoc);
-	}
+    void AddSourcePos(const opval_t* code_pos, sourceLocation_t sourceLoc) override
+    {
+        script->AddSourcePos(code_pos - prog_ptr, sourceLoc);
+    }
 
 private:
-	StringDictionary& dict;
-	ProgramScript* script;
-	opval_t* code_pos;
-	opval_t* prog_ptr;
-	opval_t* prog_end_ptr;
+    StringDictionary& dict;
+    ProgramScript* script;
+    opval_t* code_pos;
+    opval_t* prog_ptr;
+    opval_t* prog_end_ptr;
 };
 
 ScriptParser::ScriptParser()
-	: info(nullptr)
+    : info(nullptr)
 {
 }
 
 /*
 const prchar_t* ScriptParser::Preprocess(std::istream& stream)
 {
-	// FIXME: Preprocessor (#defines and #includes)
-	return sourceBuffer;
+    // FIXME: Preprocessor (#defines and #includes)
+    return sourceBuffer;
 }
 */
 
 ParseTree ScriptParser::Parse(const prchar_t* scriptName, std::istream& stream, const rawchar_t* sourceBuffer, uint64_t sourceLength)
 {
-	ParseTree parseTree;
+    ParseTree parseTree;
 
-	std::ostream* verb = info ? info->GetOutput(outputLevel_e::Verbose) : nullptr;
-	Lexer lexer(parseTree, stream, verb);
+    std::ostream* verb = info ? info->GetOutput(outputLevel_e::Verbose) : nullptr;
+    Lexer lexer(parseTree, stream, verb);
 
-	Parser parser(lexer, parseTree);
+    Parser parser(lexer, parseTree);
 
-	if (verb)
-	{
-		lexer.set_debug(1);
-		parser.set_debug_level(1);
-		parser.set_debug_stream(*verb);
-	}
+    if (verb)
+    {
+        lexer.set_debug(1);
+        parser.set_debug_level(1);
+        parser.set_debug_stream(*verb);
+    }
 
-	if (parser.parse() != 0)
-	{
-		// an error occured
-		if (info && info->GetOutput(outputLevel_e::Error))
-		{
-			std::ostream* out = info->GetOutput(outputLevel_e::Error);
+    if (parser.parse() != 0)
+    {
+        // an error occured
+        if (info && info->GetOutput(outputLevel_e::Error))
+        {
+            std::ostream* out = info->GetOutput(outputLevel_e::Error);
 
-			if (out) {
-				printSourcePos(lexer.exception.loc, scriptName, sourceBuffer, sourceLength, *out);
-			}
-		}
+            if (out) {
+                printSourcePos(lexer.exception.loc, scriptName, sourceBuffer, sourceLength, *out);
+            }
+        }
 
-		throw ParseException::ParseError(lexer.exception.text, lexer.exception.msg, lexer.exception.loc);
+        throw ParseException::ParseError(lexer.exception.text, lexer.exception.msg, lexer.exception.loc);
 
-		// FIXME: Throw
-		return {};
-	}
+        // FIXME: Throw
+        return {};
+    }
 
-	return parseTree;
+    return parseTree;
 }
 
 void ScriptParser::SetOutputInfo(const OutputInfo* infoValue)
 {
-	info = infoValue;
+    info = infoValue;
 }
 
 ScriptEmitter::ScriptEmitter(IScriptManager& managerValue, StateScript& stateScriptValue, const OutputInfo* infoValue, size_t maxDepth)
-	: stateScript(&stateScriptValue)
-	, manager(managerValue)
-	, eventSystem(EventSystem::Get())
-	, depth(maxDepth)
-	, switchDepth(0)
-	, info(infoValue)
+    : stateScript(&stateScriptValue)
+    , manager(managerValue)
+    , eventSystem(EventSystem::Get())
+    , depth(maxDepth)
+    , switchDepth(0)
+    , info(infoValue)
 {
-	Reset();
+    Reset();
 }
 
 void ScriptEmitter::Reset()
 {
-	//code_pos = nullptr;
-	//prog_ptr = nullptr;
-	//prog_end_ptr = nullptr;
-	current_label = 0;
-	info = nullptr;
+    //code_pos = nullptr;
+    //prog_ptr = nullptr;
+    //prog_end_ptr = nullptr;
+    current_label = 0;
+    info = nullptr;
 
-	for (size_t i = 0; i < BREAK_JUMP_LOCATION_COUNT; i++)
-	{
-		apucBreakJumpLocations[i] = 0;
-		apucContinueJumpLocations[i] = 0;
-		prev_opcodes[i].opcode = -1;
-		prev_opcodes[i].VarStackOffset = 0;
-	}
+    for (size_t i = 0; i < BREAK_JUMP_LOCATION_COUNT; i++)
+    {
+        apucBreakJumpLocations[i] = 0;
+        apucContinueJumpLocations[i] = 0;
+        prev_opcodes[i].opcode = -1;
+        prev_opcodes[i].VarStackOffset = 0;
+    }
 
-	iBreakJumpLocCount = 0;
-	iContinueJumpLocCount = 0;
+    iBreakJumpLocCount = 0;
+    iContinueJumpLocCount = 0;
 
-	m_iInternalMaxVarStackOffset = 0;
-	m_iMaxCallStackOffset = 0;
-	m_iMaxExternalVarStackOffset = 0;
-	m_iVarStackOffset = 0;
+    m_iInternalMaxVarStackOffset = 0;
+    m_iMaxCallStackOffset = 0;
+    m_iMaxExternalVarStackOffset = 0;
+    m_iVarStackOffset = 0;
 
-	canBreak = false;
-	canContinue = false;
-	hasExternal = false;
+    canBreak = false;
+    canContinue = false;
+    hasExternal = false;
 
-	prev_opcode_pos = 0;
+    prev_opcode_pos = 0;
 }
 
 template<typename...Args>
 void ScriptEmitter::CompileError(sourceLocation_t sourceLoc, const prchar_t* format, Args&& ...args)
 {
-	if (info)
-	{
-		info->Error(format, args...);
+    if (info)
+    {
+        info->Error(format, args...);
 
-		std::ostream* err = info->GetOutput(outputLevel_e::Error);
-		if (err)
-		{
-			*err << std::endl;
-			printSourcePos(sourceLoc, fileName, sourceBuffer, sourceLength, *err);
-		}
-	}
+        std::ostream* err = info->GetOutput(outputLevel_e::Error);
+        if (err)
+        {
+            *err << std::endl;
+            printSourcePos(sourceLoc, fileName, sourceBuffer, sourceLength, *err);
+        }
+    }
 }
 
 opval_t ScriptEmitter::PrevOpcode()
 {
-	return prev_opcodes[prev_opcode_pos].opcode;
+    return prev_opcodes[prev_opcode_pos].opcode;
 }
 
 int8_t ScriptEmitter::PrevVarStackOffset()
 {
-	return prev_opcodes[prev_opcode_pos].VarStackOffset;
+    return prev_opcodes[prev_opcode_pos].VarStackOffset;
 }
 
 void ScriptEmitter::AbsorbPrevOpcode()
 {
-	m_iVarStackOffset -= PrevVarStackOffset();
+    m_iVarStackOffset -= PrevVarStackOffset();
 
-	//code_pos -= OpcodeLength(PrevOpcode());
-	manager.MoveCodeBack(OpcodeLength(PrevOpcode()));
+    //code_pos -= OpcodeLength(PrevOpcode());
+    manager.MoveCodeBack(OpcodeLength(PrevOpcode()));
 
-	if (!prev_opcode_pos) {
-		prev_opcode_pos = 100;
-	}
+    if (!prev_opcode_pos) {
+        prev_opcode_pos = 100;
+    }
 
-	prev_opcode_pos--;
+    prev_opcode_pos--;
 }
 
 void ScriptEmitter::ClearPrevOpcode()
 {
-	prev_opcodes[prev_opcode_pos].opcode = OP_PREVIOUS;
+    prev_opcodes[prev_opcode_pos].opcode = OP_PREVIOUS;
 }
 
 void ScriptEmitter::AccumulatePrevOpcode(opval_t op, int32_t iVarStackOffset)
 {
-	if (IsDebugEnabled())
-	{
-		*info->GetOutput(outputLevel_e::Debug)
-			<< "\t\t"
-			<< std::setfill('0') << std::setw(8)
-			<< code_pos()
-			<< std::setw(0)
-			<< ": " << OpcodeName(op) << " (" << m_iVarStackOffset << ") "
-			<< (IsExternalOpcode(op) ? "[external]" : "")
-			<< std::endl;
-	}
+    if (IsDebugEnabled())
+    {
+        *info->GetOutput(outputLevel_e::Debug)
+            << "\t\t"
+            << std::setfill('0') << std::setw(8)
+            << code_pos()
+            << std::setw(0)
+            << ": " << OpcodeName(op) << " (" << m_iVarStackOffset << ") "
+            << (IsExternalOpcode(op) ? "[external]" : "")
+            << std::endl;
+    }
 
-	prev_opcode_pos = (prev_opcode_pos + 1) % MAX_PREV_OPCODES;
-	prev_opcodes[prev_opcode_pos].opcode = op;
-	prev_opcodes[prev_opcode_pos].VarStackOffset = iVarStackOffset;
-	prev_opcodes[(prev_opcode_pos + 1) % MAX_PREV_OPCODES].opcode = OP_PREVIOUS;
+    prev_opcode_pos = (prev_opcode_pos + 1) % MAX_PREV_OPCODES;
+    prev_opcodes[prev_opcode_pos].opcode = op;
+    prev_opcodes[prev_opcode_pos].VarStackOffset = iVarStackOffset;
+    prev_opcodes[(prev_opcode_pos + 1) % MAX_PREV_OPCODES].opcode = OP_PREVIOUS;
 }
 
 void ScriptEmitter::AddBreakJumpLocation(opval_t* pos, sourceLocation_t sourceLoc)
 {
-	if (iBreakJumpLocCount < BREAK_JUMP_LOCATION_COUNT)
-	{
-		apucBreakJumpLocations[iBreakJumpLocCount++] = pos;
-	}
-	else
-	{
-		iBreakJumpLocCount = 0;
-		CompileError(sourceLoc, "Increase BREAK_JUMP_LOCATION_COUNT and recompile.");
-		throw CompileException::BreakJumpLocOverflow(sourceLoc);
-	}
+    if (iBreakJumpLocCount < BREAK_JUMP_LOCATION_COUNT)
+    {
+        apucBreakJumpLocations[iBreakJumpLocCount++] = pos;
+    }
+    else
+    {
+        iBreakJumpLocCount = 0;
+        CompileError(sourceLoc, "Increase BREAK_JUMP_LOCATION_COUNT and recompile.");
+        throw CompileException::BreakJumpLocOverflow(sourceLoc);
+    }
 }
 
 void ScriptEmitter::AddContinueJumpLocation(opval_t* pos, sourceLocation_t sourceLoc)
 {
-	if (iContinueJumpLocCount < CONTINUE_JUMP_LOCATION_COUNT)
-	{
-		apucContinueJumpLocations[iContinueJumpLocCount++] = pos;
-	}
-	else
-	{
-		iContinueJumpLocCount = 0;
-		CompileError(sourceLoc, "Increase CONTINUE_JUMP_LOCATION_COUNT and recompile.");
-		throw CompileException::ContinueJumpLocOverflow(sourceLoc);
-	}
+    if (iContinueJumpLocCount < CONTINUE_JUMP_LOCATION_COUNT)
+    {
+        apucContinueJumpLocations[iContinueJumpLocCount++] = pos;
+    }
+    else
+    {
+        iContinueJumpLocCount = 0;
+        CompileError(sourceLoc, "Increase CONTINUE_JUMP_LOCATION_COUNT and recompile.");
+        throw CompileException::ContinueJumpLocOverflow(sourceLoc);
+    }
 }
 
 void ScriptEmitter::AddJumpLocation(opval_t* pos)
 {
-	op_offset_t offset = (op_offset_t)(code_pos() - sizeof(op_offset_t) - pos);
+    op_offset_t offset = (op_offset_t)(code_pos() - sizeof(op_offset_t) - pos);
 
-	manager.SetValueAtCodePosition(pos, &offset, sizeof(op_offset_t));
-	ClearPrevOpcode();
+    manager.SetValueAtCodePosition(pos, &offset, sizeof(op_offset_t));
+    ClearPrevOpcode();
 }
 
 void ScriptEmitter::AddJumpBackLocation(opval_t* pos)
 {
-	op_offset_t offset = (op_offset_t)(code_pos() - pos);
+    op_offset_t offset = (op_offset_t)(code_pos() - pos);
 
-	WriteOpValue<op_offset_t>(offset);
+    WriteOpValue<op_offset_t>(offset);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 }
 
 void ScriptEmitter::AddJumpToLocation(opval_t* pos)
 {
-	op_offset_t offset = (op_offset_t)(pos - code_pos() - 1);
+    op_offset_t offset = (op_offset_t)(pos - code_pos() - 1);
 
-	WriteOpValue<op_offset_t>(offset);
+    WriteOpValue<op_offset_t>(offset);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 }
 
 bool ScriptEmitter::BuiltinReadVariable(sourceLocation_t sourceLoc, uint8_t type, const prchar_t* name, eventNum_t eventnum)
 {
-	const ClassDef* c;
+    const ClassDef* c;
 
-	switch (type)
-	{
-	case method_game:
-		c = nullptr;
-		break;
+    switch (type)
+    {
+    case method_game:
+        c = nullptr;
+        break;
 
-	case method_level:
-		c = &Level::staticclass();
-		break;
+    case method_level:
+        c = &Level::staticclass();
+        break;
 
-	case method_local:
-		c = &ScriptThread::staticclass();
-		break;
+    case method_local:
+        c = &ScriptThread::staticclass();
+        break;
 
-	case method_parm:
-		c = &Parm::staticclass();
-		break;
+    case method_parm:
+        c = &Parm::staticclass();
+        break;
 
-	case method_group:
-		c = &ScriptClass::staticclass();
-		break;
+    case method_group:
+        c = &ScriptClass::staticclass();
+        break;
 
-	default:
-		return true;
-	}
+    default:
+        return true;
+    }
 
-	const EventDef* const def = c->GetDef(eventnum);
+    const EventDef* const def = c->GetDef(eventnum);
 
-	if (def)
-	{
-		if (def->GetAttributes().GetType() == evType_e::Getter)
-		{
-			// the event is a valid getter
-			return true;
-		}
-		else
-		{
-			CompileError(sourceLoc, "Cannot get a write-only variable");
-			throw CompileException::WriteOnly(name, sourceLoc);
-		}
-	}
+    if (def)
+    {
+        if (def->GetAttributes().GetType() == evType_e::Getter)
+        {
+            // the event is a valid getter
+            return true;
+        }
+        else
+        {
+            CompileError(sourceLoc, "Cannot get a write-only variable");
+            throw CompileException::WriteOnly(name, sourceLoc);
+        }
+    }
 
-	return false;
+    return false;
 }
 
 bool ScriptEmitter::BuiltinWriteVariable(sourceLocation_t sourceLoc, uint8_t type, const prchar_t* name, eventNum_t eventnum)
 {
-	const ClassDef* c;
+    const ClassDef* c;
 
-	switch (type)
-	{
-	case method_game:
-		c = nullptr;
-		break;
+    switch (type)
+    {
+    case method_game:
+        c = nullptr;
+        break;
 
-	case method_level:
-		c = &Level::staticclass();
-		break;
+    case method_level:
+        c = &Level::staticclass();
+        break;
 
-	case method_local:
-		c = &ScriptThread::staticclass();
-		break;
+    case method_local:
+        c = &ScriptThread::staticclass();
+        break;
 
-	case method_parm:
-		c = &Parm::staticclass();
-		break;
+    case method_parm:
+        c = &Parm::staticclass();
+        break;
 
-	case method_group:
-		c = &ScriptClass::staticclass();
-		break;
+    case method_group:
+        c = &ScriptClass::staticclass();
+        break;
 
-	default:
-		return true;
-	}
+    default:
+        return true;
+    }
 
-	const EventDef* const def = c->GetDef(eventnum);
+    const EventDef* const def = c->GetDef(eventnum);
 
-	if (def)
-	{
-		if (def->GetAttributes().GetType() == evType_e::Setter)
-		{
-			// the event is a valid setter
-			return true;
-		}
-		else
-		{
-			CompileError(sourceLoc, "Cannot get a read-only variable");
-			throw CompileException::ReadOnly(name, sourceLoc);
-		}
-	}
+    if (def)
+    {
+        if (def->GetAttributes().GetType() == evType_e::Setter)
+        {
+            // the event is a valid setter
+            return true;
+        }
+        else
+        {
+            CompileError(sourceLoc, "Cannot get a read-only variable");
+            throw CompileException::ReadOnly(name, sourceLoc);
+        }
+    }
 
-	return false;
+    return false;
 }
 
 void ScriptEmitter::EmitAssignmentStatement(sval_t lhs, sourceLocation_t sourceLoc)
 {
-	sval_t listener_val;
-	const prchar_t* name = lhs.node[2].stringValue;
+    sval_t listener_val;
+    const prchar_t* name = lhs.node[2].stringValue;
 
-	if (lhs.node[0].type != statementType_e::Field)
-	{
-		if (lhs.node[0].type == statementType_e::ArrayExpr)
-		{
-			EmitRef(lhs.node[1], sourceLoc);
-			EmitValue(lhs.node[2]);
-			EmitOpcode(OP_LOAD_ARRAY_VAR, *lhs.node[3].sourceLocValue);
+    if (lhs.node[0].type != statementType_e::Field)
+    {
+        if (lhs.node[0].type == statementType_e::ArrayExpr)
+        {
+            EmitRef(lhs.node[1], sourceLoc);
+            EmitValue(lhs.node[2]);
+            EmitOpcode(OP_LOAD_ARRAY_VAR, *lhs.node[3].sourceLocValue);
 
-			return;
-		}
-		else
-		{
-			CompileError(sourceLoc, "bad lvalue: %d (expecting field or array)", lhs.node[0].type);
-			throw CompileException::BadLeftValueExpectFieldArray((uint8_t)lhs.node[0].type, sourceLoc);
-		}
-	}
+            return;
+        }
+        else
+        {
+            CompileError(sourceLoc, "bad lvalue: %d (expecting field or array)", lhs.node[0].type);
+            throw CompileException::BadLeftValueExpectFieldArray((uint8_t)lhs.node[0].type, sourceLoc);
+        }
+    }
 
-	const eventName_t eventName = eventSystem.GetEventConstName(name);
-	const eventNum_t setterNum = eventSystem.FindSetterEventNum(eventName);
+    const eventName_t eventName = eventSystem.GetEventConstName(name);
+    const eventNum_t setterNum = eventSystem.FindSetterEventNum(eventName);
 
-	listener_val = lhs.node[1];
+    listener_val = lhs.node[1];
 
-	if (listener_val.node[0].type != statementType_e::Listener || (setterNum && BuiltinWriteVariable(sourceLoc, listener_val.node[1].byteValue, name, setterNum)))
-	{
-		EmitValue(listener_val);
-		EmitOpcode(OP_LOAD_FIELD_VAR, *lhs.node[3].sourceLocValue);
-	}
-	else
-	{
-		EmitOpcode(OP_LOAD_GAME_VAR + listener_val.node[1].byteValue, *lhs.node[3].sourceLocValue);
-	}
+    if (listener_val.node[0].type != statementType_e::Listener || (setterNum && BuiltinWriteVariable(sourceLoc, listener_val.node[1].byteValue, name, setterNum)))
+    {
+        EmitValue(listener_val);
+        EmitOpcode(OP_LOAD_FIELD_VAR, *lhs.node[3].sourceLocValue);
+    }
+    else
+    {
+        EmitOpcode(OP_LOAD_GAME_VAR + listener_val.node[1].byteValue, *lhs.node[3].sourceLocValue);
+    }
 
-	const_str index = manager.AddString(name);
-	WriteOpValue<op_name_t>(index);
-	WriteOpValue<op_evName_t>((op_evName_t)eventName);
+    const_str index = manager.AddString(name);
+    WriteOpValue<op_name_t>(index);
+    WriteOpValue<op_evName_t>((op_evName_t)eventName);
 }
 
 void ScriptEmitter::EmitBoolJumpFalse(sourceLocation_t sourceLoc)
 {
-	if (PrevOpcode() == OP_UN_CAST_BOOLEAN)
-	{
-		AbsorbPrevOpcode();
-		EmitOpcode(OP_VAR_JUMP_FALSE4, sourceLoc);
-	}
-	else
-	{
-		EmitOpcode(OP_BOOL_JUMP_FALSE4, sourceLoc);
-	}
+    if (PrevOpcode() == OP_UN_CAST_BOOLEAN)
+    {
+        AbsorbPrevOpcode();
+        EmitOpcode(OP_VAR_JUMP_FALSE4, sourceLoc);
+    }
+    else
+    {
+        EmitOpcode(OP_BOOL_JUMP_FALSE4, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitBoolJumpTrue(sourceLocation_t sourceLoc)
 {
-	if (PrevOpcode() == OP_UN_CAST_BOOLEAN)
-	{
-		AbsorbPrevOpcode();
-		EmitOpcode(OP_VAR_JUMP_TRUE4, sourceLoc);
-	}
-	else
-	{
-		EmitOpcode(OP_BOOL_JUMP_TRUE4, sourceLoc);
-	}
+    if (PrevOpcode() == OP_UN_CAST_BOOLEAN)
+    {
+        AbsorbPrevOpcode();
+        EmitOpcode(OP_VAR_JUMP_TRUE4, sourceLoc);
+    }
+    else
+    {
+        EmitOpcode(OP_BOOL_JUMP_TRUE4, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitBoolNot(sourceLocation_t sourceLoc)
 {
-	int prev = PrevOpcode();
+    int prev = PrevOpcode();
 
-	if (prev == OP_BOOL_STORE_TRUE)
-	{
-		AbsorbPrevOpcode();
-		return EmitOpcode(OP_BOOL_STORE_FALSE, sourceLoc);
-	}
-	else if (prev > OP_BOOL_STORE_TRUE && prev == OP_BOOL_UN_NOT)
-	{
-		AbsorbPrevOpcode();
-		return EmitNil(sourceLoc);
-	}
-	else if (prev == OP_BOOL_STORE_FALSE)
-	{
-		AbsorbPrevOpcode();
-		return EmitOpcode(OP_BOOL_STORE_TRUE, sourceLoc);
-	}
+    if (prev == OP_BOOL_STORE_TRUE)
+    {
+        AbsorbPrevOpcode();
+        return EmitOpcode(OP_BOOL_STORE_FALSE, sourceLoc);
+    }
+    else if (prev > OP_BOOL_STORE_TRUE && prev == OP_BOOL_UN_NOT)
+    {
+        AbsorbPrevOpcode();
+        return EmitNil(sourceLoc);
+    }
+    else if (prev == OP_BOOL_STORE_FALSE)
+    {
+        AbsorbPrevOpcode();
+        return EmitOpcode(OP_BOOL_STORE_TRUE, sourceLoc);
+    }
 
-	return EmitOpcode(OP_BOOL_UN_NOT, sourceLoc);
+    return EmitOpcode(OP_BOOL_UN_NOT, sourceLoc);
 }
 
 void ScriptEmitter::EmitBoolToVar(sourceLocation_t sourceLoc)
 {
-	if (PrevOpcode() == OP_UN_CAST_BOOLEAN)
-	{
-		AbsorbPrevOpcode();
-		EmitOpcode(OP_UN_CAST_BOOLEAN, sourceLoc);
-	}
-	else {
-		AccumulatePrevOpcode(OP_BOOL_TO_VAR, 0);
-	}
+    if (PrevOpcode() == OP_UN_CAST_BOOLEAN)
+    {
+        AbsorbPrevOpcode();
+        EmitOpcode(OP_UN_CAST_BOOLEAN, sourceLoc);
+    }
+    else {
+        AccumulatePrevOpcode(OP_BOOL_TO_VAR, 0);
+    }
 }
 
 void ScriptEmitter::EmitBreak(sourceLocation_t sourceLoc)
 {
-	if (canBreak)
-	{
-		EmitOpcode(OP_JUMP4, sourceLoc);
-		opval_t* pos = code_pos();
-		//code_pos += sizeof(op_offset_t);
-		manager.MoveCodeForward(sizeof(op_offset_t));
-		ClearPrevOpcode();
+    if (canBreak)
+    {
+        EmitOpcode(OP_JUMP4, sourceLoc);
+        opval_t* pos = code_pos();
+        //code_pos += sizeof(op_offset_t);
+        manager.MoveCodeForward(sizeof(op_offset_t));
+        ClearPrevOpcode();
 
-		AddBreakJumpLocation(pos, sourceLoc);
-	}
-	else
-	{
-		CompileError(sourceLoc, "illegal break");
-		throw CompileException::IllegalBreak(sourceLoc);
-	}
+        AddBreakJumpLocation(pos, sourceLoc);
+    }
+    else
+    {
+        CompileError(sourceLoc, "illegal break");
+        throw CompileException::IllegalBreak(sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitCaseLabel(sval_t case_parm, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	if (case_parm.node[0].type == statementType_e::Integer)
-	{
-		EmitCaseLabel(case_parm.node[1].intValue, sourceLoc);
-	}
-	else if (case_parm.node[0].type == statementType_e::String)
-	{
-		EmitCaseLabel(case_parm.node[1].stringValue, sourceLoc);
-	}
-	else if (case_parm.node[0].type == statementType_e::Func1Expr && case_parm.node[1].byteValue == OP_UN_MINUS)
-	{
-		EmitCaseLabel(-(int32_t)case_parm.node[2].node[1].intValue, sourceLoc);
-	}
-	else
-	{
-		CompileError(sourceLoc, "bad case value: %d (expected integer or string)", case_parm.node[0].type);
-		throw CompileException::BadCaseValueExpectIntString((uint8_t)case_parm.node[0].type, sourceLoc);
-	}
+    if (case_parm.node[0].type == statementType_e::Integer)
+    {
+        EmitCaseLabel(case_parm.node[1].intValue, sourceLoc);
+    }
+    else if (case_parm.node[0].type == statementType_e::String)
+    {
+        EmitCaseLabel(case_parm.node[1].stringValue, sourceLoc);
+    }
+    else if (case_parm.node[0].type == statementType_e::Func1Expr && case_parm.node[1].byteValue == OP_UN_MINUS)
+    {
+        EmitCaseLabel(-(int32_t)case_parm.node[2].node[1].intValue, sourceLoc);
+    }
+    else
+    {
+        CompileError(sourceLoc, "bad case value: %d (expected integer or string)", case_parm.node[0].type);
+        throw CompileException::BadCaseValueExpectIntString((uint8_t)case_parm.node[0].type, sourceLoc);
+    }
 
-	EmitLabelParameterList(parameter_list, sourceLoc);
+    EmitLabelParameterList(parameter_list, sourceLoc);
 }
 
 void ScriptEmitter::EmitCaseLabel(const prchar_t* name, sourceLocation_t sourceLoc)
 {
-	if (IsDebugEnabled())
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<" << name << ">:" << std::endl;
-	}
+    if (IsDebugEnabled())
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<" << name << ">:" << std::endl;
+    }
 
-	if (!manager.AddCaseLabel(stateScript, name, code_pos()))
-	{
-		CompileError(sourceLoc, "Duplicate label '%s'", name);
-		throw CompileException::DuplicateLabel(name, sourceLoc);
-	}
+    if (!manager.AddCaseLabel(stateScript, name, code_pos()))
+    {
+        CompileError(sourceLoc, "Duplicate label '%s'", name);
+        throw CompileException::DuplicateLabel(name, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitCaseLabel(int32_t label, sourceLocation_t sourceLoc)
 {
-	prchar_t name[11]{};
-	std::to_chars(name, name + sizeof(name), label);
+    prchar_t name[11]{};
+    std::to_chars(name, name + sizeof(name), label);
 
-	EmitCaseLabel(name, sourceLoc);
+    EmitCaseLabel(name, sourceLoc);
 }
 
 void ScriptEmitter::EmitCatch(sval_t val, const opval_t* try_begin_code_pos, sourceLocation_t sourceLoc)
 {
-	EmitOpcode(OP_JUMP4, sourceLoc);
+    EmitOpcode(OP_JUMP4, sourceLoc);
 
-	opval_t* old_code_pos = code_pos();
-	manager.MoveCodeForward(sizeof(op_offset_t));
+    opval_t* old_code_pos = code_pos();
+    manager.MoveCodeForward(sizeof(op_offset_t));
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	ScriptCountManager countManager;
-	ScriptEmitter emitter(countManager, *stateScript, info);
-	emitter.EmitRoot(val);
+    ScriptCountManager countManager;
+    ScriptEmitter emitter(countManager, *stateScript, info);
+    emitter.EmitRoot(val);
 
-	const sizeInfo_t& info = countManager.getSizeInfo();
+    const sizeInfo_t& info = countManager.getSizeInfo();
 
-	StateScript* const oldStateScript = stateScript;
-	stateScript = manager.CreateCatchStateScript(try_begin_code_pos, code_pos(), info.numCatchLabels);
+    StateScript* const oldStateScript = stateScript;
+    stateScript = manager.CreateCatchStateScript(try_begin_code_pos, code_pos(), info.numCatchLabels);
 
-	EmitValue(val);
+    EmitValue(val);
 
-	stateScript = oldStateScript;
+    stateScript = oldStateScript;
 
-	AddJumpLocation(old_code_pos);
+    AddJumpLocation(old_code_pos);
 }
 
 void ScriptEmitter::EmitCommandMethod(sval_t listener, const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const eventNum_t eventnum = eventSystem.FindNormalEventNum(commandName);
+    const eventNum_t eventnum = eventSystem.FindNormalEventNum(commandName);
 
-	if (!eventnum)
-	{
-		CompileError(sourceLoc, "unknown command: %s", commandName);
-		throw CompileException::UnknownCommand(commandName, sourceLoc);
+    if (!eventnum)
+    {
+        CompileError(sourceLoc, "unknown command: %s", commandName);
+        throw CompileException::UnknownCommand(commandName, sourceLoc);
 
-		EmitValue(listener);
-		uint32_t iParamCount = EmitParameterList(parameter_list);
+        EmitValue(listener);
+        uint32_t iParamCount = EmitParameterList(parameter_list);
 
-		EmitFunction(iParamCount, commandName, sourceLoc);
-		EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
+        EmitFunction(iParamCount, commandName, sourceLoc);
+        EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
 
-		WriteOpValue<op_name_t>(ConstStrings::Empty.GetIndex());
-	}
-	else
-	{
-		const uint32_t iParamCount = EmitParameterList(parameter_list);
+        WriteOpValue<op_name_t>(ConstStrings::Empty.GetIndex());
+    }
+    else
+    {
+        const uint32_t iParamCount = EmitParameterList(parameter_list);
 
-		EmitValue(listener);
+        EmitValue(listener);
 
-		if (iParamCount > 5)
-		{
-			EmitOpcodeWithStack(OP_EXEC_CMD_METHOD_COUNT1, -(int32_t)iParamCount - 1, sourceLoc);
+        if (iParamCount > 5)
+        {
+            EmitOpcodeWithStack(OP_EXEC_CMD_METHOD_COUNT1, -(int32_t)iParamCount - 1, sourceLoc);
 
-			WriteOpValue<op_parmNum_t>(iParamCount);
-		}
-		else
-		{
-			EmitOpcode(OP_EXEC_CMD_METHOD0 + iParamCount, sourceLoc);
-		}
+            WriteOpValue<op_parmNum_t>(iParamCount);
+        }
+        else
+        {
+            EmitOpcode(OP_EXEC_CMD_METHOD0 + iParamCount, sourceLoc);
+        }
 
-		WriteOpValue<op_ev_t>((op_ev_t)eventnum);
-	}
+        WriteOpValue<op_ev_t>((op_ev_t)eventnum);
+    }
 }
 
 void ScriptEmitter::EmitCommandMethodRet(sval_t listener, const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const eventNum_t eventnum = eventSystem.FindReturnEventNum(commandName);
+    const eventNum_t eventnum = eventSystem.FindReturnEventNum(commandName);
 
-	if (!eventnum)
-	{
-		CompileError(sourceLoc, "unknown return command: %s", commandName);
-		throw CompileException::UnknownCommandRet(commandName, sourceLoc);
+    if (!eventnum)
+    {
+        CompileError(sourceLoc, "unknown return command: %s", commandName);
+        throw CompileException::UnknownCommandRet(commandName, sourceLoc);
 
-		const uint32_t iParamCount = EmitParameterList(parameter_list);
-		EmitValue(listener);
-		EmitFunction(iParamCount, commandName, sourceLoc);
-	}
-	else
-	{
-		const uint32_t iParamCount = EmitParameterList(parameter_list);
-		EmitValue(listener);
-		EmitMethodExpression(iParamCount, eventnum, sourceLoc);
-	}
+        const uint32_t iParamCount = EmitParameterList(parameter_list);
+        EmitValue(listener);
+        EmitFunction(iParamCount, commandName, sourceLoc);
+    }
+    else
+    {
+        const uint32_t iParamCount = EmitParameterList(parameter_list);
+        EmitValue(listener);
+        EmitMethodExpression(iParamCount, eventnum, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitCommandScript(const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const eventNum_t eventnum = eventSystem.FindNormalEventNum(commandName);
+    const eventNum_t eventnum = eventSystem.FindNormalEventNum(commandName);
 
-	if (!eventnum)
-	{
-		CompileError(sourceLoc, "unknown command: %s", commandName);
-		throw CompileException::UnknownCommand(commandName, sourceLoc);
+    if (!eventnum)
+    {
+        CompileError(sourceLoc, "unknown command: %s", commandName);
+        throw CompileException::UnknownCommand(commandName, sourceLoc);
 
-		uint32_t iParamCount = EmitParameterList(parameter_list);
-		EmitOpcode(OP_STORE_LOCAL, sourceLoc);
-		EmitFunction(iParamCount, commandName, sourceLoc);
-		EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
+        uint32_t iParamCount = EmitParameterList(parameter_list);
+        EmitOpcode(OP_STORE_LOCAL, sourceLoc);
+        EmitFunction(iParamCount, commandName, sourceLoc);
+        EmitOpcode(OP_LOAD_LOCAL_VAR, sourceLoc);
 
-		WriteOpValue<op_name_t>(ConstStrings::Empty.GetIndex());
-	}
-	else
-	{
-		const uint32_t iParamCount = EmitParameterList(parameter_list);
+        WriteOpValue<op_name_t>(ConstStrings::Empty.GetIndex());
+    }
+    else
+    {
+        const uint32_t iParamCount = EmitParameterList(parameter_list);
 
-		if (iParamCount > 5)
-		{
-			EmitOpcodeWithStack(OP_EXEC_CMD_COUNT1, -(int32_t)iParamCount, sourceLoc);
+        if (iParamCount > 5)
+        {
+            EmitOpcodeWithStack(OP_EXEC_CMD_COUNT1, -(int32_t)iParamCount, sourceLoc);
 
-			WriteOpValue<op_parmNum_t>(iParamCount);
-		}
-		else
-		{
-			EmitOpcode(OP_EXEC_CMD0 + iParamCount, sourceLoc);
-		}
+            WriteOpValue<op_parmNum_t>(iParamCount);
+        }
+        else
+        {
+            EmitOpcode(OP_EXEC_CMD0 + iParamCount, sourceLoc);
+        }
 
-		WriteOpValue<op_ev_t>((op_ev_t)eventnum);
-	}
+        WriteOpValue<op_ev_t>((op_ev_t)eventnum);
+    }
 }
 
 void ScriptEmitter::EmitCommandScriptRet(const prchar_t* commandName, sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	const eventNum_t eventnum = eventSystem.FindReturnEventNum(commandName);
+    const eventNum_t eventnum = eventSystem.FindReturnEventNum(commandName);
 
-	if (!eventnum)
-	{
-		CompileError(sourceLoc, "unknown return command: %s", commandName);
-		throw CompileException::UnknownCommandRet(commandName, sourceLoc);
-	}
-	else
-	{
-		uint32_t iParamCount = EmitParameterList(parameter_list);
-		EmitOpcode(OP_STORE_LOCAL, sourceLoc);
-		EmitMethodExpression(iParamCount, eventnum, sourceLoc);
-	}
+    if (!eventnum)
+    {
+        CompileError(sourceLoc, "unknown return command: %s", commandName);
+        throw CompileException::UnknownCommandRet(commandName, sourceLoc);
+    }
+    else
+    {
+        uint32_t iParamCount = EmitParameterList(parameter_list);
+        EmitOpcode(OP_STORE_LOCAL, sourceLoc);
+        EmitMethodExpression(iParamCount, eventnum, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitConstArray(sval_t lhs, sval_t rhs, sourceLocation_t sourceLoc)
 {
-	uint32_t iCount = 1;
+    uint32_t iCount = 1;
 
-	EmitValue(lhs);
+    EmitValue(lhs);
 
-	for (const sval_t* node = rhs.node[0].node; node; node = node[1].node, iCount++)
-	{
-		EmitValue(*node);
-	}
-	
-	/*
-	while (rhs.node->type == statementType_e::Next)
-	{
-		lhs = rhs.node[1];
-		rhs = rhs.node[2];
-		++iCount;
+    for (const sval_t* node = rhs.node[0].node; node; node = node[1].node, iCount++)
+    {
+        EmitValue(*node);
+    }
+    
+    /*
+    while (rhs.node->type == statementType_e::Next)
+    {
+        lhs = rhs.node[1];
+        rhs = rhs.node[2];
+        ++iCount;
 
-		EmitValue(lhs);
-	}
+        EmitValue(lhs);
+    }
 
-	EmitValue(rhs);
-	*/
-	EmitConstArrayOpcode(iCount, sourceLoc);
+    EmitValue(rhs);
+    */
+    EmitConstArrayOpcode(iCount, sourceLoc);
 }
 
 void ScriptEmitter::EmitConstArrayOpcode(uint32_t iCount, sourceLocation_t sourceLoc)
 {
-	/*if( iCount > 255 )
-	{
-		CompileError( -1, "Max const array parameters exceeded") ;
-	}
-	else
-	{
-		EmitOpcodeWithStack(OP_LOAD_CONST_ARRAY1, 1 - iCount, sourceLoc);
+    /*if( iCount > 255 )
+    {
+        CompileError( -1, "Max const array parameters exceeded") ;
+    }
+    else
+    {
+        EmitOpcodeWithStack(OP_LOAD_CONST_ARRAY1, 1 - iCount, sourceLoc);
 
-		*code_pos++ = iCount;
-	}*/
+        *code_pos++ = iCount;
+    }*/
 
-	EmitOpcodeWithStack(OP_LOAD_CONST_ARRAY1, 1 - iCount, sourceLoc);
+    EmitOpcodeWithStack(OP_LOAD_CONST_ARRAY1, 1 - iCount, sourceLoc);
 
-	WriteOpValue<op_arrayParmNum_t>(iCount);
+    WriteOpValue<op_arrayParmNum_t>(iCount);
 }
 
 void ScriptEmitter::EmitContinue(sourceLocation_t sourceLoc)
 {
-	if (canContinue)
-	{
-		EmitOpcode(OP_JUMP4, sourceLoc);
-		opval_t* pos = code_pos();
-		manager.MoveCodeForward(sizeof(op_offset_t));
-		ClearPrevOpcode();
+    if (canContinue)
+    {
+        EmitOpcode(OP_JUMP4, sourceLoc);
+        opval_t* pos = code_pos();
+        manager.MoveCodeForward(sizeof(op_offset_t));
+        ClearPrevOpcode();
 
-		AddContinueJumpLocation(pos, sourceLoc);
-	}
-	else
-	{
-		CompileError(sourceLoc, "illegal continue");
-		throw CompileException::IllegalContinue(sourceLoc);
-	}
+        AddContinueJumpLocation(pos, sourceLoc);
+    }
+    else
+    {
+        CompileError(sourceLoc, "illegal continue");
+        throw CompileException::IllegalContinue(sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitDoWhileJump(sval_t while_stmt, sval_t while_expr, sourceLocation_t sourceLoc)
 {
-	opval_t* pos = code_pos();
-	uintptr_t label1;
-	uintptr_t label2;
+    opval_t* pos = code_pos();
+    uintptr_t label1;
+    uintptr_t label2;
 
-	if( IsDebugEnabled() )
-	{
-		label1 = current_label++;
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ":" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        label1 = current_label++;
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ":" << std::endl;
+    }
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	bool old_canBreak = canBreak;
-	bool old_canContinue = canContinue;
-	uint16_t breakCount = iBreakJumpLocCount;
-	uint16_t continueCount = iContinueJumpLocCount;
+    bool old_canBreak = canBreak;
+    bool old_canContinue = canContinue;
+    uint16_t breakCount = iBreakJumpLocCount;
+    uint16_t continueCount = iContinueJumpLocCount;
 
-	canBreak = true;
-	canContinue = true;
+    canBreak = true;
+    canContinue = true;
 
-	EmitValue(while_stmt);
+    EmitValue(while_stmt);
 
-	ProcessContinueJumpLocations(continueCount);
+    ProcessContinueJumpLocations(continueCount);
 
-	canContinue = old_canContinue;
+    canContinue = old_canContinue;
 
-	EmitValue(while_expr);
-	EmitVarToBool(sourceLoc);
+    EmitValue(while_expr);
+    EmitVarToBool(sourceLoc);
 
-	label2 = EmitNot(sourceLoc);
+    label2 = EmitNot(sourceLoc);
 
-	opval_t* jmp = code_pos();
+    opval_t* jmp = code_pos();
 
-	manager.MoveCodeForward(sizeof(op_offset_t));
-	//code_pos += sizeof(op_offset_t);
+    manager.MoveCodeForward(sizeof(op_offset_t));
+    //code_pos += sizeof(op_offset_t);
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "JUMP_BACK4 <LABEL" << label1 << ">" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "JUMP_BACK4 <LABEL" << label1 << ">" << std::endl;
+    }
 
-	EmitJumpBack(pos, sourceLoc);
+    EmitJumpBack(pos, sourceLoc);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label2 << ">:" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label2 << ">:" << std::endl;
+    }
 
-	AddJumpLocation(jmp);
+    AddJumpLocation(jmp);
 
-	ProcessBreakJumpLocations(breakCount);
+    ProcessBreakJumpLocations(breakCount);
 
-	canBreak = old_canBreak;
+    canBreak = old_canBreak;
 }
 
 void ScriptEmitter::EmitEof(sourceLocation_t sourceLoc)
 {
-	if (PrevOpcode() != OP_DONE) {
-		EmitOpcode(OP_DONE, sourceLoc);
-	} else {
-		EmitNil(sourceLoc);
-	}
+    if (PrevOpcode() != OP_DONE) {
+        EmitOpcode(OP_DONE, sourceLoc);
+    } else {
+        EmitNil(sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitField(sval_t listener_val, sval_t field_val, sourceLocation_t sourceLoc)
 {
-	const const_str index = manager.AddString(field_val.stringValue);
+    const const_str index = manager.AddString(field_val.stringValue);
 
-	const eventName_t eventName = eventSystem.GetEventConstName(field_val.stringValue);
-	const eventNum_t getterNum = eventSystem.FindGetterEventNum(eventName);
+    const eventName_t eventName = eventSystem.GetEventConstName(field_val.stringValue);
+    const eventNum_t getterNum = eventSystem.FindGetterEventNum(eventName);
 
-	const op_name_t prev_index = ReadOpValue<op_name_t>(sizeof(op_name_t) + sizeof(op_evName_t));
+    const op_name_t prev_index = ReadOpValue<op_name_t>(sizeof(op_name_t) + sizeof(op_evName_t));
 
-	if (listener_val.node[0].type != statementType_e::Listener || (getterNum && BuiltinReadVariable(sourceLoc, listener_val.node[1].byteValue, field_val.stringValue, getterNum)))
-	{
-		EmitValue(listener_val);
-		EmitOpcode(OP_STORE_FIELD, sourceLoc);
+    if (listener_val.node[0].type != statementType_e::Listener || (getterNum && BuiltinReadVariable(sourceLoc, listener_val.node[1].byteValue, field_val.stringValue, getterNum)))
+    {
+        EmitValue(listener_val);
+        EmitOpcode(OP_STORE_FIELD, sourceLoc);
 
-		WriteOpValue<op_name_t>(index);
-		WriteOpValue<op_evName_t>((op_evName_t)eventName);
-	}
-	else if (PrevOpcode() != (OP_LOAD_GAME_VAR + listener_val.node[1].byteValue) || prev_index != index)
-	{
-		EmitOpcode(OP_STORE_GAME_VAR + listener_val.node[1].byteValue, sourceLoc);
+        WriteOpValue<op_name_t>(index);
+        WriteOpValue<op_evName_t>((op_evName_t)eventName);
+    }
+    else if (PrevOpcode() != (OP_LOAD_GAME_VAR + listener_val.node[1].byteValue) || prev_index != index)
+    {
+        EmitOpcode(OP_STORE_GAME_VAR + listener_val.node[1].byteValue, sourceLoc);
 
-		WriteOpValue<op_name_t>(index);
-		WriteOpValue<op_evName_t>((op_evName_t)eventName);
-	}
-	else
-	{
-		AbsorbPrevOpcode();
-		EmitOpcode(OP_LOAD_STORE_GAME_VAR + listener_val.node[1].byteValue, sourceLoc);
+        WriteOpValue<op_name_t>(index);
+        WriteOpValue<op_evName_t>((op_evName_t)eventName);
+    }
+    else
+    {
+        AbsorbPrevOpcode();
+        EmitOpcode(OP_LOAD_STORE_GAME_VAR + listener_val.node[1].byteValue, sourceLoc);
 
-		// Move forward because the previous opcode was replaced
-		manager.MoveCodeForward(sizeof(op_name_t) + sizeof(op_evName_t));
-	}
+        // Move forward because the previous opcode was replaced
+        manager.MoveCodeForward(sizeof(op_name_t) + sizeof(op_evName_t));
+    }
 }
 
 void ScriptEmitter::EmitFloat(float value, sourceLocation_t sourceLoc)
 {
-	EmitOpcode(OP_STORE_FLOAT, sourceLoc);
+    EmitOpcode(OP_STORE_FLOAT, sourceLoc);
 
-	WriteOpValue<float>(value);
+    WriteOpValue<float>(value);
 }
 
 void ScriptEmitter::EmitFunc1(opval_t opcode, sourceLocation_t sourceLoc)
 {
-	if (opcode == OP_UN_MINUS)
-	{
-		ScriptVariable var;
+    if (opcode == OP_UN_MINUS)
+    {
+        ScriptVariable var;
 
-		if (EvalPrevValue(var))
-		{
-			AbsorbPrevOpcode();
-			var.minus();
+        if (EvalPrevValue(var))
+        {
+            AbsorbPrevOpcode();
+            var.minus();
 
-			return EmitValue(var, sourceLoc);
-		}
-	}
+            return EmitValue(var, sourceLoc);
+        }
+    }
 
-	EmitOpcode(opcode, sourceLoc);
+    EmitOpcode(opcode, sourceLoc);
 }
 
 void ScriptEmitter::EmitFunction(uint32_t iParamCount, const prchar_t* functionName, sourceLocation_t sourceLoc)
 {
-	strview filename;
-	strview label;
-	bool found = false;
+    strview filename;
+    strview label;
+    bool found = false;
 
-	const prchar_t* p = functionName;
-	while (*p)
-	{
-		if (p[0] == ':' && p[1] == ':')
-		{
-			filename = strview(functionName, p - functionName);
-			label = strview(p + 2);
+    const prchar_t* p = functionName;
+    while (*p)
+    {
+        if (p[0] == ':' && p[1] == ':')
+        {
+            filename = strview(functionName, p - functionName);
+            label = strview(p + 2);
 
-			found = true;
+            found = true;
 
-			break;
-		}
+            break;
+        }
 
-		p++;
-	}
+        p++;
+    }
 
-	EmitOpcodeWithStack(OP_FUNC, -(int32_t)iParamCount, sourceLoc);
+    EmitOpcodeWithStack(OP_FUNC, -(int32_t)iParamCount, sourceLoc);
 
-	if (!found)
-	{
-		WriteOpValue<bool>(false);
-		// no file specified, so only put the label
-		WriteOpValue<op_name_t>(manager.AddString(functionName));
-	}
-	else
-	{
-		WriteOpValue<bool>(true);
-		WriteOpValue<op_name_t>(manager.AddString(functionName));
-		WriteOpValue<op_name_t>(manager.AddString(label));
-	}
+    if (!found)
+    {
+        WriteOpValue<bool>(false);
+        // no file specified, so only put the label
+        WriteOpValue<op_name_t>(manager.AddString(functionName));
+    }
+    else
+    {
+        WriteOpValue<bool>(true);
+        WriteOpValue<op_name_t>(manager.AddString(functionName));
+        WriteOpValue<op_name_t>(manager.AddString(label));
+    }
 
-	WriteOpValue<op_parmNum_t>(iParamCount);
+    WriteOpValue<op_parmNum_t>(iParamCount);
 }
 
 void ScriptEmitter::EmitIfElseJump(sval_t if_stmt, sval_t else_stmt, sourceLocation_t sourceLoc)
 {
-	opval_t* jmp1, * jmp2;
+    opval_t* jmp1, * jmp2;
 
-	const uintptr_t label1 = EmitNot(sourceLoc);
+    const uintptr_t label1 = EmitNot(sourceLoc);
 
-	jmp1 = code_pos();
-	manager.MoveCodeForward(sizeof(op_offset_t));
-	//code_pos += sizeof(op_offset_t);
-	ClearPrevOpcode();
+    jmp1 = code_pos();
+    manager.MoveCodeForward(sizeof(op_offset_t));
+    //code_pos += sizeof(op_offset_t);
+    ClearPrevOpcode();
 
-	EmitValue(if_stmt);
+    EmitValue(if_stmt);
 
-	if( IsDebugEnabled() )
-	{
-		const uintptr_t label2 = current_label++;
-		*info->GetOutput(outputLevel_e::Debug) << "JUMP <LABEL" << label2 << ">" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        const uintptr_t label2 = current_label++;
+        *info->GetOutput(outputLevel_e::Debug) << "JUMP <LABEL" << label2 << ">" << std::endl;
+    }
 
-	EmitOpcode(OP_JUMP4, sourceLoc);
-	jmp2 = code_pos();
-	manager.MoveCodeForward(sizeof(op_offset_t));
-	//code_pos += sizeof(op_offset_t);
+    EmitOpcode(OP_JUMP4, sourceLoc);
+    jmp2 = code_pos();
+    manager.MoveCodeForward(sizeof(op_offset_t));
+    //code_pos += sizeof(op_offset_t);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ">:" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ">:" << std::endl;
+    }
 
-	AddJumpLocation(jmp1);
-	EmitValue(else_stmt);
+    AddJumpLocation(jmp1);
+    EmitValue(else_stmt);
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ">:" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ">:" << std::endl;
+    }
 
-	AddJumpLocation(jmp2);
+    AddJumpLocation(jmp2);
 }
 
 void ScriptEmitter::EmitIfJump(sval_t if_stmt, sourceLocation_t sourceLoc)
 {
-	opval_t* jmp;
+    opval_t* jmp;
 
-	const uintptr_t label = EmitNot(sourceLoc);
-	jmp = code_pos();
-	manager.MoveCodeForward(sizeof(op_offset_t));
-	//code_pos += sizeof(op_offset_t);
+    const uintptr_t label = EmitNot(sourceLoc);
+    jmp = code_pos();
+    manager.MoveCodeForward(sizeof(op_offset_t));
+    //code_pos += sizeof(op_offset_t);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	EmitValue(if_stmt);
+    EmitValue(if_stmt);
 
-	if (IsDebugEnabled())
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label << "" << std::endl;
-	}
+    if (IsDebugEnabled())
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label << "" << std::endl;
+    }
 
-	AddJumpLocation(jmp);
+    AddJumpLocation(jmp);
 }
 
 void ScriptEmitter::EmitInteger(uint64_t value, sourceLocation_t sourceLoc)
 {
-	if (value == 0)
-	{
-		EmitOpcode(OP_STORE_INT0, sourceLoc);
-	}
-	else if (value <= (1 << 8))
-	{
-		EmitOpcode(OP_STORE_INT1, sourceLoc);
+    if (value == 0)
+    {
+        EmitOpcode(OP_STORE_INT0, sourceLoc);
+    }
+    else if (value <= (1 << 8))
+    {
+        EmitOpcode(OP_STORE_INT1, sourceLoc);
 
-		WriteOpValue<uint8_t>(static_cast<uint8_t>(value));
-	}
-	else if (value <= (1 << 16))
-	{
-		EmitOpcode(OP_STORE_INT2, sourceLoc);
+        WriteOpValue<uint8_t>(static_cast<uint8_t>(value));
+    }
+    else if (value <= (1 << 16))
+    {
+        EmitOpcode(OP_STORE_INT2, sourceLoc);
 
-		WriteOpValue<uint16_t>(static_cast<uint16_t>(value));
-	}
-	else if (value <= (1 << 24))
-	{
-		EmitOpcode(OP_STORE_INT3, sourceLoc);
+        WriteOpValue<uint16_t>(static_cast<uint16_t>(value));
+    }
+    else if (value <= (1 << 24))
+    {
+        EmitOpcode(OP_STORE_INT3, sourceLoc);
 
-		WriteOpValue<short3>(static_cast<short3>(value));
-	}
-	else if(value <= (1ll << 32ll))
-	{
-		EmitOpcode(OP_STORE_INT4, sourceLoc);
+        WriteOpValue<short3>(static_cast<short3>(value));
+    }
+    else if(value <= (1ll << 32ll))
+    {
+        EmitOpcode(OP_STORE_INT4, sourceLoc);
 
-		WriteOpValue<uint32_t>(static_cast<uint32_t>(value));
-	}
-	else
-	{
-		// 64-bit value
-		EmitOpcode(OP_STORE_INT8, sourceLoc);
+        WriteOpValue<uint32_t>(static_cast<uint32_t>(value));
+    }
+    else
+    {
+        // 64-bit value
+        EmitOpcode(OP_STORE_INT8, sourceLoc);
 
-		WriteOpValue<uint64_t>(value);
-	}
+        WriteOpValue<uint64_t>(value);
+    }
 }
 
 void ScriptEmitter::EmitJump(opval_t* pos, sourceLocation_t sourceLoc)
 {
-	EmitOpcode(OP_JUMP4, sourceLoc);
-	AddJumpToLocation(pos);
+    EmitOpcode(OP_JUMP4, sourceLoc);
+    AddJumpToLocation(pos);
 }
 
 void ScriptEmitter::EmitJumpBack(opval_t* pos, sourceLocation_t sourceLoc)
 {
-	EmitOpcode(OP_JUMP_BACK4, sourceLoc);
-	AddJumpBackLocation(pos);
+    EmitOpcode(OP_JUMP_BACK4, sourceLoc);
+    AddJumpBackLocation(pos);
 }
 
 void ScriptEmitter::EmitLabel(const prchar_t* name, sourceLocation_t sourceLoc)
 {
-	if(IsDebugEnabled())
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<" << name << ">:" << std::endl;
-	}
+    if(IsDebugEnabled())
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<" << name << ">:" << std::endl;
+    }
 
-	if(!switchDepth)
-	{
-		if (!manager.AddLabel(stateScript, name, code_pos()))
-		{
-			CompileError(sourceLoc, "Duplicate label '%s'", name);
-			throw CompileException::DuplicateLabel(name, sourceLoc);
-		}
-	}
-	else
-	{
-		if (!manager.AddCaseLabel(stateScript, name, code_pos()))
-		{
-			CompileError(sourceLoc, "Duplicate label '%s'", name);
-			throw CompileException::DuplicateLabel(name, sourceLoc);
-		}
-	}
+    if(!switchDepth)
+    {
+        if (!manager.AddLabel(stateScript, name, code_pos()))
+        {
+            CompileError(sourceLoc, "Duplicate label '%s'", name);
+            throw CompileException::DuplicateLabel(name, sourceLoc);
+        }
+    }
+    else
+    {
+        if (!manager.AddCaseLabel(stateScript, name, code_pos()))
+        {
+            CompileError(sourceLoc, "Duplicate label '%s'", name);
+            throw CompileException::DuplicateLabel(name, sourceLoc);
+        }
+    }
 
-	// Always clear the previous opcode when a new label is emitted
-	ClearPrevOpcode();
+    // Always clear the previous opcode when a new label is emitted
+    ClearPrevOpcode();
 }
 
 void ScriptEmitter::EmitLabel(unsigned int number, sourceLocation_t sourceLoc)
 {
-	prchar_t name[11]{};
-	std::to_chars(name, name + sizeof(name), number);
+    prchar_t name[11]{};
+    std::to_chars(name, name + sizeof(name), number);
 
-	EmitLabel(name, sourceLoc);
+    EmitLabel(name, sourceLoc);
 
-	// Always clear the previous opcode when a new label is emitted
-	ClearPrevOpcode();
+    // Always clear the previous opcode when a new label is emitted
+    ClearPrevOpcode();
 }
 
 void ScriptEmitter::EmitLabelParameterList(sval_t parameter_list, sourceLocation_t sourceLoc)
 {
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	if (parameter_list.node)
-	{
-		EmitOpcode(OP_MARK_STACK_POS, sourceLoc);
+    if (parameter_list.node)
+    {
+        EmitOpcode(OP_MARK_STACK_POS, sourceLoc);
 
-		for(const sval_t* param = parameter_list.node->node; param; param = param[1].node) {
-			EmitParameter(param->node, sourceLoc);
-		};
+        for(const sval_t* param = parameter_list.node->node; param; param = param[1].node) {
+            EmitParameter(param->node, sourceLoc);
+        };
 
-		EmitOpcode(OP_RESTORE_STACK_POS, sourceLoc);
-	}
+        EmitOpcode(OP_RESTORE_STACK_POS, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitLabelPrivate(const prchar_t* name, sourceLocation_t sourceLoc)
 {
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<" << name << ">:" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<" << name << ">:" << std::endl;
+    }
 
-	if (!manager.AddLabel(stateScript, name, code_pos(), true))
-	{
-		CompileError(sourceLoc, "Duplicate label '%s'", name);
-		throw CompileException::DuplicateLabel(name, sourceLoc);
-	}
+    if (!manager.AddLabel(stateScript, name, code_pos(), true))
+    {
+        CompileError(sourceLoc, "Duplicate label '%s'", name);
+        throw CompileException::DuplicateLabel(name, sourceLoc);
+    }
 }
 
 void ScriptEmitter::EmitAndJump(sval_t logic_stmt, sourceLocation_t sourceLoc)
 {
-	opval_t* jmp;
+    opval_t* jmp;
 
-	uintptr_t label;
-	if( IsDebugEnabled() )
-	{
-		label = current_label++;
-		*info->GetOutput(outputLevel_e::Debug) << "BOOL_LOGICAL_AND <LABEL" << label << ">" << std::endl;
-	}
+    uintptr_t label;
+    if( IsDebugEnabled() )
+    {
+        label = current_label++;
+        *info->GetOutput(outputLevel_e::Debug) << "BOOL_LOGICAL_AND <LABEL" << label << ">" << std::endl;
+    }
 
-	EmitOpcode(OP_BOOL_LOGICAL_AND, sourceLoc);
-	jmp = manager.MoveCodeForward(sizeof(op_offset_t));
-	//jmp = code_pos();
-	//code_pos += sizeof(op_offset_t);
+    EmitOpcode(OP_BOOL_LOGICAL_AND, sourceLoc);
+    jmp = manager.MoveCodeForward(sizeof(op_offset_t));
+    //jmp = code_pos();
+    //code_pos += sizeof(op_offset_t);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	EmitValue(logic_stmt);
-	EmitVarToBool(sourceLoc);
+    EmitValue(logic_stmt);
+    EmitVarToBool(sourceLoc);
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label << ">:" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label << ">:" << std::endl;
+    }
 
-	AddJumpLocation(jmp);
-	//EmitBoolToVar(sourceLoc);
-	AccumulatePrevOpcode(OP_BOOL_LOGICAL_AND, 0);
+    AddJumpLocation(jmp);
+    //EmitBoolToVar(sourceLoc);
+    AccumulatePrevOpcode(OP_BOOL_LOGICAL_AND, 0);
 }
 
 void ScriptEmitter::EmitOrJump(sval_t logic_stmt, sourceLocation_t sourceLoc)
 {
-	opval_t* jmp;
+    opval_t* jmp;
 
-	uintptr_t label;
-	if (IsDebugEnabled())
-	{
-		label = current_label++;
-		*info->GetOutput(outputLevel_e::Debug) << "BOOL_LOGICAL_OR <LABEL" << label << ">" << std::endl;
-	}
+    uintptr_t label;
+    if (IsDebugEnabled())
+    {
+        label = current_label++;
+        *info->GetOutput(outputLevel_e::Debug) << "BOOL_LOGICAL_OR <LABEL" << label << ">" << std::endl;
+    }
 
-	EmitOpcode(OP_BOOL_LOGICAL_OR, sourceLoc);
-	jmp = manager.MoveCodeForward(sizeof(op_offset_t));
-	//jmp = code_pos;
-	//code_pos += sizeof(op_offset_t);
+    EmitOpcode(OP_BOOL_LOGICAL_OR, sourceLoc);
+    jmp = manager.MoveCodeForward(sizeof(op_offset_t));
+    //jmp = code_pos;
+    //code_pos += sizeof(op_offset_t);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	EmitValue(logic_stmt);
-	EmitVarToBool(sourceLoc);
+    EmitValue(logic_stmt);
+    EmitVarToBool(sourceLoc);
 
-	if (IsDebugEnabled())
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label << ">:" << std::endl;
-	}
+    if (IsDebugEnabled())
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label << ">:" << std::endl;
+    }
 
-	AddJumpLocation(jmp);
-	//EmitBoolToVar(sourceLoc);
-	AccumulatePrevOpcode(OP_BOOL_LOGICAL_AND, 0);
+    AddJumpLocation(jmp);
+    //EmitBoolToVar(sourceLoc);
+    AccumulatePrevOpcode(OP_BOOL_LOGICAL_AND, 0);
 }
 
 void ScriptEmitter::EmitMakeArray(sval_t val, sourceLocation_t sourceLoc)
 {
-	uint32_t iCount = 0;
-	for (sval_t* node = val.node[0].node; node != nullptr; iCount++, node = node[1].node)
-	{
-		EmitValue(node[0]);
-	}
+    uint32_t iCount = 0;
+    for (sval_t* node = val.node[0].node; node != nullptr; iCount++, node = node[1].node)
+    {
+        EmitValue(node[0]);
+    }
 
-	EmitConstArrayOpcode(iCount, sourceLoc);
+    EmitConstArrayOpcode(iCount, sourceLoc);
 }
 
 void ScriptEmitter::EmitMethodExpression(uint32_t iParamCount, eventNum_t eventnum, sourceLocation_t sourceLoc)
 {
-	if (iParamCount > 5)
-	{
-		EmitOpcodeWithStack(OP_EXEC_METHOD_COUNT1, -(int32_t)iParamCount, sourceLoc);
+    if (iParamCount > 5)
+    {
+        EmitOpcodeWithStack(OP_EXEC_METHOD_COUNT1, -(int32_t)iParamCount, sourceLoc);
 
-		WriteOpValue<op_parmNum_t>(iParamCount);
-	}
-	else
-	{
-		EmitOpcode(OP_EXEC_METHOD0 + iParamCount, sourceLoc);
-	}
+        WriteOpValue<op_parmNum_t>(iParamCount);
+    }
+    else
+    {
+        EmitOpcode(OP_EXEC_METHOD0 + iParamCount, sourceLoc);
+    }
 
-	WriteOpValue<op_ev_t>(static_cast<op_ev_t>(eventnum));
+    WriteOpValue<op_ev_t>(static_cast<op_ev_t>(eventnum));
 }
 
 void ScriptEmitter::EmitNil(sourceLocation_t)
 {
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug)
-			<< "\t\t"
-			<< std::setfill('0') << std::setw(8)
-			<< manager.GetCodePosition()
-			<< ":" << std::endl
-			<< std::setw(0);
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug)
+            << "\t\t"
+            << std::setfill('0') << std::setw(8)
+            << manager.GetCodePosition()
+            << ":" << std::endl
+            << std::setw(0);
+    }
 }
 
 void ScriptEmitter::EmitNop()
 {
-	EmitOpcode(OP_NOP, -1);
+    EmitOpcode(OP_NOP, -1);
 }
 
 uintptr_t ScriptEmitter::EmitNot(sourceLocation_t sourceLoc)
 {
-	uintptr_t label = 0;
+    uintptr_t label = 0;
 
-	if (PrevOpcode() == OP_BOOL_UN_NOT)
-	{
-		AbsorbPrevOpcode();
+    if (PrevOpcode() == OP_BOOL_UN_NOT)
+    {
+        AbsorbPrevOpcode();
 
-		if( IsDebugEnabled() )
-		{
-			label = current_label++;
-			*info->GetOutput(outputLevel_e::Debug) << "BOOL_JUMP_TRUE <LABEL" << label << ">" << std::endl;
-		}
+        if( IsDebugEnabled() )
+        {
+            label = current_label++;
+            *info->GetOutput(outputLevel_e::Debug) << "BOOL_JUMP_TRUE <LABEL" << label << ">" << std::endl;
+        }
 
-		EmitBoolJumpTrue(sourceLoc);
-	}
-	else
-	{
-		if( IsDebugEnabled() )
-		{
-			label = current_label++;
-			*info->GetOutput(outputLevel_e::Debug) << "BOOL_JUMP_FALSE <LABEL" << label << ">" << std::endl;
-		}
+        EmitBoolJumpTrue(sourceLoc);
+    }
+    else
+    {
+        if( IsDebugEnabled() )
+        {
+            label = current_label++;
+            *info->GetOutput(outputLevel_e::Debug) << "BOOL_JUMP_FALSE <LABEL" << label << ">" << std::endl;
+        }
 
-		EmitBoolJumpFalse(sourceLoc);
-	}
+        EmitBoolJumpFalse(sourceLoc);
+    }
 
-	return label;
+    return label;
 }
 
 void ScriptEmitter::EmitOpcode(opval_t opcode, sourceLocation_t sourceLoc)
 {
-	return EmitOpcodeWithStack(opcode, OpcodeVarStackOffset(opcode), sourceLoc);
+    return EmitOpcodeWithStack(opcode, OpcodeVarStackOffset(opcode), sourceLoc);
 }
 
 void ScriptEmitter::EmitOpcodeWithStack(opval_t opcode, int32_t varStackOffset, sourceLocation_t sourceLoc)
 {
-	//assert(code_pos());
-	//assert(manager.GetCodePosition() < manager.GetProgLength());
+    //assert(code_pos());
+    //assert(manager.GetCodePosition() < manager.GetProgLength());
 
-	manager.AddSourcePos(code_pos(), sourceLoc);
+    manager.AddSourcePos(code_pos(), sourceLoc);
 
-	const bool isExternal = IsExternalOpcode(opcode);
+    const bool isExternal = IsExternalOpcode(opcode);
 
-	if (isExternal)
-	{
-		if (m_iVarStackOffset > m_iMaxExternalVarStackOffset) {
-			m_iMaxExternalVarStackOffset = m_iVarStackOffset;
-		}
+    if (isExternal)
+    {
+        if (m_iVarStackOffset > m_iMaxExternalVarStackOffset) {
+            m_iMaxExternalVarStackOffset = m_iVarStackOffset;
+        }
 
-		hasExternal = true;
-	}
+        hasExternal = true;
+    }
 
-	m_iVarStackOffset += varStackOffset;
+    m_iVarStackOffset += varStackOffset;
 
-	if (!isExternal)
-	{
-		if (m_iVarStackOffset > m_iInternalMaxVarStackOffset) {
-			m_iInternalMaxVarStackOffset = m_iVarStackOffset;
-		}
-	}
+    if (!isExternal)
+    {
+        if (m_iVarStackOffset > m_iInternalMaxVarStackOffset) {
+            m_iInternalMaxVarStackOffset = m_iVarStackOffset;
+        }
+    }
 
-	/*if( m_iInternalMaxVarStackOffset + 9 * m_iMaxExternalVarStackOffset + 1 > 255 )
-	{
-		CompileError( sourceLoc,
-			"The required variable stack size of %d exceeds the statically allocated variable stack of size %d.\nIncrease SCRIPTTHREAD_VARSTACK_SIZE to at least %d and recompile." << std::endl,
-			m_iInternalMaxVarStackOffset + 9 * m_iMaxExternalVarStackOffset + 1,
-			255,
-			m_iInternalMaxVarStackOffset + 9 * m_iMaxExternalVarStackOffset + 1
-		);
-	}*/
+    /*if( m_iInternalMaxVarStackOffset + 9 * m_iMaxExternalVarStackOffset + 1 > 255 )
+    {
+        CompileError( sourceLoc,
+            "The required variable stack size of %d exceeds the statically allocated variable stack of size %d.\nIncrease SCRIPTTHREAD_VARSTACK_SIZE to at least %d and recompile." << std::endl,
+            m_iInternalMaxVarStackOffset + 9 * m_iMaxExternalVarStackOffset + 1,
+            255,
+            m_iInternalMaxVarStackOffset + 9 * m_iMaxExternalVarStackOffset + 1
+        );
+    }*/
 
-	AccumulatePrevOpcode(opcode, varStackOffset);
+    AccumulatePrevOpcode(opcode, varStackOffset);
 
-	WriteOpValue<opval_t>(opcode);
+    WriteOpValue<opval_t>(opcode);
 }
 
 void ScriptEmitter::EmitParameter(sval_t lhs, sourceLocation_t sourceLoc)
 {
-	if (lhs.node[0].type != statementType_e::Field)
-	{
-		CompileError(sourceLoc, "bad parameter lvalue: %d (expecting field)", lhs.node[0].type);
-		throw CompileException::BadParameterLValueExpectField((uint8_t)lhs.node[0].type, sourceLoc);
-	}
+    if (lhs.node[0].type != statementType_e::Field)
+    {
+        CompileError(sourceLoc, "bad parameter lvalue: %d (expecting field)", lhs.node[0].type);
+        throw CompileException::BadParameterLValueExpectField((uint8_t)lhs.node[0].type, sourceLoc);
+    }
 
-	const sval_t* const listener_val = lhs.node[1].node;
-	const prchar_t* const name = lhs.node[2].stringValue;
+    const sval_t* const listener_val = lhs.node[1].node;
+    const prchar_t* const name = lhs.node[2].stringValue;
 
-	const eventName_t eventName = eventSystem.GetEventConstName(name);
-	const eventNum_t setterNum = eventSystem.FindSetterEventNum(eventName);
+    const eventName_t eventName = eventSystem.GetEventConstName(name);
+    const eventNum_t setterNum = eventSystem.FindSetterEventNum(eventName);
 
-	if (listener_val[0].type != statementType_e::Listener || (setterNum && BuiltinWriteVariable(sourceLoc, listener_val[1].byteValue, name, setterNum)))
-	{
-		CompileError(sourceLoc, "built-in field '%s' not allowed", name);
-		throw CompileException::NotAllowed(name, *lhs.node[3].sourceLocValue);
-	}
-	else
-	{
-		EmitOpcode(OP_STORE_PARAM, *lhs.node[3].sourceLocValue);
-		EmitOpcode(OP_LOAD_GAME_VAR + listener_val[1].byteValue, *lhs.node[3].sourceLocValue);
+    if (listener_val[0].type != statementType_e::Listener || (setterNum && BuiltinWriteVariable(sourceLoc, listener_val[1].byteValue, name, setterNum)))
+    {
+        CompileError(sourceLoc, "built-in field '%s' not allowed", name);
+        throw CompileException::NotAllowed(name, *lhs.node[3].sourceLocValue);
+    }
+    else
+    {
+        EmitOpcode(OP_STORE_PARAM, *lhs.node[3].sourceLocValue);
+        EmitOpcode(OP_LOAD_GAME_VAR + listener_val[1].byteValue, *lhs.node[3].sourceLocValue);
 
-		const uint32_t index = manager.AddString(name);
-		WriteOpValue<op_name_t>(index);
-		WriteOpValue<op_evName_t>(static_cast<op_evName_t>(eventName));
-	}
+        const uint32_t index = manager.AddString(name);
+        WriteOpValue<op_name_t>(index);
+        WriteOpValue<op_evName_t>(static_cast<op_evName_t>(eventName));
+    }
 }
 
 uint32_t ScriptEmitter::EmitParameterList(sval_t event_parameter_list)
 {
-	sval_t* node;
-	uint32_t iParamCount = 0;
+    sval_t* node;
+    uint32_t iParamCount = 0;
 
-	if (!event_parameter_list.node) {
-		return 0;
-	}
+    if (!event_parameter_list.node) {
+        return 0;
+    }
 
-	for (node = event_parameter_list.node->node; node; node = node[1].node)
-	{
-		EmitValue(node->node);
+    for (node = event_parameter_list.node->node; node; node = node[1].node)
+    {
+        EmitValue(node->node);
 
-		iParamCount++;
-	}
+        iParamCount++;
+    }
 
-	return iParamCount;
+    return iParamCount;
 }
 
 void ScriptEmitter::EmitRef(sval_t val, sourceLocation_t sourceLoc)
 {
-	if (val.node[0].type != statementType_e::Field)
-	{
-		if (val.node[0].type == statementType_e::ArrayExpr)
-		{
-			EmitRef(val.node[1], sourceLoc);
-			EmitValue(val.node[2]);
-			EmitOpcode(OP_STORE_ARRAY_REF, *val.node[3].sourceLocValue);
+    if (val.node[0].type != statementType_e::Field)
+    {
+        if (val.node[0].type == statementType_e::ArrayExpr)
+        {
+            EmitRef(val.node[1], sourceLoc);
+            EmitValue(val.node[2]);
+            EmitOpcode(OP_STORE_ARRAY_REF, *val.node[3].sourceLocValue);
 
-			return;
-		}
-		else
-		{
-			CompileError(sourceLoc, "bad lvalue: %d (expecting field or array)", val.node[0].type);
-			throw CompileException::BadLeftValueExpectFieldArray((uint8_t)val.node[0].type, sourceLoc);
-		}
-	}
+            return;
+        }
+        else
+        {
+            CompileError(sourceLoc, "bad lvalue: %d (expecting field or array)", val.node[0].type);
+            throw CompileException::BadLeftValueExpectFieldArray((uint8_t)val.node[0].type, sourceLoc);
+        }
+    }
 
-	//index = director.AddString(val.node[2].stringValue);
-	const prchar_t* const name = val.node[2].stringValue;
-	const const_str index = manager.AddString(name);
-	const eventName_t eventName = eventSystem.GetEventConstName(name);
+    //index = director.AddString(val.node[2].stringValue);
+    const prchar_t* const name = val.node[2].stringValue;
+    const const_str index = manager.AddString(name);
+    const eventName_t eventName = eventSystem.GetEventConstName(name);
 
-	EmitValue(val.node[1]);
-	EmitOpcode(OP_STORE_FIELD_REF, sourceLoc);
+    EmitValue(val.node[1]);
+    EmitOpcode(OP_STORE_FIELD_REF, sourceLoc);
 
-	WriteOpValue<op_name_t>(index);
-	WriteOpValue<op_evName_t>(static_cast<op_evName_t>(eventName));
+    WriteOpValue<op_name_t>(index);
+    WriteOpValue<op_evName_t>(static_cast<op_evName_t>(eventName));
 }
 
 void ScriptEmitter::EmitStatementList(sval_t val)
 {
-	for (const sval_t* node = val.node[0].node; node != nullptr; node = node[1].node)
-	{
-		EmitValue(*node);
-	}
+    for (const sval_t* node = val.node[0].node; node != nullptr; node = node[1].node)
+    {
+        EmitValue(*node);
+    }
 }
 
 void ScriptEmitter::EmitString(const prchar_t* value, sourceLocation_t sourceLoc)
 {
-	const_str index = manager.AddString(value);
+    const_str index = manager.AddString(value);
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "\t\tSTRING \"" << value << "\"" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "\t\tSTRING \"" << value << "\"" << std::endl;
+    }
 
-	EmitOpcode(OP_STORE_STRING, sourceLoc);
+    EmitOpcode(OP_STORE_STRING, sourceLoc);
 
-	WriteOpValue<op_name_t>(index);
+    WriteOpValue<op_name_t>(index);
 }
 
 void ScriptEmitter::EmitSwitch(sval_t val, sourceLocation_t sourceLoc)
 {
-	bool bStartCanBreak;
-	int iStartBreakJumpLocCount;
-	StateScript* oldStateScript;
+    bool bStartCanBreak;
+    int iStartBreakJumpLocCount;
+    StateScript* oldStateScript;
 
-	++switchDepth;
+    ++switchDepth;
 
-	ScriptCountManager countManager;
-	ScriptEmitter emitter(countManager, *stateScript, info, 5);
-	emitter.canBreak = true;
-	emitter.switchDepth = 1;
-	emitter.EmitRoot(val);
+    ScriptCountManager countManager;
+    ScriptEmitter emitter(countManager, *stateScript, info, 5);
+    emitter.canBreak = true;
+    emitter.switchDepth = 1;
+    emitter.EmitRoot(val);
 
-	const sizeInfo_t& info = countManager.getSizeInfo();
+    const sizeInfo_t& info = countManager.getSizeInfo();
 
-	oldStateScript = stateScript;
-	// reserve number of case
-	stateScript = manager.CreateSwitchStateScript(info.numCaseLabels);
+    oldStateScript = stateScript;
+    // reserve number of case
+    stateScript = manager.CreateSwitchStateScript(info.numCaseLabels);
 
-	EmitOpcode(OP_SWITCH, sourceLoc);
+    EmitOpcode(OP_SWITCH, sourceLoc);
 
-	WriteOpValue<StateScript*>(stateScript);
+    WriteOpValue<StateScript*>(stateScript);
 
-	bStartCanBreak = canBreak;
-	iStartBreakJumpLocCount = iBreakJumpLocCount;
+    bStartCanBreak = canBreak;
+    iStartBreakJumpLocCount = iBreakJumpLocCount;
 
-	canBreak = true;
+    canBreak = true;
 
-	// add a point to the future switch exit
-	EmitBreak(sourceLoc);
+    // add a point to the future switch exit
+    EmitBreak(sourceLoc);
 
-	// emit the compound statement of the switch
-	EmitValue(val);
-	
-	// set the exit point for the previously emitted break
-	ProcessBreakJumpLocations(iStartBreakJumpLocCount);
+    // emit the compound statement of the switch
+    EmitValue(val);
+    
+    // set the exit point for the previously emitted break
+    ProcessBreakJumpLocations(iStartBreakJumpLocCount);
 
-	canBreak = bStartCanBreak;
-	stateScript = oldStateScript;
-	--switchDepth;
+    canBreak = bStartCanBreak;
+    stateScript = oldStateScript;
+    --switchDepth;
 }
 
 void ScriptEmitter::EmitValue(ScriptVariable& var, sourceLocation_t sourceLoc)
 {
-	switch(var.GetType())
-	{
-	case variableType_e::Integer:
-		EmitInteger(var.longValue(), sourceLoc);
-		break;
-	case variableType_e::Float:
-		EmitFloat(var.floatValue(), sourceLoc);
-		break;
-	default:
-		break;
-	}
+    switch(var.GetType())
+    {
+    case variableType_e::Integer:
+        EmitInteger(var.longValue(), sourceLoc);
+        break;
+    case variableType_e::Float:
+        EmitFloat(var.floatValue(), sourceLoc);
+        break;
+    default:
+        break;
+    }
 }
 
 void ScriptEmitter::EmitValue(sval_t val)
 {
-	StackDepth stackDepth(depth);
+    StackDepth stackDepth(depth);
 
 __emit:
 
-	switch (val.node->type)
-	{
-	case statementType_e::None:
-		break;
+    switch (val.node->type)
+    {
+    case statementType_e::None:
+        break;
 
-	case statementType_e::Next:
-		val = val.node[1];
-		// prevent stack overflow by calling the function recursively
-		goto __emit;
+    case statementType_e::Next:
+        val = val.node[1];
+        // prevent stack overflow by calling the function recursively
+        goto __emit;
 
-	case statementType_e::StatementList:
-		EmitStatementList(val.node[1]);
-		break;
+    case statementType_e::StatementList:
+        EmitStatementList(val.node[1]);
+        break;
 
-	case statementType_e::Labeled:
-		EmitLabel(val.node[1].stringValue, *val.node[3].sourceLocValue);
-		EmitLabelParameterList(val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::Labeled:
+        EmitLabel(val.node[1].stringValue, *val.node[3].sourceLocValue);
+        EmitLabelParameterList(val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::NegIntLabeled:
-		val.node[1].intValue = -(int32_t)val.node[1].intValue;
+    case statementType_e::NegIntLabeled:
+        val.node[1].intValue = -(int32_t)val.node[1].intValue;
 
-	case statementType_e::IntLabeled:
-		EmitCaseLabel(val.node[1], val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::IntLabeled:
+        EmitCaseLabel(val.node[1], val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::Assignment:
-		EmitValue(val.node[2]);
-		EmitAssignmentStatement(val.node[1], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::Assignment:
+        EmitValue(val.node[2]);
+        EmitAssignmentStatement(val.node[1], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::If:
-		EmitValue(val.node[1]);
-		EmitVarToBool(*val.node[3].sourceLocValue);
-		EmitIfJump(val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::If:
+        EmitValue(val.node[1]);
+        EmitVarToBool(*val.node[3].sourceLocValue);
+        EmitIfJump(val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::IfElse:
-		EmitValue(val.node[1]);
-		EmitVarToBool(*val.node[4].sourceLocValue);
-		EmitIfElseJump(val.node[2], val.node[3], *val.node[4].sourceLocValue);
-		break;
+    case statementType_e::IfElse:
+        EmitValue(val.node[1]);
+        EmitVarToBool(*val.node[4].sourceLocValue);
+        EmitIfElseJump(val.node[2], val.node[3], *val.node[4].sourceLocValue);
+        break;
 
-	case statementType_e::While:
-		EmitWhileJump(val.node[1], val.node[2], val.node[3], *val.node[4].sourceLocValue);
-		break;
+    case statementType_e::While:
+        EmitWhileJump(val.node[1], val.node[2], val.node[3], *val.node[4].sourceLocValue);
+        break;
 
-	case statementType_e::LogicalAnd:
-		EmitValue(val.node[1]);
-		EmitVarToBool(*val.node[3].sourceLocValue);
-		EmitAndJump(val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::LogicalAnd:
+        EmitValue(val.node[1]);
+        EmitVarToBool(*val.node[3].sourceLocValue);
+        EmitAndJump(val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::LogicalOr:
-		EmitValue(val.node[1]);
-		EmitVarToBool(*val.node[3].sourceLocValue);
-		EmitOrJump(val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::LogicalOr:
+        EmitValue(val.node[1]);
+        EmitVarToBool(*val.node[3].sourceLocValue);
+        EmitOrJump(val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::MethodEvent:
-		EmitCommandMethod(val.node[1], val.node[2].stringValue, val.node[3], *val.node[4].sourceLocValue);
-		break;
+    case statementType_e::MethodEvent:
+        EmitCommandMethod(val.node[1], val.node[2].stringValue, val.node[3], *val.node[4].sourceLocValue);
+        break;
 
-	case statementType_e::MethodEventExpr:
-		EmitCommandMethodRet(val.node[1], val.node[2].stringValue, val.node[3], *val.node[4].sourceLocValue);
-		break;
+    case statementType_e::MethodEventExpr:
+        EmitCommandMethodRet(val.node[1], val.node[2].stringValue, val.node[3], *val.node[4].sourceLocValue);
+        break;
 
-	case statementType_e::CmdEvent:
-		EmitCommandScript(val.node[1].stringValue, val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::CmdEvent:
+        EmitCommandScript(val.node[1].stringValue, val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::CmdEventExpr:
-		EmitCommandScriptRet(val.node[1].stringValue, val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::CmdEventExpr:
+        EmitCommandScriptRet(val.node[1].stringValue, val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::Field:
-		EmitField(val.node[1], val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::Field:
+        EmitField(val.node[1], val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::Listener:
-		EmitOpcode(OP_STORE_GAME + val.node[1].byteValue, *val.node[2].sourceLocValue);
-		break;
+    case statementType_e::Listener:
+        EmitOpcode(OP_STORE_GAME + val.node[1].byteValue, *val.node[2].sourceLocValue);
+        break;
 
-	case statementType_e::String:
-		EmitString(val.node[1].stringValue, *val.node[2].sourceLocValue);
-		break;
+    case statementType_e::String:
+        EmitString(val.node[1].stringValue, *val.node[2].sourceLocValue);
+        break;
 
-	case statementType_e::Integer:
-		EmitInteger(val.node[1].intValue, *val.node[2].sourceLocValue);
-		break;
+    case statementType_e::Integer:
+        EmitInteger(val.node[1].intValue, *val.node[2].sourceLocValue);
+        break;
 
-	case statementType_e::Float:
-		EmitFloat(val.node[1].floatValue, *val.node[2].sourceLocValue);
-		break;
+    case statementType_e::Float:
+        EmitFloat(val.node[1].floatValue, *val.node[2].sourceLocValue);
+        break;
 
-	case statementType_e::Vector:
-		EmitValue(val.node[1]);
-		EmitValue(val.node[2]);
-		EmitValue(val.node[3]);
-		EmitOpcode(OP_CALC_VECTOR, *val.node[4].sourceLocValue);
-		break;
+    case statementType_e::Vector:
+        EmitValue(val.node[1]);
+        EmitValue(val.node[2]);
+        EmitValue(val.node[3]);
+        EmitOpcode(OP_CALC_VECTOR, *val.node[4].sourceLocValue);
+        break;
 
-	case statementType_e::NIL:
-		EmitOpcode(OP_STORE_NIL, *val.node[1].sourceLocValue);
-		break;
+    case statementType_e::NIL:
+        EmitOpcode(OP_STORE_NIL, *val.node[1].sourceLocValue);
+        break;
 
-	case statementType_e::NULLPTR:
-		EmitOpcode(OP_STORE_NULL, *val.node[1].sourceLocValue);
-		break;
+    case statementType_e::NULLPTR:
+        EmitOpcode(OP_STORE_NULL, *val.node[1].sourceLocValue);
+        break;
 
-	case statementType_e::Func1Expr:
-		EmitValue(val.node[2]);
-		EmitFunc1(val.node[1].byteValue, *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::Func1Expr:
+        EmitValue(val.node[2]);
+        EmitFunc1(val.node[1].byteValue, *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::Func2Expr:
-		EmitValue(val.node[2]);
-		EmitValue(val.node[3]);
-		EmitOpcode(val.node[1].byteValue, *val.node[4].sourceLocValue);
-		break;
+    case statementType_e::Func2Expr:
+        EmitValue(val.node[2]);
+        EmitValue(val.node[3]);
+        EmitOpcode(val.node[1].byteValue, *val.node[4].sourceLocValue);
+        break;
 
-	case statementType_e::BoolNot:
-		EmitValue(val.node[1]);
-		EmitVarToBool(*val.node[2].sourceLocValue);
-		EmitBoolNot(*val.node[2].sourceLocValue);
-		EmitBoolToVar(*val.node[2].sourceLocValue);
-		break;
+    case statementType_e::BoolNot:
+        EmitValue(val.node[1]);
+        EmitVarToBool(*val.node[2].sourceLocValue);
+        EmitBoolNot(*val.node[2].sourceLocValue);
+        EmitBoolToVar(*val.node[2].sourceLocValue);
+        break;
 
-	case statementType_e::ArrayExpr:
-		EmitValue(val.node[1]);
-		EmitValue(val.node[2]);
-		EmitOpcode(OP_STORE_ARRAY, *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::ArrayExpr:
+        EmitValue(val.node[1]);
+        EmitValue(val.node[2]);
+        EmitOpcode(OP_STORE_ARRAY, *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::ConstArrayExpr:
-		EmitConstArray(val.node[1], val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::ConstArrayExpr:
+        EmitConstArray(val.node[1], val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::MakeArray:
-		EmitMakeArray(val.node[1], *val.node[2].sourceLocValue);
-		break;
+    case statementType_e::MakeArray:
+        EmitMakeArray(val.node[1], *val.node[2].sourceLocValue);
+        break;
 
-	case statementType_e::Try:
-	{
-		opval_t* old_code_pos = code_pos();
+    case statementType_e::Try:
+    {
+        opval_t* old_code_pos = code_pos();
 
-		ClearPrevOpcode();
-		EmitValue(val.node[1]);
-		EmitCatch(val.node[2], old_code_pos, *val.node[3].sourceLocValue);
-		break;
-	}
+        ClearPrevOpcode();
+        EmitValue(val.node[1]);
+        EmitCatch(val.node[2], old_code_pos, *val.node[3].sourceLocValue);
+        break;
+    }
 
-	case statementType_e::Switch:
-		EmitValue(val.node[1]);
-		EmitSwitch(val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::Switch:
+        EmitValue(val.node[1]);
+        EmitSwitch(val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::Break:
-		EmitBreak(*val.node[1].sourceLocValue);
-		break;
+    case statementType_e::Break:
+        EmitBreak(*val.node[1].sourceLocValue);
+        break;
 
-	case statementType_e::Continue:
-		EmitContinue(*val.node[1].sourceLocValue);
-		break;
+    case statementType_e::Continue:
+        EmitContinue(*val.node[1].sourceLocValue);
+        break;
 
-	case statementType_e::Do:
-		EmitDoWhileJump(val.node[1], val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::Do:
+        EmitDoWhileJump(val.node[1], val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	case statementType_e::PrivateLabeled:
-		EmitLabelPrivate(val.node[1].stringValue, *val.node[3].sourceLocValue);
-		EmitLabelParameterList(val.node[2], *val.node[3].sourceLocValue);
-		break;
+    case statementType_e::PrivateLabeled:
+        EmitLabelPrivate(val.node[1].stringValue, *val.node[3].sourceLocValue);
+        EmitLabelParameterList(val.node[2], *val.node[3].sourceLocValue);
+        break;
 
-	default:
-		CompileError(-1, "unknown type %d", val.node[0].type);
-		throw CompileException::UnknownNodeType((uint8_t)val.node->type);
-	}
+    default:
+        CompileError(-1, "unknown type %d", val.node[0].type);
+        throw CompileException::UnknownNodeType((uint8_t)val.node->type);
+    }
 }
 
 void ScriptEmitter::EmitVarToBool(sourceLocation_t sourceLoc)
 {
-	const opval_t prev = PrevOpcode();
+    const opval_t prev = PrevOpcode();
 
-	if (prev == OP_STORE_INT0)
-	{
-		AbsorbPrevOpcode();
-		return EmitOpcode(OP_BOOL_STORE_FALSE, sourceLoc);
-	}
-	else if (prev > OP_STORE_INT0 && prev <= OP_STORE_INT8)
-	{
-		AbsorbPrevOpcode();
-		return EmitOpcode(OP_BOOL_STORE_TRUE, sourceLoc);
-	}
-	else if (prev == OP_BOOL_TO_VAR)
-	{
-		AbsorbPrevOpcode();
-		return EmitNil(sourceLoc);
-	}
+    if (prev == OP_STORE_INT0)
+    {
+        AbsorbPrevOpcode();
+        return EmitOpcode(OP_BOOL_STORE_FALSE, sourceLoc);
+    }
+    else if (prev > OP_STORE_INT0 && prev <= OP_STORE_INT8)
+    {
+        AbsorbPrevOpcode();
+        return EmitOpcode(OP_BOOL_STORE_TRUE, sourceLoc);
+    }
+    else if (prev == OP_BOOL_TO_VAR)
+    {
+        AbsorbPrevOpcode();
+        return EmitNil(sourceLoc);
+    }
 
-	return EmitOpcode(OP_UN_CAST_BOOLEAN, sourceLoc);
+    return EmitOpcode(OP_UN_CAST_BOOLEAN, sourceLoc);
 }
 
 void ScriptEmitter::EmitWhileJump(sval_t while_expr, sval_t while_stmt, sval_t inc_stmt, sourceLocation_t sourceLoc)
 {
-	opval_t* pos = code_pos();
-	uintptr_t label1 = 0;
+    opval_t* pos = code_pos();
+    uintptr_t label1 = 0;
 
-	if( IsDebugEnabled() )
-	{
-		label1 = current_label++;
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ">:" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        label1 = current_label++;
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label1 << ">:" << std::endl;
+    }
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	EmitValue(while_expr);
-	EmitVarToBool(sourceLoc);
+    EmitValue(while_expr);
+    EmitVarToBool(sourceLoc);
 
-	const uintptr_t label2 = EmitNot(sourceLoc);
-	//opval_t* jmp = code_pos;
-	//code_pos += sizeof(op_offset_t);
-	opval_t* jmp = manager.MoveCodeForward(sizeof(op_offset_t));
-	ClearPrevOpcode();
+    const uintptr_t label2 = EmitNot(sourceLoc);
+    //opval_t* jmp = code_pos;
+    //code_pos += sizeof(op_offset_t);
+    opval_t* jmp = manager.MoveCodeForward(sizeof(op_offset_t));
+    ClearPrevOpcode();
 
-	bool old_canBreak = canBreak;
-	bool old_canContinue = canContinue;
-	int breakCount = iBreakJumpLocCount;
-	int continueCount = iContinueJumpLocCount;
+    bool old_canBreak = canBreak;
+    bool old_canContinue = canContinue;
+    int breakCount = iBreakJumpLocCount;
+    int continueCount = iContinueJumpLocCount;
 
-	canBreak = true;
-	canContinue = true;
+    canBreak = true;
+    canContinue = true;
 
-	EmitValue(while_stmt);
-	ProcessContinueJumpLocations(continueCount);
+    EmitValue(while_stmt);
+    ProcessContinueJumpLocations(continueCount);
 
-	canContinue = old_canContinue;
+    canContinue = old_canContinue;
 
-	EmitValue(inc_stmt);
+    EmitValue(inc_stmt);
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "JUMP_BACK4 <LABEL" << label1 << ">" << std::endl;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "JUMP_BACK4 <LABEL" << label1 << ">" << std::endl;
+    }
 
-	EmitJumpBack(pos, sourceLoc);
+    EmitJumpBack(pos, sourceLoc);
 
-	ClearPrevOpcode();
+    ClearPrevOpcode();
 
-	if( IsDebugEnabled() )
-	{
-		*info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label2 << ">:" << std::endl ;
-	}
+    if( IsDebugEnabled() )
+    {
+        *info->GetOutput(outputLevel_e::Debug) << "<LABEL" << label2 << ">:" << std::endl ;
+    }
 
-	AddJumpLocation(jmp);
+    AddJumpLocation(jmp);
 
-	ProcessBreakJumpLocations(breakCount);
+    ProcessBreakJumpLocations(breakCount);
 
-	canBreak = old_canBreak;
+    canBreak = old_canBreak;
 }
 
 void ScriptEmitter::EmitRoot(sval_t root)
 {
-	EmitValue(root);
-	EmitEof(-1);
+    EmitValue(root);
+    EmitEof(-1);
 }
 
 bool ScriptEmitter::EvalPrevValue(ScriptVariable& var)
 {
-	switch (PrevOpcode())
-	{
-	case OP_STORE_INT0:
-		var.setIntValue(0);
-		break;
+    switch (PrevOpcode())
+    {
+    case OP_STORE_INT0:
+        var.setIntValue(0);
+        break;
 
-	case OP_STORE_INT1:
-		var.setIntValue(ReadOpValue<uint8_t>(sizeof(uint8_t)));
-		break;
+    case OP_STORE_INT1:
+        var.setIntValue(ReadOpValue<uint8_t>(sizeof(uint8_t)));
+        break;
 
-	case OP_STORE_INT2:
-		var.setIntValue(ReadOpValue<uint16_t>(sizeof(uint16_t)));
-		break;
+    case OP_STORE_INT2:
+        var.setIntValue(ReadOpValue<uint16_t>(sizeof(uint16_t)));
+        break;
 
-	case OP_STORE_INT3:
-		var.setIntValue(ReadOpValue<short3>(sizeof(short3)));
-		break;
+    case OP_STORE_INT3:
+        var.setIntValue(ReadOpValue<short3>(sizeof(short3)));
+        break;
 
-	case OP_STORE_INT4:
-		var.setIntValue(ReadOpValue<uint32_t>(sizeof(uint32_t)));
-		break;
+    case OP_STORE_INT4:
+        var.setIntValue(ReadOpValue<uint32_t>(sizeof(uint32_t)));
+        break;
 
-	case OP_STORE_INT8:
-		var.setLongValue(ReadOpValue<uint64_t>(sizeof(uint64_t)));
-		break;
+    case OP_STORE_INT8:
+        var.setLongValue(ReadOpValue<uint64_t>(sizeof(uint64_t)));
+        break;
 
-	case OP_STORE_FLOAT:
-		var.setFloatValue(ReadOpValue<float>(sizeof(float)));
-		return true;
+    case OP_STORE_FLOAT:
+        var.setFloatValue(ReadOpValue<float>(sizeof(float)));
+        return true;
 
-	default:
-		return false;
-	}
+    default:
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
 void ScriptEmitter::OptimizeInstructions(opval_t* code, opval_t* op1, opval_t* op2)
 {
-	int intValue1 = 0, intValue2 = 0;
-	float floatValue1 = 0.0f, floatValue2 = 0.0f;
-	int type1, type2;
+    int intValue1 = 0, intValue2 = 0;
+    float floatValue1 = 0.0f, floatValue2 = 0.0f;
+    int type1, type2;
 
-	if (!(*op1 >= OP_STORE_INT0 && *op1 <= OP_STORE_FLOAT &&
-		*op2 >= OP_STORE_INT0 && *op2 <= OP_STORE_FLOAT
-		))
-	{
-		return;
-	}
+    if (!(*op1 >= OP_STORE_INT0 && *op1 <= OP_STORE_FLOAT &&
+        *op2 >= OP_STORE_INT0 && *op2 <= OP_STORE_FLOAT
+        ))
+    {
+        return;
+    }
 
-	if (*op1 >= OP_STORE_INT0 && *op1 <= OP_STORE_INT4)
-	{
-		memcpy(&intValue1, op1 + 1, *op1 - OP_STORE_INT0);
-		type1 = OP_STORE_INT4;
-	}
-	else
-	{
-		type1 = *op1;
-	}
+    if (*op1 >= OP_STORE_INT0 && *op1 <= OP_STORE_INT4)
+    {
+        memcpy(&intValue1, op1 + 1, *op1 - OP_STORE_INT0);
+        type1 = OP_STORE_INT4;
+    }
+    else
+    {
+        type1 = *op1;
+    }
 
-	if (*op2 >= OP_STORE_INT0 && *op2 <= OP_STORE_INT4)
-	{
-		memcpy(&intValue2, op2 + 1, *op2 - OP_STORE_INT0);
-		type2 = OP_STORE_INT4;
-	}
-	else
-	{
-		type2 = *op2;
-	}
+    if (*op2 >= OP_STORE_INT0 && *op2 <= OP_STORE_INT4)
+    {
+        memcpy(&intValue2, op2 + 1, *op2 - OP_STORE_INT0);
+        type2 = OP_STORE_INT4;
+    }
+    else
+    {
+        type2 = *op2;
+    }
 
-	if (*op1 == OP_STORE_FLOAT)
-	{
-		memcpy(&floatValue1, op1 + 1, sizeof(float));
-	}
+    if (*op1 == OP_STORE_FLOAT)
+    {
+        memcpy(&floatValue1, op1 + 1, sizeof(float));
+    }
 
-	if (*op2 == OP_STORE_FLOAT)
-	{
-		memcpy(&floatValue2, op2 + 1, sizeof(float));
-	}
+    if (*op2 == OP_STORE_FLOAT)
+    {
+        memcpy(&floatValue2, op2 + 1, sizeof(float));
+    }
 
-	*op1 = OP_NOP;
-	*op2 = OP_NOP;
+    *op1 = OP_NOP;
+    *op2 = OP_NOP;
 
-	switch (type1 + type2 * OP_MAX)
-	{
-	case OP_STORE_INT4 + OP_STORE_INT4 * OP_MAX:
-		*op1 = OP_STORE_INT4;
-		*(uint32_t*)(op1 + 1) = OptimizeValue(intValue1, intValue2, *code);
-		break;
-	}
+    switch (type1 + type2 * OP_MAX)
+    {
+    case OP_STORE_INT4 + OP_STORE_INT4 * OP_MAX:
+        *op1 = OP_STORE_INT4;
+        *(uint32_t*)(op1 + 1) = OptimizeValue(intValue1, intValue2, *code);
+        break;
+    }
 
-	*code = OP_NOP;
+    *code = OP_NOP;
 }
 
 int ScriptEmitter::OptimizeValue(int val1, int val2, opval_t opcode)
 {
-	switch (opcode)
-	{
-	case OP_BIN_BITWISE_AND:
-		return val1 & val2;
-	case OP_BIN_BITWISE_OR:
-		return val1 | val2;
-	case OP_BIN_BITWISE_EXCL_OR:
-		return val1 ^ val2;
-	case OP_BIN_EQUALITY:
-		return val1 == val2;
-	case OP_BIN_INEQUALITY:
-		return val1 != val2;
-	case OP_BIN_LESS_THAN:
-		return val1 > val2;
-	case OP_BIN_GREATER_THAN:
-		return val1 < val2;
-	case OP_BIN_LESS_THAN_OR_EQUAL:
-		return val1 >= val2;
-	case OP_BIN_GREATER_THAN_OR_EQUAL:
-		return val1 <= val2;
-	case OP_BIN_PLUS:
-		return val1 + val2;
-	case OP_BIN_MINUS:
-		return val1 - val2;
-	case OP_BIN_MULTIPLY:
-		return val1 * val2;
-	case OP_BIN_DIVIDE:
-		return val1 / val2;
-	case OP_BIN_PERCENTAGE:
-		return val1 % val2;
-	default:
-		return 0;
-	}
+    switch (opcode)
+    {
+    case OP_BIN_BITWISE_AND:
+        return val1 & val2;
+    case OP_BIN_BITWISE_OR:
+        return val1 | val2;
+    case OP_BIN_BITWISE_EXCL_OR:
+        return val1 ^ val2;
+    case OP_BIN_EQUALITY:
+        return val1 == val2;
+    case OP_BIN_INEQUALITY:
+        return val1 != val2;
+    case OP_BIN_LESS_THAN:
+        return val1 > val2;
+    case OP_BIN_GREATER_THAN:
+        return val1 < val2;
+    case OP_BIN_LESS_THAN_OR_EQUAL:
+        return val1 >= val2;
+    case OP_BIN_GREATER_THAN_OR_EQUAL:
+        return val1 <= val2;
+    case OP_BIN_PLUS:
+        return val1 + val2;
+    case OP_BIN_MINUS:
+        return val1 - val2;
+    case OP_BIN_MULTIPLY:
+        return val1 * val2;
+    case OP_BIN_DIVIDE:
+        return val1 / val2;
+    case OP_BIN_PERCENTAGE:
+        return val1 % val2;
+    default:
+        return 0;
+    }
 }
 
 void ScriptEmitter::ProcessBreakJumpLocations(int iStartBreakJumpLocCount)
 {
-	if (iBreakJumpLocCount > iStartBreakJumpLocCount)
-	{
-		do
-		{
-			iBreakJumpLocCount--;
+    if (iBreakJumpLocCount > iStartBreakJumpLocCount)
+    {
+        do
+        {
+            iBreakJumpLocCount--;
 
-			op_offset_t offset = (op_offset_t)(code_pos() - apucBreakJumpLocations[iBreakJumpLocCount] - sizeof(op_offset_t));
+            op_offset_t offset = (op_offset_t)(code_pos() - apucBreakJumpLocations[iBreakJumpLocCount] - sizeof(op_offset_t));
 
-			manager.SetValueAtCodePosition(apucBreakJumpLocations[iBreakJumpLocCount], &offset, sizeof(offset));
-		} while (iBreakJumpLocCount > iStartBreakJumpLocCount);
+            manager.SetValueAtCodePosition(apucBreakJumpLocations[iBreakJumpLocCount], &offset, sizeof(offset));
+        } while (iBreakJumpLocCount > iStartBreakJumpLocCount);
 
-		ClearPrevOpcode();
-	}
+        ClearPrevOpcode();
+    }
 }
 
 void ScriptEmitter::ProcessContinueJumpLocations(int iStartContinueJumpLocCount)
 {
-	if (iContinueJumpLocCount > iStartContinueJumpLocCount)
-	{
-		do
-		{
-			iContinueJumpLocCount--;
+    if (iContinueJumpLocCount > iStartContinueJumpLocCount)
+    {
+        do
+        {
+            iContinueJumpLocCount--;
 
-			const op_offset_t offset = (op_offset_t)(code_pos() - sizeof(op_offset_t) - apucContinueJumpLocations[iContinueJumpLocCount]);
+            const op_offset_t offset = (op_offset_t)(code_pos() - sizeof(op_offset_t) - apucContinueJumpLocations[iContinueJumpLocCount]);
 
-			manager.SetValueAtCodePosition(apucContinueJumpLocations[iBreakJumpLocCount], &offset, sizeof(offset));
-		} while (iContinueJumpLocCount > iStartContinueJumpLocCount);
+            manager.SetValueAtCodePosition(apucContinueJumpLocations[iBreakJumpLocCount], &offset, sizeof(offset));
+        } while (iContinueJumpLocCount > iStartContinueJumpLocCount);
 
-		ClearPrevOpcode();
-	}
+        ClearPrevOpcode();
+    }
 }
 
 bool ScriptEmitter::GetCompiledScript(ProgramScript*)
 {
-	// FIXME: retrieve script from bytecodes (compiled)
-	/*
-	Archiver arc;
+    // FIXME: retrieve script from bytecodes (compiled)
+    /*
+    Archiver arc;
 
-	arc.SetSilent( true );
-	arc.Read( scr->Filename(), false );
+    arc.SetSilent( true );
+    arc.Read( scr->Filename(), false );
 
-	if( !arc.NoErrors() )
-	{
-		return false;
-	}
+    if( !arc.NoErrors() )
+    {
+        return false;
+    }
 
-	arc.SetSilent( false );
+    arc.SetSilent( false );
 
-	scr->Archive( arc );
+    scr->Archive( arc );
 
-	arc.Close();
+    arc.Close();
 
-	return true;
-	*/
-	return false;
+    return true;
+    */
+    return false;
 }
 
 bool ScriptEmitter::IsDebugEnabled() const
 {
-	return info && info->GetOutput(outputLevel_e::Debug) != nullptr;
+    return info && info->GetOutput(outputLevel_e::Debug) != nullptr;
 }
 
 opval_t* ScriptEmitter::code_pos() const
 {
-	return manager.GetCodePositionPtr();
+    return manager.GetCodePositionPtr();
 }
 
 uint32_t ScriptEmitter::GetInternalMaxVarStackOffset() const
 {
-	return m_iInternalMaxVarStackOffset;
+    return m_iInternalMaxVarStackOffset;
 }
 
 uint32_t ScriptEmitter::GetMaxExternalVarStackOffset() const
 {
-	return m_iMaxExternalVarStackOffset;
+    return m_iMaxExternalVarStackOffset;
 }
 
 ScriptEmitter::StackDepth::StackDepth(size_t& depthRef)
-	: depth(depthRef)
+    : depth(depthRef)
 {
-	if (!depth)
-	{
-		// maximum depth reached
-		throw CompileErrors::StackOverflow();
-	}
+    if (!depth)
+    {
+        // maximum depth reached
+        throw CompileErrors::StackOverflow();
+    }
 
-	--depth;
+    --depth;
 }
 
 ScriptEmitter::StackDepth::~StackDepth()
 {
-	++depth;
+    ++depth;
 }
 
 ScriptCompiler::ScriptCompiler()
-	: dict(ScriptContext::Get().GetDirector().GetDictionary())
+    : dict(ScriptContext::Get().GetDirector().GetDictionary())
 {
 }
 
 size_t ScriptCompiler::Compile(ProgramScript* script, sval_t rootNode, opval_t*& progBuffer)
 {
-	// preallocate the right amount of memory as long as it's possible
-	// this has the advantage to :
-	//  1) avoid the fragmentation
-	//  2) avoid reallocating containers each time
-	//  3) perform allocation only once, thus avoid lock contention and avoid monopolizing the memory manager
-	//  4) if there is no memory available, it will not halt in the middle of the compilation so there is no cleanup to do
-	const size_t progLength = Preallocate(script, rootNode, progBuffer);
-	compileSuccess = true;
+    // preallocate the right amount of memory as long as it's possible
+    // this has the advantage to :
+    //  1) avoid the fragmentation
+    //  2) avoid reallocating containers each time
+    //  3) perform allocation only once, thus avoid lock contention and avoid monopolizing the memory manager
+    //  4) if there is no memory available, it will not halt in the middle of the compilation so there is no cleanup to do
+    const size_t progLength = Preallocate(script, rootNode, progBuffer);
+    compileSuccess = true;
 
-	// start emitting program instructions
-	EmitProgram(script, rootNode, progBuffer, progLength);
-	return progLength;
+    // start emitting program instructions
+    EmitProgram(script, rootNode, progBuffer, progLength);
+    return progLength;
 }
 
 void ScriptCompiler::EmitProgram(ProgramScript* script, sval_t rootNode, opval_t*& progBuffer, size_t progLength)
 {
-	ScriptProgramManager manager(dict, script, progBuffer, progLength);
-	// invoke the ScriptEmitter and use the program manager interface to write opcodes
-	// and to create state scripts
-	ScriptEmitter emitter(manager, script->GetStateScript(), info);
-	emitter.EmitRoot(rootNode);
+    ScriptProgramManager manager(dict, script, progBuffer, progLength);
+    // invoke the ScriptEmitter and use the program manager interface to write opcodes
+    // and to create state scripts
+    ScriptEmitter emitter(manager, script->GetStateScript(), info);
+    emitter.EmitRoot(rootNode);
 
-	m_iInternalMaxVarStackOffset = emitter.GetInternalMaxVarStackOffset();
-	m_iMaxExternalVarStackOffset = emitter.GetMaxExternalVarStackOffset();
+    m_iInternalMaxVarStackOffset = emitter.GetInternalMaxVarStackOffset();
+    m_iMaxExternalVarStackOffset = emitter.GetMaxExternalVarStackOffset();
 }
 
 size_t ScriptCompiler::Preallocate(ProgramScript* script, sval_t rootNode, opval_t*& progBuffer)
 {
-	ScriptCountManager manager;
+    ScriptCountManager manager;
 
-	// invoke the script emitter
-	// and connect the interface for counting opcodes and stateScripts
-	ScriptEmitter emitter(manager, script->GetStateScript(), info);
-	emitter.EmitRoot(rootNode);
+    // invoke the script emitter
+    // and connect the interface for counting opcodes and stateScripts
+    ScriptEmitter emitter(manager, script->GetStateScript(), info);
+    emitter.EmitRoot(rootNode);
 
-	MEM::PreAllocator& allocator = script->GetAllocator();
+    MEM::PreAllocator& allocator = script->GetAllocator();
 
-	const sizeInfo_t& sizeInfo = manager.getSizeInfo();
+    const sizeInfo_t& sizeInfo = manager.getSizeInfo();
 
-	size_t totalAllocation = sizeInfo.progLength;
-	totalAllocation += sizeof(StateScript) * sizeInfo.numSwitches;
-	totalAllocation += sizeof(CatchBlock) * sizeInfo.numCatches;
-	totalAllocation += labelMap::countEntryBytes(sizeInfo.numLabels);
-	totalAllocation += labelMap::countEntryBytes(sizeInfo.numCaseLabels);
+    size_t totalAllocation = sizeInfo.progLength;
+    totalAllocation += sizeof(StateScript) * sizeInfo.numSwitches;
+    totalAllocation += sizeof(CatchBlock) * sizeInfo.numCatches;
+    totalAllocation += labelMap::countEntryBytes(sizeInfo.numLabels);
+    totalAllocation += labelMap::countEntryBytes(sizeInfo.numCaseLabels);
 
-	const bool isDeveloperMode = ScriptContext::Get().GetSettings().IsDeveloperEnabled();
-	if (isDeveloperMode)
-	{
-		// also preallocate length for source map
-		totalAllocation += sizeof(sourcePosMap_t) * sizeInfo.progLength; //sourcePosMap_t::countEntryBytes(sizeInfo.progLength);
-	}
-	allocator.PreAllocate(totalAllocation);
+    const bool isDeveloperMode = ScriptContext::Get().GetSettings().IsDeveloperEnabled();
+    if (isDeveloperMode)
+    {
+        // also preallocate length for source map
+        totalAllocation += sizeof(sourcePosMap_t) * sizeInfo.progLength; //sourcePosMap_t::countEntryBytes(sizeInfo.progLength);
+    }
+    allocator.PreAllocate(totalAllocation);
 
-	if (isDeveloperMode)
-	{
-		// create program source map to be able to view error location
-		// and also allocate only once
-		script->CreateProgToSource(sizeInfo.progLength);
-	}
+    if (isDeveloperMode)
+    {
+        // create program source map to be able to view error location
+        // and also allocate only once
+        script->CreateProgToSource(sizeInfo.progLength);
+    }
 
-	if (sizeInfo.numStrings)
-	{
-		// preallocate enough strings to avoid fragmenting memory due to frequent reallocation of the table
-		dict.AllocateMoreString(sizeInfo.numStrings);
-	}
+    if (sizeInfo.numStrings)
+    {
+        // preallocate enough strings to avoid fragmenting memory due to frequent reallocation of the table
+        dict.AllocateMoreString(sizeInfo.numStrings);
+    }
 
-	if (sizeInfo.numCatches)
-	{
-		// now allocate try/catch state scripts
-		script->ReserveCatchStates(sizeInfo.numCatches);
-	}
+    if (sizeInfo.numCatches)
+    {
+        // now allocate try/catch state scripts
+        script->ReserveCatchStates(sizeInfo.numCatches);
+    }
 
-	if (sizeInfo.numSwitches)
-	{
-		// and also allocate switch state scripts
-		script->ReserveStateScripts(sizeInfo.numSwitches);
-	}
+    if (sizeInfo.numSwitches)
+    {
+        // and also allocate switch state scripts
+        script->ReserveStateScripts(sizeInfo.numSwitches);
+    }
 
-	// noew allocate the program buffer
-	progBuffer = new (allocator) opval_t [sizeInfo.progLength];
+    // noew allocate the program buffer
+    progBuffer = new (allocator) opval_t [sizeInfo.progLength];
 
-	// reserve the initial label and other labels
-	script->GetStateScript().Reserve(sizeInfo.numLabels);
+    // reserve the initial label and other labels
+    script->GetStateScript().Reserve(sizeInfo.numLabels);
 
-	return sizeInfo.progLength;
+    return sizeInfo.progLength;
 }
 
 void ScriptCompiler::Optimize(opval_t*)
 {
 #if 0
-	size_t length = code_pos - prog_ptr;
-	opval_t* prevcodePos1 = nullptr;
-	opval_t* prevcodePos2 = nullptr;
+    size_t length = code_pos - prog_ptr;
+    opval_t* prevcodePos1 = nullptr;
+    opval_t* prevcodePos2 = nullptr;
 
-	code_pos = sourceBuffer;
+    code_pos = sourceBuffer;
 
-	if (!length)
-	{
-		return;
-	}
+    if (!length)
+    {
+        return;
+    }
 
-	while (code_pos < prog_end_ptr)
-	{
-		if (*code_pos >= OP_BIN_BITWISE_AND && *code_pos <= OP_BIN_PERCENTAGE)
-		{
-			assert(prevcodePos1);
-			assert(prevcodePos2);
+    while (code_pos < prog_end_ptr)
+    {
+        if (*code_pos >= OP_BIN_BITWISE_AND && *code_pos <= OP_BIN_PERCENTAGE)
+        {
+            assert(prevcodePos1);
+            assert(prevcodePos2);
 
-			OptimizeInstructions(code_pos, prevcodePos1, prevcodePos2);
-		}
+            OptimizeInstructions(code_pos, prevcodePos1, prevcodePos2);
+        }
 
-		prevcodePos2 = prevcodePos1;
-		prevcodePos1 = code_pos;
+        prevcodePos2 = prevcodePos1;
+        prevcodePos1 = code_pos;
 
-		code_pos += OpcodeLength(*code_pos);
+        code_pos += OpcodeLength(*code_pos);
 
-		if (*code_pos == OP_DONE) {
-			break;
-		}
-	}
+        if (*code_pos == OP_DONE) {
+            break;
+        }
+    }
 #endif
 }
 
 uint32_t ScriptCompiler::GetInternalMaxVarStackOffset() const
 {
-	return m_iInternalMaxVarStackOffset;
+    return m_iInternalMaxVarStackOffset;
 }
 
 uint32_t ScriptCompiler::GetMaxExternalVarStackOffset() const
 {
-	return m_iMaxExternalVarStackOffset;
+    return m_iMaxExternalVarStackOffset;
 }
 
 void ScriptCompiler::SetOutputInfo(const OutputInfo* infoValue)
 {
-	info = infoValue;
+    info = infoValue;
 }
 
 bool ScriptCompiler::IsDebugEnabled() const
 {
-	return info && info->GetOutput(outputLevel_e::Debug) != nullptr;
+    return info && info->GetOutput(outputLevel_e::Debug) != nullptr;
 }
 
 sizeInfo_t::sizeInfo_t()
-	: length(0)
-	, numLabels(0)
-	, numCaseLabels(0)
-	, numCatchLabels(0)
-	, numCommands(0)
-	, numStrings(0)
-	, numCatches(0)
-	, numSwitches(0)
-	, progLength(0)
+    : length(0)
+    , numLabels(0)
+    , numCaseLabels(0)
+    , numCatchLabels(0)
+    , numCommands(0)
+    , numStrings(0)
+    , numCatches(0)
+    , numSwitches(0)
+    , progLength(0)
 {}
 
 const char* CompileErrors::StackOverflow::what() const noexcept
 {
-	return "stack overflow";
+    return "stack overflow";
 }

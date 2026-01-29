@@ -4,5 +4,5 @@ using namespace mfuse;
 
 MFUS_CLASS_DECLARATION(Listener, Game, NULL)
 {
-	{ NULL, NULL }
+    { NULL, NULL }
 };

@@ -6,5 +6,5 @@ using namespace mfuse;
 template<>
 intptr_t Hash<Vector>::operator()(const Vector& key) const
 {
-	return (int)((key[0] + key[1] + key[2]) / 3);
+    return (int)((key[0] + key[1] + key[2]) / 3);
 }

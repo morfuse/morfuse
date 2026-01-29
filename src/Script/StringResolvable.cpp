@@ -7,51 +7,51 @@
 using namespace mfuse;
 
 StringResolvable::StringResolvable()
-	: constString(0)
+    : constString(0)
 {
 }
 
 StringResolvable::StringResolvable(const rawchar_t* stringValue)
-	: string(stringValue)
-	, constString(0)
+    : string(stringValue)
+    , constString(0)
 {
 }
 
 StringResolvable::StringResolvable(const str& stringValue)
-	: string(stringValue)
-	, constString(0)
+    : string(stringValue)
+    , constString(0)
 {
 }
 
 StringResolvable::StringResolvable(const_str constStringValue)
-	: constString(constStringValue)
+    : constString(constStringValue)
 {
 }
 
 StringResolvable::StringResolvable(const StringResolvable& other)
-	: string(other.string)
-	, constString(other.constString)
+    : string(other.string)
+    , constString(other.constString)
 {
 }
 
 StringResolvable::StringResolvable(StringResolvable&& other)
-	: string(std::move(other.string))
-	, constString(other.constString)
+    : string(std::move(other.string))
+    , constString(other.constString)
 {
 }
 
 StringResolvable& StringResolvable::operator=(const StringResolvable& other)
 {
-	string = other.string;
-	constString = other.constString;
-	return *this;
+    string = other.string;
+    constString = other.constString;
+    return *this;
 }
 
 StringResolvable& StringResolvable::operator=(StringResolvable&& other)
 {
-	string = std::move(other.string);
-	constString = other.constString;
-	return *this;
+    string = std::move(other.string);
+    constString = other.constString;
+    return *this;
 }
 
 StringResolvable::~StringResolvable()
@@ -60,299 +60,299 @@ StringResolvable::~StringResolvable()
 
 const str& StringResolvable::GetString()
 {
-	if (!string.isEmpty()) {
-		return string;
-	}
+    if (!string.isEmpty()) {
+        return string;
+    }
 
-	return GetStringInternal(ScriptContext::Get().GetDirector().GetDictionary());
+    return GetStringInternal(ScriptContext::Get().GetDirector().GetDictionary());
 }
 
 const str& StringResolvable::GetString() const
 {
-	if (!string.isEmpty()) {
-		return string;
-	}
+    if (!string.isEmpty()) {
+        return string;
+    }
 
-	return GetStringInternal(ScriptContext::Get().GetDirector().GetDictionary());
+    return GetStringInternal(ScriptContext::Get().GetDirector().GetDictionary());
 }
 
 const str& StringResolvable::GetString(const StringDictionary& dict)
 {
-	if (!string.isEmpty()) {
-		return string;
-	}
+    if (!string.isEmpty()) {
+        return string;
+    }
 
-	return GetStringInternal(dict);
+    return GetStringInternal(dict);
 }
 
 const str& StringResolvable::GetString(const StringDictionary& dict) const
 {
-	if (!string.isEmpty()) {
-		return string;
-	}
+    if (!string.isEmpty()) {
+        return string;
+    }
 
-	return GetStringInternal(dict);
+    return GetStringInternal(dict);
 }
 
 const rawchar_t* StringResolvable::GetRawString()
 {
-	return GetString().c_str();
+    return GetString().c_str();
 }
 
 const rawchar_t* StringResolvable::GetRawString() const
 {
-	return GetString().c_str();
+    return GetString().c_str();
 }
 
 const mfuse::rawchar_t* StringResolvable::GetRawString(const StringDictionary& dict)
 {
-	return GetString(dict).c_str();
+    return GetString(dict).c_str();
 }
 
 const mfuse::rawchar_t* StringResolvable::GetRawString(const StringDictionary& dict) const
 {
-	return GetString(dict).c_str();
+    return GetString(dict).c_str();
 }
 
 const_str StringResolvable::GetConstString()
 {
-	if (constString) {
-		return constString;
-	}
+    if (constString) {
+        return constString;
+    }
 
-	return GetConstString(ScriptContext::Get().GetDirector().GetDictionary());
+    return GetConstString(ScriptContext::Get().GetDirector().GetDictionary());
 }
 
 const_str StringResolvable::GetConstString() const
 {
-	if (constString) {
-		return constString;
-	}
+    if (constString) {
+        return constString;
+    }
 
-	return GetConstString(ScriptContext::Get().GetDirector().GetDictionary());
+    return GetConstString(ScriptContext::Get().GetDirector().GetDictionary());
 }
 
 const_str StringResolvable::GetConstString(StringDictionary& dict)
 {
-	if (constString)
-	{
-		// cached
-		return constString;
-	}
+    if (constString)
+    {
+        // cached
+        return constString;
+    }
 
-	return GetConstStringInternal(dict);
+    return GetConstStringInternal(dict);
 }
 
 const_str StringResolvable::GetConstString(StringDictionary& dict) const
 {
-	if (constString)
-	{
-		// cached
-		return constString;
-	}
+    if (constString)
+    {
+        // cached
+        return constString;
+    }
 
-	return GetConstStringInternal(dict);
+    return GetConstStringInternal(dict);
 }
 
 const str& StringResolvable::GetStringInternal(const StringDictionary& dict)
 {
-	// cache the string
-	if (constString) {
-		string = dict.Get(constString);
-	}
+    // cache the string
+    if (constString) {
+        string = dict.Get(constString);
+    }
 
-	return string;
+    return string;
 }
 
 const str& StringResolvable::GetStringInternal(const StringDictionary& dict) const
 {
-	if (constString) {
-		return dict.Get(constString);
-	}
+    if (constString) {
+        return dict.Get(constString);
+    }
 
-	return str::getEmpty();
+    return str::getEmpty();
 }
 
 const rawchar_t* StringResolvable::GetRawStringInternal(const StringDictionary& dict)
 {
-	return GetStringInternal(dict).c_str();
+    return GetStringInternal(dict).c_str();
 }
 
 const rawchar_t* StringResolvable::GetRawStringInternal(const StringDictionary& dict) const
 {
-	return GetStringInternal(dict).c_str();
+    return GetStringInternal(dict).c_str();
 }
 
 const_str StringResolvable::GetConstStringInternal(StringDictionary& dict)
 {
-	if (!string.isEmpty())
-	{
-		// cache the const string
-		constString = dict.Add(string);
-	}
-	else
-	{
-		// use the default
-		constString = ConstStrings::Empty;
-	}
+    if (!string.isEmpty())
+    {
+        // cache the const string
+        constString = dict.Add(string);
+    }
+    else
+    {
+        // use the default
+        constString = ConstStrings::Empty;
+    }
 
-	return constString;
+    return constString;
 }
 
 const_str StringResolvable::GetConstStringInternal(StringDictionary& dict) const
 {
-	if (!string.isEmpty())
-	{
-		// cache the const string
-		return dict.Add(string);
-	}
+    if (!string.isEmpty())
+    {
+        // cache the const string
+        return dict.Add(string);
+    }
 
-	return const_str(0);
+    return const_str(0);
 }
 
 bool StringResolvable::IsEmpty() const
 {
-	return !constString && string.isEmpty();
+    return !constString && string.isEmpty();
 }
 
 StringResolvable::operator const str& () const
 {
-	return GetString();
+    return GetString();
 }
 
 StringResolvable::operator const rawchar_t* () const
 {
-	return GetRawString();
+    return GetRawString();
 }
 
 StringResolvable::operator const_str() const
 {
-	return GetConstString();
+    return GetConstString();
 }
 
 bool StringResolvable::operator==(const StringResolvable& other) const
 {
-	if (constString && other.constString)
-	{
-		// both have a const string so use it in priority
-		return constString == other.constString;
-	}
-	else if (!constString && !other.constString)
-	{
-		// string match
-		return string == other.string;
-	}
-	else if (constString && !other.constString)
-	{
-		if (string.length())
-		{
-			// fallback to the string to avoid allocation
-			return string == other.string;
-		}
-		else
-		{
-			return GetString() == other.string;
-		}
-	}
-	else if (!constString && other.constString)
-	{
-		if (other.string.length())
-		{
-			// fallback to the string to avoid allocation
-			return string == other.string;
-		}
-		else
-		{
-			return string == other.GetString();
-		}
-	}
+    if (constString && other.constString)
+    {
+        // both have a const string so use it in priority
+        return constString == other.constString;
+    }
+    else if (!constString && !other.constString)
+    {
+        // string match
+        return string == other.string;
+    }
+    else if (constString && !other.constString)
+    {
+        if (string.length())
+        {
+            // fallback to the string to avoid allocation
+            return string == other.string;
+        }
+        else
+        {
+            return GetString() == other.string;
+        }
+    }
+    else if (!constString && other.constString)
+    {
+        if (other.string.length())
+        {
+            // fallback to the string to avoid allocation
+            return string == other.string;
+        }
+        else
+        {
+            return string == other.GetString();
+        }
+    }
 
-	return false;
+    return false;
 }
 
 bool StringResolvable::operator!=(const StringResolvable& other) const
 {
-	return !(*this == other);
+    return !(*this == other);
 }
 
 bool mfuse::operator==(const StringResolvable& left, const_str right)
 {
-	if (left.IsEmpty())
-	{
-		// true if both empty
-		return !right;
-	}
-	else if (!right)
-	{
-		return left.IsEmpty();
-	}
+    if (left.IsEmpty())
+    {
+        // true if both empty
+        return !right;
+    }
+    else if (!right)
+    {
+        return left.IsEmpty();
+    }
 
-	return left.GetConstString() == right;
+    return left.GetConstString() == right;
 }
 
 bool mfuse::operator!=(const StringResolvable& left, const_str right)
 {
-	return !(left == right);
+    return !(left == right);
 }
 
 bool mfuse::operator==(const_str left, const StringResolvable& right)
 {
-	if (right.IsEmpty())
-	{
-		return !left;
-	}
-	else if (!left)
-	{
-		// true if both empty
-		return right.IsEmpty();
-	}
-	
+    if (right.IsEmpty())
+    {
+        return !left;
+    }
+    else if (!left)
+    {
+        // true if both empty
+        return right.IsEmpty();
+    }
+    
 
-	return left == right.GetConstString();
+    return left == right.GetConstString();
 }
 
 bool mfuse::operator!=(const_str left, const StringResolvable& right)
 {
-	return !(left == right);
+    return !(left == right);
 }
 
 bool mfuse::operator==(const StringResolvable& left, const rawchar_t* right)
 {
-	if (left.IsEmpty())
-	{
-		// true if both empty
-		return str::isEmpty(right);
-	}
-	else if (str::isEmpty(right))
-	{
-		return left.string.isEmpty();
-	}
+    if (left.IsEmpty())
+    {
+        // true if both empty
+        return str::isEmpty(right);
+    }
+    else if (str::isEmpty(right))
+    {
+        return left.string.isEmpty();
+    }
 
-	return left.GetString() == right;
+    return left.GetString() == right;
 }
 
 bool mfuse::operator!=(const StringResolvable& left, const rawchar_t* right)
 {
-	return !(left == right);
+    return !(left == right);
 }
 
 bool mfuse::operator==(const rawchar_t* left, const StringResolvable& right)
 {
-	if (str::isEmpty(left))
-	{
-		return right.string.isEmpty();
-	}
-	else if (right.IsEmpty())
-	{
-		// true if both empty
-		return str::isEmpty(left);
-	}
+    if (str::isEmpty(left))
+    {
+        return right.string.isEmpty();
+    }
+    else if (right.IsEmpty())
+    {
+        // true if both empty
+        return str::isEmpty(left);
+    }
 
-	return left == right.GetString();
+    return left == right.GetString();
 }
 
 
 bool mfuse::operator!=(const rawchar_t* left, const StringResolvable& right)
 {
-	return !(left == right);
+    return !(left == right);
 }

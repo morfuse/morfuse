@@ -8,15 +8,15 @@ Level::Level()
 
 MFUS_CLASS_DECLARATION(Listener, Level, NULL)
 {
-	{ NULL, NULL }
+    { NULL, NULL }
 };
 
 const mfuse::str& Level::GetCurrentScript() const
 {
-	return currentScript;
+    return currentScript;
 }
 
 void Level::SetCurrentScript(const rawchar_t* name)
 {
-	currentScript = name;
+    currentScript = name;
 }

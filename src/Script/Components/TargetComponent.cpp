@@ -6,64 +6,64 @@
 using namespace mfuse;
 
 TargetComponent::TargetComponent(Listener& parentRef)
-	: Component(parentRef)
+    : Component(parentRef)
 {
 
 }
 
 TargetComponent::~TargetComponent()
 {
-	TargetList& targetList = ScriptContext::Get().GetTargetList();
-	targetList.RemoveListener(Parent(), targetName.GetConstString());
+    TargetList& targetList = ScriptContext::Get().GetTargetList();
+    targetList.RemoveListener(Parent(), targetName.GetConstString());
 }
 
 void TargetComponent::SetTargetName(const StringResolvable& newTargetName)
 {
-	TargetList& targetList = ScriptContext::Get().GetTargetList();
+    TargetList& targetList = ScriptContext::Get().GetTargetList();
 
-	targetList.RemoveListener(Parent(), targetName.GetConstString());
-	targetName = newTargetName;
-	targetList.AddListener(Parent(), targetName.GetConstString());
+    targetList.RemoveListener(Parent(), targetName.GetConstString());
+    targetName = newTargetName;
+    targetList.AddListener(Parent(), targetName.GetConstString());
 }
 
 const StringResolvable& TargetComponent::GetTargetName()
 {
-	return targetName;
+    return targetName;
 }
 
 void TargetComponent::SetTarget(const StringResolvable& newTarget)
 {
-	target = newTarget;
+    target = newTarget;
 }
 
 const StringResolvable& TargetComponent::GetTarget()
 {
-	return target;
+    return target;
 }
 
 Listener* TargetComponent::Next() const
 {
-	const TargetList& targetList = ScriptContext::Get().GetTargetList();
-	return targetList.GetTarget(target);
+    const TargetList& targetList = ScriptContext::Get().GetTargetList();
+    return targetList.GetTarget(target);
 }
 
 void TargetComponent::Archive(Archiver& arc)
 {
-	if (arc.Loading())
-	{
-		str targetNameStr;
-		str targetStr;
-		::Archive(arc, targetNameStr);
-		::Archive(arc, targetStr);
+    if (arc.Loading())
+    {
+        str targetNameStr;
+        str targetStr;
+        ::Archive(arc, targetNameStr);
+        ::Archive(arc, targetStr);
 
-		targetName = targetNameStr;
-		target = targetStr;
-	}
-	else
-	{
-		str targetNameStr = targetName.GetString();
-		str targetStr = target.GetString();
-		::Archive(arc, targetNameStr);
-		::Archive(arc, targetStr);
-	}
+        targetName = targetNameStr;
+        target = targetStr;
+    }
+    else
+    {
+        str targetNameStr = targetName.GetString();
+        str targetStr = target.GetString();
+        ::Archive(arc, targetNameStr);
+        ::Archive(arc, targetStr);
+    }
 }

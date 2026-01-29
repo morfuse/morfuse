@@ -8,58 +8,58 @@
 
 namespace mfuse
 {
-	class Listener;
-	class ClassDef;
+    class Listener;
+    class ClassDef;
 
 class SpawnArgs : public Class
 {
-	MFUS_CLASS_PROTOTYPE(SpawnArgs);
+    MFUS_CLASS_PROTOTYPE(SpawnArgs);
 
 public:
-	SpawnArgs();
-	SpawnArgs(SpawnArgs& arglist);
+    SpawnArgs();
+    SpawnArgs(SpawnArgs& arglist);
 
-	void Clear(void);
+    void Clear(void);
 
-	const char* getArg(const char* key, const char* defaultValue = nullptr);
-	void setArg(const strview& key, const strview& value);
+    const char* getArg(const char* key, const char* defaultValue = nullptr);
+    void setArg(const strview& key, const strview& value);
 
-	size_t NumArgs(void);
-	const char* getKey(uintptr_t index);
-	const char* getValue(uintptr_t index);
-	void operator=(SpawnArgs& a);
+    size_t NumArgs(void);
+    const char* getKey(uintptr_t index);
+    const char* getValue(uintptr_t index);
+    void operator=(SpawnArgs& a);
 
-	const ClassDef* getClassDef(const rawchar_t** foundClassName);
-	Listener* Spawn(void);
-	Listener* SpawnInternal(void);
+    const ClassDef* getClassDef(const rawchar_t** foundClassName);
+    Listener* Spawn(void);
+    Listener* SpawnInternal(void);
 
-	void Archive(Archiver& arc) override;
+    void Archive(Archiver& arc) override;
 
 private:
-	con::Container<str> keyList;
-	con::Container<str> valueList;
+    con::Container<str> keyList;
+    con::Container<str> valueList;
 };
 
 namespace SpawnErrors
 {
-	class Base : public ScriptExceptionBase {};
+    class Base : public ScriptExceptionBase {};
 
-	class InvalidClassName : public Base, public Messageable
-	{
-	public:
-		InvalidClassName(const str& classNameRef);
+    class InvalidClassName : public Base, public Messageable
+    {
+    public:
+        InvalidClassName(const str& classNameRef);
 
-		const str& getClassName() const;
-		const char* what() const noexcept override;
+        const str& getClassName() const;
+        const char* what() const noexcept override;
 
-	private:
-		str className;
-	};
+    private:
+        str className;
+    };
 
-	class NoSpawnFunction : public Base
-	{
-	public:
-		const char* what() const noexcept override;
-	};
+    class NoSpawnFunction : public Base
+    {
+    public:
+        const char* what() const noexcept override;
+    };
 }
 }

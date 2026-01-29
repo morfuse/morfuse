@@ -6,29 +6,29 @@
 
 namespace mfuse
 {
-	class StringResolvable;
+    class StringResolvable;
 
-	/**
-	 * Component for assigning targetname and pointing to target.
-	 */
-	class TargetComponent : public Component
-	{
-	public:
-		mfuse_EXPORTS TargetComponent(Listener& parentRef);
-		mfuse_EXPORTS ~TargetComponent();
+    /**
+     * Component for assigning targetname and pointing to target.
+     */
+    class TargetComponent : public Component
+    {
+    public:
+        mfuse_EXPORTS TargetComponent(Listener& parentRef);
+        mfuse_EXPORTS ~TargetComponent();
 
-		mfuse_EXPORTS void SetTargetName(const StringResolvable& targetname);
-		mfuse_EXPORTS const StringResolvable& GetTargetName();
+        mfuse_EXPORTS void SetTargetName(const StringResolvable& targetname);
+        mfuse_EXPORTS const StringResolvable& GetTargetName();
 
-		mfuse_EXPORTS void SetTarget(const StringResolvable& newTarget);
-		mfuse_EXPORTS const StringResolvable& GetTarget();
+        mfuse_EXPORTS void SetTarget(const StringResolvable& newTarget);
+        mfuse_EXPORTS const StringResolvable& GetTarget();
 
-		mfuse_EXPORTS Listener* Next() const;
+        mfuse_EXPORTS Listener* Next() const;
 
-		void Archive(Archiver& arc) override;
+        void Archive(Archiver& arc) override;
 
-	private:
-		StringResolvable target;
-		StringResolvable targetName;
-	};
+    private:
+        StringResolvable target;
+        StringResolvable targetName;
+    };
 }

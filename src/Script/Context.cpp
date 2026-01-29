@@ -6,7 +6,7 @@
 using namespace mfuse;
 
 ScriptContext::ScriptContext()
-	//: ThreadSingleton(this)
+    //: ThreadSingleton(this)
 {
 }
 
@@ -16,117 +16,117 @@ ScriptContext::~ScriptContext()
 
 TargetList& ScriptContext::GetTargetList()
 {
-	return targetList;
+    return targetList;
 }
 
 Level* ScriptContext::GetLevel()
 {
-	return &level;
+    return &level;
 }
 
 Game* ScriptContext::GetGame()
 {
-	return &game;
+    return &game;
 }
 
 ScriptMaster& ScriptContext::GetDirector()
 {
-	return director;
+    return director;
 }
 
 const ScriptMaster& ScriptContext::GetDirector() const
 {
-	return director;
+    return director;
 }
 
 void ScriptContext::Execute(float timeScale)
 {
-	uint64_t deltaTime;
-	TimeManager& timeMan = GetTimeManagerInternal();
-	if (timeScale == 1.f) {
-		deltaTime = timeMan.Frame();
-	} else {
-		deltaTime = timeMan.Frame(timeScale);
-	}
+    uint64_t deltaTime;
+    TimeManager& timeMan = GetTimeManagerInternal();
+    if (timeScale == 1.f) {
+        deltaTime = timeMan.Frame();
+    } else {
+        deltaTime = timeMan.Frame(timeScale);
+    }
 
-	director.SetTime(timeMan.GetTime());
+    director.SetTime(timeMan.GetTime());
 
-	// process current pending events
-	GetEventQueue().ProcessPendingEvents();
+    // process current pending events
+    GetEventQueue().ProcessPendingEvents();
 
-	// process all scripts
-	director.ExecuteRunning();
+    // process all scripts
+    director.ExecuteRunning();
 }
 
 bool ScriptContext::IsIdle() const
 {
-	if (GetEventQueue().HasPendingEvents()) {
-		return false;
-	}
+    if (GetEventQueue().HasPendingEvents()) {
+        return false;
+    }
 
-	if (director.GetNumRunningScripts() > 0) {
-		return false;
-	}
+    if (director.GetNumRunningScripts() > 0) {
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
 DefaultScriptAllocator& ScriptContext::GetAllocator()
 {
-	return scriptAllocator;
+    return scriptAllocator;
 }
 
 OutputInfo& ScriptContext::GetOutputInfo()
 {
-	return outputInfo;
+    return outputInfo;
 }
 
 const OutputInfo& ScriptContext::GetOutputInfo() const
 {
-	return outputInfo;
+    return outputInfo;
 }
 
 ScriptSettings& ScriptContext::GetSettings()
 {
-	return settings;
+    return settings;
 }
 
 const ScriptSettings& ScriptContext::GetSettings() const
 {
-	return settings;
+    return settings;
 }
 
 ScriptInterfaces& ScriptContext::GetScriptInterfaces()
 {
-	return interfaces;
+    return interfaces;
 }
 
 const ScriptInterfaces& ScriptContext::GetScriptInterfaces() const
 {
-	return interfaces;
+    return interfaces;
 }
 
 TrackedInstances& ScriptContext::GetTrackedInstances()
 {
-	return trackedInstances;
+    return trackedInstances;
 }
 
 ScriptSettings::ScriptSettings()
-	: bDeveloper(false)
+    : bDeveloper(false)
 {
 }
 
 void ScriptSettings::SetDeveloperEnabled(bool value)
 {
-	bDeveloper = value;
+    bDeveloper = value;
 }
 
 bool ScriptSettings::IsDeveloperEnabled() const
 {
-	return bDeveloper;
+    return bDeveloper;
 }
 
 ScriptInterfaces::ScriptInterfaces()
-	: fileManagement(nullptr)
+    : fileManagement(nullptr)
 {
 }

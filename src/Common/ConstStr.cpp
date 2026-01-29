@@ -6,5 +6,5 @@ using namespace mfuse;
 template<>
 intptr_t Hash<const_str>::operator()(const const_str& key) const
 {
-	return (intptr_t)key;
+    return (intptr_t)key;
 }

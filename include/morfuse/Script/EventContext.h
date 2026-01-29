@@ -9,55 +9,55 @@
 
 namespace mfuse
 {
-	template<size_t BlockSize>
-	class EventAllocator
-	{
-	public:
-		template<typename T>
-		MEM::BlockAlloc<T, BlockSize>& GetBlock();
+    template<size_t BlockSize>
+    class EventAllocator
+    {
+    public:
+        template<typename T>
+        MEM::BlockAlloc<T, BlockSize>& GetBlock();
 
-		template<>
-		MEM::BlockAlloc<Event, BlockSize>& GetBlock<Event>()
-		{
-			return Event_allocator;
-		}
+        template<>
+        MEM::BlockAlloc<Event, BlockSize>& GetBlock<Event>()
+        {
+            return Event_allocator;
+        }
 
-		template<>
-		MEM::BlockAlloc<EventQueueNode, BlockSize>& GetBlock<EventQueueNode>()
-		{
-			return EventQueueNode_allocator;
-		}
+        template<>
+        MEM::BlockAlloc<EventQueueNode, BlockSize>& GetBlock<EventQueueNode>()
+        {
+            return EventQueueNode_allocator;
+        }
 
-	private:
-		MEM::BlockAlloc<Event, BlockSize> Event_allocator;
-		MEM::BlockAlloc<EventQueueNode, BlockSize> EventQueueNode_allocator;
-	};
-	using DefaultEventAllocator = EventAllocator<MEM::DefaultBlock>;
+    private:
+        MEM::BlockAlloc<Event, BlockSize> Event_allocator;
+        MEM::BlockAlloc<EventQueueNode, BlockSize> EventQueueNode_allocator;
+    };
+    using DefaultEventAllocator = EventAllocator<MEM::DefaultBlock>;
 
-	class EventContext : public ThreadSingleton<EventContext>
-	{
-	public:
-		mfuse_EXPORTS EventContext();
-		mfuse_EXPORTS ~EventContext();
+    class EventContext : public ThreadSingleton<EventContext>
+    {
+    public:
+        mfuse_EXPORTS EventContext();
+        mfuse_EXPORTS ~EventContext();
 
-		mfuse_EXPORTS void ProcessEvents(float timeScale = 1.f);
-		mfuse_EXPORTS const TimeManager& GetTimeManager() const;
-		mfuse_EXPORTS EventQueue& GetEventQueue();
-		mfuse_EXPORTS const EventQueue& GetEventQueue() const;
-		mfuse_EXPORTS NamespaceManager& GetNamespaceManager();
-		mfuse_EXPORTS const NamespaceManager& GetNamespaceManager() const;
+        mfuse_EXPORTS void ProcessEvents(float timeScale = 1.f);
+        mfuse_EXPORTS const TimeManager& GetTimeManager() const;
+        mfuse_EXPORTS EventQueue& GetEventQueue();
+        mfuse_EXPORTS const EventQueue& GetEventQueue() const;
+        mfuse_EXPORTS NamespaceManager& GetNamespaceManager();
+        mfuse_EXPORTS const NamespaceManager& GetNamespaceManager() const;
 
-		DefaultEventAllocator& GetAllocator();
+        DefaultEventAllocator& GetAllocator();
 
-	protected:
-		TimeManager& GetTimeManagerInternal();
+    protected:
+        TimeManager& GetTimeManagerInternal();
 
-	private:
-		DefaultEventAllocator allocator;
-		TimeManager timeManager;
-		EventQueue eventQueue;
-		NamespaceManager namespaceManager;
-	};
+    private:
+        DefaultEventAllocator allocator;
+        TimeManager timeManager;
+        EventQueue eventQueue;
+        NamespaceManager namespaceManager;
+    };
 
-	mfuse_TEMPLATE template class mfuse_EXPORTS ThreadSingleton<EventContext>;
+    mfuse_TEMPLATE template class mfuse_EXPORTS ThreadSingleton<EventContext>;
 }

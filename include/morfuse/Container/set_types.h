@@ -7,14 +7,14 @@ namespace mfuse
 template<typename T>
 struct EqualTo
 {
-	constexpr bool operator()(const T& lhs, const T& rhs) const
-	{
-		return lhs == rhs;
-	}
+    constexpr bool operator()(const T& lhs, const T& rhs) const
+    {
+        return lhs == rhs;
+    }
 };
 
 namespace con
 {
-	mfuse_EXPORTS extern size_t set_primes[24];
+    mfuse_EXPORTS extern size_t set_primes[24];
 }
 }

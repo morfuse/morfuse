@@ -21,104 +21,104 @@
 
 namespace mfuse
 {
-	class Game;
-	class Level;
-	class ScriptThread;
-	class ScriptClass;
-	class ScriptVM;
+    class Game;
+    class Level;
+    class ScriptThread;
+    class ScriptClass;
+    class ScriptVM;
 
-	template<size_t BlockSize>
-	class ScriptAllocator
-	{
-	public:
-		template<typename T>
-		MEM::BlockAlloc<T, BlockSize>& GetBlock();
+    template<size_t BlockSize>
+    class ScriptAllocator
+    {
+    public:
+        template<typename T>
+        MEM::BlockAlloc<T, BlockSize>& GetBlock();
 
-		template<>
-		MEM::BlockAlloc<ScriptThread, BlockSize>& GetBlock<ScriptThread>()
-		{
-			return ScriptThread_allocator;
-		}
+        template<>
+        MEM::BlockAlloc<ScriptThread, BlockSize>& GetBlock<ScriptThread>()
+        {
+            return ScriptThread_allocator;
+        }
 
-		template<>
-		MEM::BlockAlloc<ScriptClass, BlockSize>& GetBlock<ScriptClass>()
-		{
-			return ScriptClass_allocator;
-		}
+        template<>
+        MEM::BlockAlloc<ScriptClass, BlockSize>& GetBlock<ScriptClass>()
+        {
+            return ScriptClass_allocator;
+        }
 
-		template<>
-		MEM::BlockAlloc<ScriptVM, BlockSize>& GetBlock<ScriptVM>()
-		{
-			return ScriptVM_allocator;
-		}
+        template<>
+        MEM::BlockAlloc<ScriptVM, BlockSize>& GetBlock<ScriptVM>()
+        {
+            return ScriptVM_allocator;
+        }
 
-	private:
-		MEM::BlockAlloc<ScriptThread, BlockSize> ScriptThread_allocator;
-		MEM::BlockAlloc<ScriptVM, BlockSize> ScriptVM_allocator;
-		MEM::BlockAlloc<ScriptClass, BlockSize> ScriptClass_allocator;
-	};
-	using DefaultScriptAllocator = ScriptAllocator<MEM::DefaultBlock>;
+    private:
+        MEM::BlockAlloc<ScriptThread, BlockSize> ScriptThread_allocator;
+        MEM::BlockAlloc<ScriptVM, BlockSize> ScriptVM_allocator;
+        MEM::BlockAlloc<ScriptClass, BlockSize> ScriptClass_allocator;
+    };
+    using DefaultScriptAllocator = ScriptAllocator<MEM::DefaultBlock>;
 
-	class ScriptSettings
-	{
-	public:
-		ScriptSettings();
+    class ScriptSettings
+    {
+    public:
+        ScriptSettings();
 
-		mfuse_EXPORTS void SetDeveloperEnabled(bool value);
-		mfuse_EXPORTS bool IsDeveloperEnabled() const;
+        mfuse_EXPORTS void SetDeveloperEnabled(bool value);
+        mfuse_EXPORTS bool IsDeveloperEnabled() const;
 
-	private:
-		bool bDeveloper;
-	};
+    private:
+        bool bDeveloper;
+    };
 
-	class ScriptInterfaces
-	{
-	public:
-		ScriptInterfaces();
+    class ScriptInterfaces
+    {
+    public:
+        ScriptInterfaces();
 
-	public:
-		IFileManagement* fileManagement;
-	};
+    public:
+        IFileManagement* fileManagement;
+    };
 
-	class ScriptContext : public EventContext, public ThreadCastSingleton<EventContext, ScriptContext>
-	{
-	public:
-		using ThreadCastSingleton::Get;
+    class ScriptContext : public EventContext, public ThreadCastSingleton<EventContext, ScriptContext>
+    {
+    public:
+        using ThreadCastSingleton::Get;
 
-		mfuse_EXPORTS ScriptContext();
-		mfuse_EXPORTS ~ScriptContext();
+        mfuse_EXPORTS ScriptContext();
+        mfuse_EXPORTS ~ScriptContext();
 
-		mfuse_EXPORTS TargetList& GetTargetList();
-		mfuse_EXPORTS TrackedInstances& GetTrackedInstances();
-		mfuse_EXPORTS Level* GetLevel();
-		mfuse_EXPORTS Game* GetGame();
-		mfuse_EXPORTS ScriptMaster& GetDirector();
-		mfuse_EXPORTS const ScriptMaster& GetDirector() const;
+        mfuse_EXPORTS TargetList& GetTargetList();
+        mfuse_EXPORTS TrackedInstances& GetTrackedInstances();
+        mfuse_EXPORTS Level* GetLevel();
+        mfuse_EXPORTS Game* GetGame();
+        mfuse_EXPORTS ScriptMaster& GetDirector();
+        mfuse_EXPORTS const ScriptMaster& GetDirector() const;
 
-		mfuse_EXPORTS OutputInfo& GetOutputInfo();
-		mfuse_EXPORTS const OutputInfo& GetOutputInfo() const;
-		mfuse_EXPORTS ScriptInterfaces& GetScriptInterfaces();
-		mfuse_EXPORTS const ScriptInterfaces& GetScriptInterfaces() const;
+        mfuse_EXPORTS OutputInfo& GetOutputInfo();
+        mfuse_EXPORTS const OutputInfo& GetOutputInfo() const;
+        mfuse_EXPORTS ScriptInterfaces& GetScriptInterfaces();
+        mfuse_EXPORTS const ScriptInterfaces& GetScriptInterfaces() const;
 
-		mfuse_EXPORTS void Execute(float timeScale = 1.f);
-		mfuse_EXPORTS bool IsIdle() const;
+        mfuse_EXPORTS void Execute(float timeScale = 1.f);
+        mfuse_EXPORTS bool IsIdle() const;
 
-		mfuse_EXPORTS DefaultScriptAllocator& GetAllocator();
-		mfuse_EXPORTS ScriptSettings& GetSettings();
-		mfuse_EXPORTS const ScriptSettings& GetSettings() const;
+        mfuse_EXPORTS DefaultScriptAllocator& GetAllocator();
+        mfuse_EXPORTS ScriptSettings& GetSettings();
+        mfuse_EXPORTS const ScriptSettings& GetSettings() const;
 
-	private:
-		// put it first so instances are freed last
-		TrackedInstances trackedInstances;
-		Game game;
-		Level level;
-		TargetList targetList;
-		ScriptMaster director;
-		OutputInfo outputInfo;
-		ScriptInterfaces interfaces;
-		DefaultScriptAllocator scriptAllocator;
-		ScriptSettings settings;
-	};
+    private:
+        // put it first so instances are freed last
+        TrackedInstances trackedInstances;
+        Game game;
+        Level level;
+        TargetList targetList;
+        ScriptMaster director;
+        OutputInfo outputInfo;
+        ScriptInterfaces interfaces;
+        DefaultScriptAllocator scriptAllocator;
+        ScriptSettings settings;
+    };
 
-	mfuse_TEMPLATE template class mfuse_EXPORTS ThreadCastSingleton<EventContext, ScriptContext>;
+    mfuse_TEMPLATE template class mfuse_EXPORTS ThreadCastSingleton<EventContext, ScriptContext>;
 };

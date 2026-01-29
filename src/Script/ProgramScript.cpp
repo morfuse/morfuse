@@ -13,33 +13,33 @@
 using namespace mfuse;
 
 ProgramScript::ProgramScript(const_str fileName)
-	: m_State(this)
+    : m_State(this)
 {
-	successCompile = false;
+    successCompile = false;
 
-	m_ProgBuffer = nullptr;
-	m_ProgLength = 0;
-	m_ProgToSource = nullptr;
+    m_ProgBuffer = nullptr;
+    m_ProgLength = 0;
+    m_ProgToSource = nullptr;
 
-	m_SourceBuffer = nullptr;
-	m_SourceLength = 0;
+    m_SourceBuffer = nullptr;
+    m_SourceLength = 0;
 
-	m_Filename = fileName;
+    m_Filename = fileName;
 
-	requiredStackSize = 0;
+    requiredStackSize = 0;
 
-	m_CatchBlocks.GetAllocator().SetAllocator(GetAllocator());
-	m_StateScripts.GetAllocator().SetAllocator(GetAllocator());
+    m_CatchBlocks.GetAllocator().SetAllocator(GetAllocator());
+    m_StateScripts.GetAllocator().SetAllocator(GetAllocator());
 }
 
 ProgramScript::~ProgramScript()
 {
-	Close();
+    Close();
 }
 
 struct pfixup_t {
-	bool			isString;
-	unsigned int	*ptr;
+    bool            isString;
+    unsigned int    *ptr;
 };
 
 #if 0
@@ -49,619 +49,619 @@ static con::Container< pfixup_t * > archivedPointerFixup;
 
 void ArchiveOpcode(Archiver& arc, opval_t *code)
 {
-	/*
-	unsigned int index;
+    /*
+    unsigned int index;
 
-	arc.ArchiveByte(code);
+    arc.ArchiveByte(code);
 
-	switch (*code)
-	{
-	case OP_STORE_NIL:
-	case OP_STORE_NULL:
-	case OP_DONE:
-		break;
+    switch (*code)
+    {
+    case OP_STORE_NIL:
+    case OP_STORE_NULL:
+    case OP_DONE:
+        break;
 
-	case OP_EXEC_CMD_COUNT1:
-	case OP_EXEC_CMD_METHOD_COUNT1:
-	case OP_EXEC_METHOD_COUNT1:
-		arc.ArchiveByte(code + 1);
-		goto __exec;
+    case OP_EXEC_CMD_COUNT1:
+    case OP_EXEC_CMD_METHOD_COUNT1:
+    case OP_EXEC_METHOD_COUNT1:
+        arc.ArchiveByte(code + 1);
+        goto __exec;
 
-	case OP_EXEC_CMD0:
-	case OP_EXEC_CMD1:
-	case OP_EXEC_CMD2:
-	case OP_EXEC_CMD3:
-	case OP_EXEC_CMD4:
-	case OP_EXEC_CMD5:
-	case OP_EXEC_CMD_METHOD0:
-	case OP_EXEC_CMD_METHOD1:
-	case OP_EXEC_CMD_METHOD2:
-	case OP_EXEC_CMD_METHOD3:
-	case OP_EXEC_CMD_METHOD4:
-	case OP_EXEC_CMD_METHOD5:
-	case OP_EXEC_METHOD0:
-	case OP_EXEC_METHOD1:
-	case OP_EXEC_METHOD2:
-	case OP_EXEC_METHOD3:
-	case OP_EXEC_METHOD4:
-	case OP_EXEC_METHOD5:
-		code--;
-	__exec:
-		if (!arc.Loading())
-		{
-			index = archivedEvents.AddUniqueObject(*reinterpret_cast<unsigned int *>(code + 2));
-		}
+    case OP_EXEC_CMD0:
+    case OP_EXEC_CMD1:
+    case OP_EXEC_CMD2:
+    case OP_EXEC_CMD3:
+    case OP_EXEC_CMD4:
+    case OP_EXEC_CMD5:
+    case OP_EXEC_CMD_METHOD0:
+    case OP_EXEC_CMD_METHOD1:
+    case OP_EXEC_CMD_METHOD2:
+    case OP_EXEC_CMD_METHOD3:
+    case OP_EXEC_CMD_METHOD4:
+    case OP_EXEC_CMD_METHOD5:
+    case OP_EXEC_METHOD0:
+    case OP_EXEC_METHOD1:
+    case OP_EXEC_METHOD2:
+    case OP_EXEC_METHOD3:
+    case OP_EXEC_METHOD4:
+    case OP_EXEC_METHOD5:
+        code--;
+    __exec:
+        if (!arc.Loading())
+        {
+            index = archivedEvents.AddUniqueObject(*reinterpret_cast<unsigned int *>(code + 2));
+        }
 
-		arc.ArchiveUnsigned(&index);
+        arc.ArchiveUnsigned(&index);
 
-		if (arc.Loading())
-		{
-			pfixup_t *p = new pfixup_t;
+        if (arc.Loading())
+        {
+            pfixup_t *p = new pfixup_t;
 
-			p->isString = false;
-			p->ptr = reinterpret_cast<unsigned int *>(code + 2);
+            p->isString = false;
+            p->ptr = reinterpret_cast<unsigned int *>(code + 2);
 
-			*reinterpret_cast<unsigned int *>(code + 2) = index;
-			archivedPointerFixup.AddObject(p);
-		}
-		break;
+            *reinterpret_cast<unsigned int *>(code + 2) = index;
+            archivedPointerFixup.AddObject(p);
+        }
+        break;
 
-	case OP_LOAD_FIELD_VAR:
-	case OP_LOAD_GAME_VAR:
-	case OP_LOAD_GROUP_VAR:
-	case OP_LOAD_LEVEL_VAR:
-	case OP_LOAD_LOCAL_VAR:
-	case OP_LOAD_OWNER_VAR:
-	case OP_LOAD_PARM_VAR:
-	case OP_LOAD_SELF_VAR:
-	case OP_LOAD_STORE_GAME_VAR:
-	case OP_LOAD_STORE_GROUP_VAR:
-	case OP_LOAD_STORE_LEVEL_VAR:
-	case OP_LOAD_STORE_LOCAL_VAR:
-	case OP_LOAD_STORE_OWNER_VAR:
-	case OP_LOAD_STORE_PARM_VAR:
-	case OP_LOAD_STORE_SELF_VAR:
-	case OP_STORE_FIELD:
-	case OP_STORE_FIELD_REF:
-	case OP_STORE_GAME_VAR:
-	case OP_STORE_GROUP_VAR:
-	case OP_STORE_LEVEL_VAR:
-	case OP_STORE_LOCAL_VAR:
-	case OP_STORE_OWNER_VAR:
-	case OP_STORE_PARM_VAR:
-	case OP_STORE_SELF_VAR:
-	case OP_STORE_STRING:
-		if (!arc.Loading())
-		{
-			index = archivedStrings.AddUniqueObject(*reinterpret_cast<unsigned int *>(code + 1));
-		}
+    case OP_LOAD_FIELD_VAR:
+    case OP_LOAD_GAME_VAR:
+    case OP_LOAD_GROUP_VAR:
+    case OP_LOAD_LEVEL_VAR:
+    case OP_LOAD_LOCAL_VAR:
+    case OP_LOAD_OWNER_VAR:
+    case OP_LOAD_PARM_VAR:
+    case OP_LOAD_SELF_VAR:
+    case OP_LOAD_STORE_GAME_VAR:
+    case OP_LOAD_STORE_GROUP_VAR:
+    case OP_LOAD_STORE_LEVEL_VAR:
+    case OP_LOAD_STORE_LOCAL_VAR:
+    case OP_LOAD_STORE_OWNER_VAR:
+    case OP_LOAD_STORE_PARM_VAR:
+    case OP_LOAD_STORE_SELF_VAR:
+    case OP_STORE_FIELD:
+    case OP_STORE_FIELD_REF:
+    case OP_STORE_GAME_VAR:
+    case OP_STORE_GROUP_VAR:
+    case OP_STORE_LEVEL_VAR:
+    case OP_STORE_LOCAL_VAR:
+    case OP_STORE_OWNER_VAR:
+    case OP_STORE_PARM_VAR:
+    case OP_STORE_SELF_VAR:
+    case OP_STORE_STRING:
+        if (!arc.Loading())
+        {
+            index = archivedStrings.AddUniqueObject(*reinterpret_cast<unsigned int *>(code + 1));
+        }
 
-		arc.ArchiveUnsigned(&index);
+        arc.ArchiveUnsigned(&index);
 
-		if (arc.Loading())
-		{
-			pfixup_t *p = new pfixup_t;
+        if (arc.Loading())
+        {
+            pfixup_t *p = new pfixup_t;
 
-			p->isString = true;
-			p->ptr = reinterpret_cast<unsigned int *>(code + 1);
+            p->isString = true;
+            p->ptr = reinterpret_cast<unsigned int *>(code + 1);
 
-			*reinterpret_cast<unsigned int *>(code + 1) = index;
-			archivedPointerFixup.AddObject(p);
-		}
-		break;
+            *reinterpret_cast<unsigned int *>(code + 1) = index;
+            archivedPointerFixup.AddObject(p);
+        }
+        break;
 
-	default:
-		if (OpcodeLength(*code) > 1)
-			arc.ArchiveRaw(code + 1, OpcodeLength(*code) - 1);
-	}
-	*/
+    default:
+        if (OpcodeLength(*code) > 1)
+            arc.ArchiveRaw(code + 1, OpcodeLength(*code) - 1);
+    }
+    */
 }
 
 template<>
 void con::Entry <opval_t *, sourceinfo_t>::Archive(Archiver& arc)
 {
-	/*
-	unsigned int offset;
+    /*
+    unsigned int offset;
 
-	if (arc.Loading())
-	{
-		arc.ArchiveUnsigned(&offset);
-		key = current_progBuffer + offset;
-	}
-	else
-	{
-		offset = key - current_progBuffer;
-		arc.ArchiveUnsigned(&offset);
-	}
+    if (arc.Loading())
+    {
+        arc.ArchiveUnsigned(&offset);
+        key = current_progBuffer + offset;
+    }
+    else
+    {
+        offset = key - current_progBuffer;
+        arc.ArchiveUnsigned(&offset);
+    }
 
-	arc.ArchiveUnsigned(&value.sourcePos);
-	arc.ArchiveInteger(&value.column);
-	arc.ArchiveInteger(&value.line);
-	*/
+    arc.ArchiveUnsigned(&value.sourcePos);
+    arc.ArchiveInteger(&value.column);
+    arc.ArchiveInteger(&value.line);
+    */
 }
 #endif
 
 void ProgramScript::Archive(Archiver&)
 {
-	/*
-	int count = 0, i;
-	opval_t *p, *code_pos, *code_end;
-	const_str s;
-	command_t *c, cmd;
+    /*
+    int count = 0, i;
+    opval_t *p, *code_pos, *code_end;
+    const_str s;
+    command_t *c, cmd;
 
-	arc.ArchiveSize((long *)&m_ProgLength);
+    arc.ArchiveSize((long *)&m_ProgLength);
 
-	if (arc.Saving())
-	{
-		p = m_ProgBuffer;
-		current_progBuffer = m_ProgBuffer;
+    if (arc.Saving())
+    {
+        p = m_ProgBuffer;
+        current_progBuffer = m_ProgBuffer;
 
-		// archive opcodes
-		while (*p != OP_DONE)
-		{
-			ArchiveOpcode(arc, p);
+        // archive opcodes
+        while (*p != OP_DONE)
+        {
+            ArchiveOpcode(arc, p);
 
-			p += OpcodeLength(*p);
-		}
+            p += OpcodeLength(*p);
+        }
 
-		ArchiveOpcode(arc, p);
+        ArchiveOpcode(arc, p);
 
-		// archive string dictionary list
-		i = archivedStrings.NumObjects();
-		arc.ArchiveInteger(&i);
+        // archive string dictionary list
+        i = archivedStrings.NumObjects();
+        arc.ArchiveInteger(&i);
 
-		for (; i > 0; i--)
-		{
-			GetScriptManager()->ArchiveString(arc, archivedStrings.ObjectAt(i));
-		}
+        for (; i > 0; i--)
+        {
+            GetScriptManager()->ArchiveString(arc, archivedStrings.ObjectAt(i));
+        }
 
-		// archive event list
-		i = archivedEvents.NumObjects();
-		arc.ArchiveInteger(&i);
+        // archive event list
+        i = archivedEvents.NumObjects();
+        arc.ArchiveInteger(&i);
 
-		for (; i > 0; i--)
-		{
-			c = Event::GetEventInfo(archivedEvents.ObjectAt(i));
+        for (; i > 0; i--)
+        {
+            c = Event::GetEventInfo(archivedEvents.ObjectAt(i));
 
-			arc.ArchiveString(&c->command);
-			arc.ArchiveInteger(&c->flags);
-			arc.ArchiveByte(&c->type);
-		}
-	}
-	else
-	{
-		m_ProgBuffer = (opval_t *)glbs.Malloc(m_ProgLength);
-		code_pos = m_ProgBuffer;
-		code_end = m_ProgBuffer + m_ProgLength;
+            arc.ArchiveString(&c->command);
+            arc.ArchiveInteger(&c->flags);
+            arc.ArchiveByte(&c->type);
+        }
+    }
+    else
+    {
+        m_ProgBuffer = (opval_t *)glbs.Malloc(m_ProgLength);
+        code_pos = m_ProgBuffer;
+        code_end = m_ProgBuffer + m_ProgLength;
 
-		current_progBuffer = m_ProgBuffer;
+        current_progBuffer = m_ProgBuffer;
 
-		do
-		{
-			ArchiveOpcode(arc, code_pos);
+        do
+        {
+            ArchiveOpcode(arc, code_pos);
 
-			code_pos += OpcodeLength(*code_pos);
-		} while (*code_pos != OP_DONE && arc.NoErrors());
+            code_pos += OpcodeLength(*code_pos);
+        } while (*code_pos != OP_DONE && arc.NoErrors());
 
-		if (!arc.NoErrors())
-		{
-			return;
-		}
+        if (!arc.NoErrors())
+        {
+            return;
+        }
 
-		// retrieve the string dictionary list
-		arc.ArchiveInteger(&i);
-		archivedStrings.Resize(i + 1);
+        // retrieve the string dictionary list
+        arc.ArchiveInteger(&i);
+        archivedStrings.Resize(i + 1);
 
-		for (; i > 0; i--)
-		{
-			GetScriptManager()->ArchiveString(arc, s);
-			archivedStrings.AddObjectAt(i, s);
-		}
+        for (; i > 0; i--)
+        {
+            GetScriptManager()->ArchiveString(arc, s);
+            archivedStrings.AddObjectAt(i, s);
+        }
 
-		// retrieve the event list
-		arc.ArchiveInteger(&i);
-		archivedEvents.Resize(i + 1);
+        // retrieve the event list
+        arc.ArchiveInteger(&i);
+        archivedEvents.Resize(i + 1);
 
-		for (; i > 0; i--)
-		{
-			arc.ArchiveString(&cmd.command);
-			arc.ArchiveInteger(&cmd.flags);
-			arc.ArchiveByte(&cmd.type);
+        for (; i > 0; i--)
+        {
+            arc.ArchiveString(&cmd.command);
+            arc.ArchiveInteger(&cmd.flags);
+            arc.ArchiveByte(&cmd.type);
 
-			archivedEvents.AddObjectAt(i, Event::GetEventWithFlags(cmd.command, cmd.flags, cmd.type));
-		}
+            archivedEvents.AddObjectAt(i, Event::GetEventWithFlags(cmd.command, cmd.flags, cmd.type));
+        }
 
-		// fix program string/event pointers
-		for (i = archivedPointerFixup.NumObjects(); i > 0; i--)
-		{
-			pfixup_t *fixup = archivedPointerFixup.ObjectAt(i);
+        // fix program string/event pointers
+        for (i = archivedPointerFixup.NumObjects(); i > 0; i--)
+        {
+            pfixup_t *fixup = archivedPointerFixup.ObjectAt(i);
 
-			if (fixup->isString)
-			{
-				*fixup->ptr = archivedStrings.ObjectAt(*fixup->ptr);
-			}
-			else
-			{
-				*fixup->ptr = archivedEvents.ObjectAt(*fixup->ptr);
-			}
+            if (fixup->isString)
+            {
+                *fixup->ptr = archivedStrings.ObjectAt(*fixup->ptr);
+            }
+            else
+            {
+                *fixup->ptr = archivedEvents.ObjectAt(*fixup->ptr);
+            }
 
-			delete fixup;
-		}
+            delete fixup;
+        }
 
-		successCompile = true;
-	}
+        successCompile = true;
+    }
 
-	// cleanup
-	archivedStrings.FreeObjectList();
-	archivedEvents.FreeObjectList();
-	archivedPointerFixup.FreeObjectList();
+    // cleanup
+    archivedStrings.FreeObjectList();
+    archivedEvents.FreeObjectList();
+    archivedPointerFixup.FreeObjectList();
 
-	if (!arc.Loading())
-	{
-		if (m_ProgToSource)
-		{
-			count = m_ProgToSource->size();
-			arc.ArchiveInteger(&count);
+    if (!arc.Loading())
+    {
+        if (m_ProgToSource)
+        {
+            count = m_ProgToSource->size();
+            arc.ArchiveInteger(&count);
 
-			m_ProgToSource->Archive(arc);
-		}
-		else
-		{
-			arc.ArchiveInteger(&count);
-		}
-	}
-	else
-	{
-		arc.ArchiveInteger(&count);
+            m_ProgToSource->Archive(arc);
+        }
+        else
+        {
+            arc.ArchiveInteger(&count);
+        }
+    }
+    else
+    {
+        arc.ArchiveInteger(&count);
 
-		if (count)
-		{
-			m_ProgToSource = new con_set < opval_t *, sourceinfo_t >;
-			m_ProgToSource->Archive(arc);
-		}
-	}
+        if (count)
+        {
+            m_ProgToSource = new con_set < opval_t *, sourceinfo_t >;
+            m_ProgToSource->Archive(arc);
+        }
+    }
 
-	arc.ArchiveUnsigned(&requiredStackSize);
-	arc.ArchiveBool(&m_bPrecompiled);
+    arc.ArchiveUnsigned(&requiredStackSize);
+    arc.ArchiveBool(&m_bPrecompiled);
 
-	if (!m_bPrecompiled && arc.Loading())
-	{
-		fileHandle_t filehandle = nullptr;
+    if (!m_bPrecompiled && arc.Loading())
+    {
+        fileHandle_t filehandle = nullptr;
 
-		m_SourceLength = glbs.FS_ReadFile(Filename().c_str(), (void **)&m_SourceBuffer, true);
+        m_SourceLength = glbs.FS_ReadFile(Filename().c_str(), (void **)&m_SourceBuffer, true);
 
-		if (m_SourceLength > 0)
-		{
-			m_SourceBuffer = (rawchar_t *)glbs.Malloc(m_SourceLength);
+        if (m_SourceLength > 0)
+        {
+            m_SourceBuffer = (rawchar_t *)glbs.Malloc(m_SourceLength);
 
-			glbs.FS_Read(m_SourceBuffer, m_SourceLength, filehandle);
-			glbs.FS_FCloseFile(filehandle);
-		}
-	}
+            glbs.FS_Read(m_SourceBuffer, m_SourceLength, filehandle);
+            glbs.FS_FCloseFile(filehandle);
+        }
+    }
 
-	m_State->Archive(arc);
+    m_State->Archive(arc);
 
-	current_progBuffer = nullptr;
-	*/
+    current_progBuffer = nullptr;
+    */
 }
 
 void ProgramScript::Archive(Archiver& arc, const ProgramScript*& scr)
 {
-	ScriptMaster& director = ScriptContext::Get().GetDirector();
+    ScriptMaster& director = ScriptContext::Get().GetDirector();
 
-	str filename;
+    str filename;
 
-	if (arc.Loading())
-	{
-		::Archive(arc, filename);
+    if (arc.Loading())
+    {
+        ::Archive(arc, filename);
 
-		try
-		{
-			if (!filename.isEmpty()) {
-				scr = director.GetProgramScript(filename);
-			}
-			else {
-				scr = nullptr;
-			}
-		}
-		catch (ScriptExceptionBase&)
-		{
-			scr = nullptr;
-		}
-	}
-	else
-	{
-		StringDictionary& dict = director.GetDictionary();
-		filename = dict.Get(scr->Filename());
+        try
+        {
+            if (!filename.isEmpty()) {
+                scr = director.GetProgramScript(filename);
+            }
+            else {
+                scr = nullptr;
+            }
+        }
+        catch (ScriptExceptionBase&)
+        {
+            scr = nullptr;
+        }
+    }
+    else
+    {
+        StringDictionary& dict = director.GetDictionary();
+        filename = dict.Get(scr->Filename());
 
-		::Archive(arc, filename);
-	}
+        ::Archive(arc, filename);
+    }
 }
 
 void ProgramScript::ArchiveCodePos(Archiver& arc, const opval_t*& codePos) const
 {
-	ScriptMaster& director = ScriptContext::Get().GetDirector();
-	StringDictionary& dict = director.GetDictionary();
+    ScriptMaster& director = ScriptContext::Get().GetDirector();
+    StringDictionary& dict = director.GetDictionary();
 
-	uint32_t pos = 0;
-	str filename;
+    uint32_t pos = 0;
+    str filename;
 
-	if (!arc.Loading())
-	{
-		pos = uint32_t(codePos - m_ProgBuffer);
-		if (pos >= 0 && pos < m_ProgLength)
-		{
-			filename = dict.Get(Filename());
-		}
-	}
+    if (!arc.Loading())
+    {
+        pos = uint32_t(codePos - m_ProgBuffer);
+        if (pos >= 0 && pos < m_ProgLength)
+        {
+            filename = dict.Get(Filename());
+        }
+    }
 
-	arc.ArchiveUInt32(pos);
-	::Archive(arc, filename);
+    arc.ArchiveUInt32(pos);
+    ::Archive(arc, filename);
 
-	if (arc.Loading())
-	{
-		if (dict.Get(Filename()) == filename)
-		{
-			codePos = m_ProgBuffer + pos;
-		}
-	}
+    if (arc.Loading())
+    {
+        if (dict.Get(Filename()) == filename)
+        {
+            codePos = m_ProgBuffer + pos;
+        }
+    }
 }
 
 void ProgramScript::Close()
 {
-	m_CatchBlocks.FreeObjectList();
-	m_StateScripts.FreeObjectList();
+    m_CatchBlocks.FreeObjectList();
+    m_StateScripts.FreeObjectList();
 
-	if (m_ProgToSource)
-	{
-		//delete m_ProgToSource;
-		m_ProgToSource = nullptr;
-	}
+    if (m_ProgToSource)
+    {
+        //delete m_ProgToSource;
+        m_ProgToSource = nullptr;
+    }
 
-	if (m_ProgBuffer)
-	{
-		//delete[] m_ProgBuffer;
-		m_ProgBuffer = nullptr;
-	}
+    if (m_ProgBuffer)
+    {
+        //delete[] m_ProgBuffer;
+        m_ProgBuffer = nullptr;
+    }
 
-	if (m_SourceBuffer)
-	{
-		freeMemory((void*)m_SourceBuffer);
-		m_SourceBuffer = nullptr;
-	}
+    if (m_SourceBuffer)
+    {
+        freeMemory((void*)m_SourceBuffer);
+        m_SourceBuffer = nullptr;
+    }
 
-	m_ProgLength = 0;
-	m_SourceLength = 0;
+    m_ProgLength = 0;
+    m_SourceLength = 0;
 }
 
 void ProgramScript::Load(std::istream& stream)
 {
-	const ScriptContext& context = ScriptContext::Get();
+    const ScriptContext& context = ScriptContext::Get();
 
-	if (context.GetSettings().IsDeveloperEnabled())
-	{
-		std::streamoff start = stream.tellg();
-		stream.seekg(0, stream.end);
-		const std::streamoff sz = stream.tellg() - start;
-		stream.seekg(start);
+    if (context.GetSettings().IsDeveloperEnabled())
+    {
+        std::streamoff start = stream.tellg();
+        stream.seekg(0, stream.end);
+        const std::streamoff sz = stream.tellg() - start;
+        stream.seekg(start);
 
-		// copy the whole script content for locating positions
-		if (sz)
-		{
-			char* newBuf = (char*)allocateMemory(size_t(sz + 1));
-			newBuf[sz] = 0;
-			stream.read(newBuf, sz);
-			stream.seekg(start);
+        // copy the whole script content for locating positions
+        if (sz)
+        {
+            char* newBuf = (char*)allocateMemory(size_t(sz + 1));
+            newBuf[sz] = 0;
+            stream.read(newBuf, sz);
+            stream.seekg(start);
 
-			m_SourceBuffer = newBuf;
-			m_SourceLength = size_t(sz);
-		}
-	}
+            m_SourceBuffer = newBuf;
+            m_SourceLength = size_t(sz);
+        }
+    }
 
-	const str& fileName = context.GetDirector().GetDictionary().Get(Filename());
+    const str& fileName = context.GetDirector().GetDictionary().Get(Filename());
 
-	try
-	{
-		ScriptParser parser;
-		const OutputInfo& info = context.GetOutputInfo();
-		parser.SetOutputInfo(&info);
-		// preprocess the buffer
-		//const char* m_PreprocessedBuffer = parser.Preprocess(stream);
-		// parse the buffer into an Abstract Syntax Tree
-		const ParseTree parseTree = parser.Parse(fileName.c_str(), stream, m_SourceBuffer, m_SourceLength);
+    try
+    {
+        ScriptParser parser;
+        const OutputInfo& info = context.GetOutputInfo();
+        parser.SetOutputInfo(&info);
+        // preprocess the buffer
+        //const char* m_PreprocessedBuffer = parser.Preprocess(stream);
+        // parse the buffer into an Abstract Syntax Tree
+        const ParseTree parseTree = parser.Parse(fileName.c_str(), stream, m_SourceBuffer, m_SourceLength);
 
-		ScriptCompiler Compiler;
-		Compiler.SetOutputInfo(&info);
-		// compile the AST into opcodes
-		m_ProgLength = Compiler.Compile(this, parseTree.getRootNode(), m_ProgBuffer);
+        ScriptCompiler Compiler;
+        Compiler.SetOutputInfo(&info);
+        // compile the AST into opcodes
+        m_ProgLength = Compiler.Compile(this, parseTree.getRootNode(), m_ProgBuffer);
 
-		// get the required stack size for the VM to preallocate enough stack
-		requiredStackSize = Compiler.GetInternalMaxVarStackOffset() + 9 * Compiler.GetMaxExternalVarStackOffset() + 1;
+        // get the required stack size for the VM to preallocate enough stack
+        requiredStackSize = Compiler.GetInternalMaxVarStackOffset() + 9 * Compiler.GetMaxExternalVarStackOffset() + 1;
 
-		successCompile = true;
-	}
-	catch(ParseException::Base& e)
-	{
-		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err) {
-			*err << "^~^~^ Script file compile error: Couldn't parse '" << fileName.c_str() << "': '" << e.what() << "'\n";
-		}
-		Close();
-		throw;
-	}
-	catch (CompileException::BaseSource& e)
-	{
-		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err)
-		{
-			this->PrintSourcePos(*err, e.getSourceLoc());
-			*err << "^~^~^ Script file compile error: Couldn't compile '" << fileName.c_str() << "': " << e.what() << std::endl;
-		}
-		Close();
-		throw;
-	}
-	catch (CompileException::Base& e)
-	{
-		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err) {
-			*err << "^~^~^ Script file compile error: Couldn't compile '" << fileName.c_str() << "': " << e.what() << std::endl;
-		}
-		Close();
-		throw;
-	}
-	catch(std::exception& e)
-	{
-		std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
-		if (err) {
-			*err << "^~^~^ Unknown script compile error: Couldn't load '" << fileName.c_str() << "': " << e.what() << "\n";
-		}
-		Close();
-		throw;
-	}
+        successCompile = true;
+    }
+    catch(ParseException::Base& e)
+    {
+        std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
+        if (err) {
+            *err << "^~^~^ Script file compile error: Couldn't parse '" << fileName.c_str() << "': '" << e.what() << "'\n";
+        }
+        Close();
+        throw;
+    }
+    catch (CompileException::BaseSource& e)
+    {
+        std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
+        if (err)
+        {
+            this->PrintSourcePos(*err, e.getSourceLoc());
+            *err << "^~^~^ Script file compile error: Couldn't compile '" << fileName.c_str() << "': " << e.what() << std::endl;
+        }
+        Close();
+        throw;
+    }
+    catch (CompileException::Base& e)
+    {
+        std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
+        if (err) {
+            *err << "^~^~^ Script file compile error: Couldn't compile '" << fileName.c_str() << "': " << e.what() << std::endl;
+        }
+        Close();
+        throw;
+    }
+    catch(std::exception& e)
+    {
+        std::ostream* err = ScriptContext::Get().GetOutputInfo().GetOutput(outputLevel_e::Error);
+        if (err) {
+            *err << "^~^~^ Unknown script compile error: Couldn't load '" << fileName.c_str() << "': " << e.what() << "\n";
+        }
+        Close();
+        throw;
+    }
 }
 
 bool ProgramScript::GetCodePos(opval_t *codePos, const_str& filename, uintptr_t& pos)
 {
-	pos = codePos - m_ProgBuffer;
+    pos = codePos - m_ProgBuffer;
 
-	if (pos >= 0 && pos < m_ProgLength)
-	{
-		filename = Filename();
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    if (pos >= 0 && pos < m_ProgLength)
+    {
+        filename = Filename();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool ProgramScript::SetCodePos(opval_t *&codePos, const_str filename, uintptr_t pos)
 {
-	if (Filename() == filename)
-	{
-		codePos = m_ProgBuffer + pos;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    if (Filename() == filename)
+    {
+        codePos = m_ProgBuffer + pos;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 size_t ProgramScript::GetRequiredStackSize() const
 {
-	return requiredStackSize;
+    return requiredStackSize;
 }
 
 bool ProgramScript::labelExists(const_str labelName)
 {
-	// if we got passed a nullptr than that means just run the script so of course it exists
-	if (!labelName || labelName == ConstStrings::Empty)
-	{
-		return true;
-	}
+    // if we got passed a nullptr than that means just run the script so of course it exists
+    if (!labelName || labelName == ConstStrings::Empty)
+    {
+        return true;
+    }
 
-	if (m_State.FindLabel(labelName))
-	{
-		return true;
-	}
+    if (m_State.FindLabel(labelName))
+    {
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 StateScript& ProgramScript::GetStateScript()
 {
-	return m_State;
+    return m_State;
 }
 
 const StateScript& ProgramScript::GetStateScript() const
 {
-	return m_State;
+    return m_State;
 }
 
 StateScript *ProgramScript::CreateCatchStateScript(const opval_t* try_begin_code_pos, const opval_t* try_end_code_pos)
 {
-	CatchBlock *catchBlock = new (m_CatchBlocks) CatchBlock(this, try_begin_code_pos, try_end_code_pos);
-	return &catchBlock->GetStateScript();
+    CatchBlock *catchBlock = new (m_CatchBlocks) CatchBlock(this, try_begin_code_pos, try_end_code_pos);
+    return &catchBlock->GetStateScript();
 }
 
 StateScript *ProgramScript::CreateSwitchStateScript()
 {
-	return new (m_StateScripts) StateScript(this);
+    return new (m_StateScripts) StateScript(this);
 }
 
 StateScript *ProgramScript::GetCatchStateScript(const opval_t* in, const opval_t*&out) const
 {
-	CatchBlock *bestCatchBlock = nullptr;
+    CatchBlock *bestCatchBlock = nullptr;
 
-	for (intptr_t i = m_CatchBlocks.NumObjects(); i > 0; i--)
-	{
-		CatchBlock& catchBlock = m_CatchBlocks.ObjectAt(i);
+    for (intptr_t i = m_CatchBlocks.NumObjects(); i > 0; i--)
+    {
+        CatchBlock& catchBlock = m_CatchBlocks.ObjectAt(i);
 
-		if (in >= catchBlock.GetTryStartCodePos() && in < catchBlock.GetTryEndCodePos())
-		{
-			if (!bestCatchBlock || catchBlock.GetTryEndCodePos() < bestCatchBlock->GetTryStartCodePos())
-			{
-				bestCatchBlock = &catchBlock;
-			}
-		}
-	}
+        if (in >= catchBlock.GetTryStartCodePos() && in < catchBlock.GetTryEndCodePos())
+        {
+            if (!bestCatchBlock || catchBlock.GetTryEndCodePos() < bestCatchBlock->GetTryStartCodePos())
+            {
+                bestCatchBlock = &catchBlock;
+            }
+        }
+    }
 
-	if (bestCatchBlock)
-	{
-		out = bestCatchBlock->GetTryEndCodePos();
+    if (bestCatchBlock)
+    {
+        out = bestCatchBlock->GetTryEndCodePos();
 
-		return &bestCatchBlock->GetStateScript();
-	}
-	else
-	{
-		return nullptr;
-	}
+        return &bestCatchBlock->GetStateScript();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 bool ProgramScript::IsCompileSuccess() const
 {
-	return successCompile;
+    return successCompile;
 }
 
 const opval_t* ProgramScript::GetProgBuffer() const
 {
-	return m_ProgBuffer;
+    return m_ProgBuffer;
 }
 
 size_t ProgramScript::GetProgLength() const
 {
-	return m_ProgLength;
+    return m_ProgLength;
 }
 
 void ProgramScript::ReserveCatchStates(size_t count)
 {
-	m_CatchBlocks.Resize(count);
+    m_CatchBlocks.Resize(count);
 }
 
 void ProgramScript::ReserveStateScripts(size_t count)
 {
-	m_StateScripts.Resize(count);
+    m_StateScripts.Resize(count);
 }
 
 CatchBlock::CatchBlock(ProgramScript* inParent, const opval_t* inTryStart, const opval_t* inTryEnd)
-	: m_StateScript(inParent)
-	, m_TryStartCodePos(inTryStart)
-	, m_TryEndCodePos(inTryEnd)
+    : m_StateScript(inParent)
+    , m_TryStartCodePos(inTryStart)
+    , m_TryEndCodePos(inTryEnd)
 {
 }
 
 const opval_t* CatchBlock::GetTryStartCodePos() const
 {
-	return m_TryStartCodePos;
+    return m_TryStartCodePos;
 }
 
 const opval_t* CatchBlock::GetTryEndCodePos() const
 {
-	return m_TryEndCodePos;
+    return m_TryEndCodePos;
 }
 
 StateScript& CatchBlock::GetStateScript()
 {
-	return m_StateScript;
+    return m_StateScript;
 }

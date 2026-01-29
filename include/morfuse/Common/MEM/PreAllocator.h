@@ -8,51 +8,51 @@ namespace mfuse
 {
 namespace MEM
 {
-	class PreAllocator
-	{
-	public:
-		PreAllocator();
-		PreAllocator(PreAllocator&& other);
-		PreAllocator(const PreAllocator& other) = delete;
-		PreAllocator& operator=(PreAllocator&& other);
-		PreAllocator& operator=(const PreAllocator& other) = delete;
-		~PreAllocator();
+    class PreAllocator
+    {
+    public:
+        PreAllocator();
+        PreAllocator(PreAllocator&& other);
+        PreAllocator(const PreAllocator& other) = delete;
+        PreAllocator& operator=(PreAllocator&& other);
+        PreAllocator& operator=(const PreAllocator& other) = delete;
+        ~PreAllocator();
 
-		void* Alloc(size_t size);
-		void Free(void* ptr);
+        void* Alloc(size_t size);
+        void Free(void* ptr);
 
-		void PreAllocate(size_t size);
-		void Release();
+        void PreAllocate(size_t size);
+        void Release();
 
-		size_t Size() const;
+        size_t Size() const;
 
-	private:
-		unsigned char* allocatedBlock;
-		unsigned char* endBlock;
-		unsigned char* current;
-	};
+    private:
+        unsigned char* allocatedBlock;
+        unsigned char* endBlock;
+        unsigned char* current;
+    };
 
-	class ChildPreAllocator
-	{
-	public:
-		ChildPreAllocator();
+    class ChildPreAllocator
+    {
+    public:
+        ChildPreAllocator();
 
-		void SetAllocator(PreAllocator& newAllocator);
-		PreAllocator* GetAllocator() const;
+        void SetAllocator(PreAllocator& newAllocator);
+        PreAllocator* GetAllocator() const;
 
-		void* Alloc(size_t size);
-		void Free(void* ptr);
+        void* Alloc(size_t size);
+        void Free(void* ptr);
 
-	private:
-		PreAllocator* allocator;
-	};
+    private:
+        PreAllocator* allocator;
+    };
 
-	class ChildPreAllocator_set : public ChildPreAllocator
-	{
-	public:
-		void* AllocTable(size_t size);
-		void FreeTable(void* ptr);
-	};
+    class ChildPreAllocator_set : public ChildPreAllocator
+    {
+    public:
+        void* AllocTable(size_t size);
+        void FreeTable(void* ptr);
+    };
 }
 }
 

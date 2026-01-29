@@ -5,20 +5,20 @@ using namespace mfuse;
 
 void* MEM::DefaultAlloc::Alloc(size_t size)
 {
-	return IMemoryManager::get().allocate(size);
+    return IMemoryManager::get().allocate(size);
 }
 
 void MEM::DefaultAlloc::Free(void* ptr)
 {
-	return IMemoryManager::get().free(ptr);
+    return IMemoryManager::get().free(ptr);
 }
 
 void* MEM::DefaultAlloc_set::AllocTable(size_t size)
 {
-	return IMemoryManager::get().allocate(size);
+    return IMemoryManager::get().allocate(size);
 }
 
 void MEM::DefaultAlloc_set::FreeTable(void* ptr)
 {
-	return IMemoryManager::get().free(ptr);
+    return IMemoryManager::get().free(ptr);
 }

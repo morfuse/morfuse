@@ -5,10 +5,10 @@ using namespace mfuse;
 
 void* MEM::Alloc(size_t sz)
 {
-	return allocateMemory(sz);
+    return allocateMemory(sz);
 }
 
 void MEM::Free(void* ptr)
 {
-	return freeMemory(ptr);
+    return freeMemory(ptr);
 }

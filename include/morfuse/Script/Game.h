@@ -4,10 +4,10 @@
 
 namespace mfuse
 {
-	class Game : public Listener
-	{
-		MFUS_CLASS_PROTOTYPE(Game);
+    class Game : public Listener
+    {
+        MFUS_CLASS_PROTOTYPE(Game);
 
-	public:
-	};
+    public:
+    };
 }

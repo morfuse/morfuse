@@ -16,52 +16,52 @@ add_library(morfuse SHARED ${SRC} ${BISON_mfuse-parser_OUTPUTS} ${FLEX_mfuse-lex
 add_library(morfuse::morfuse ALIAS morfuse)
 
 if(DEBUG_MEM)
-	target_compile_definitions(morfuse PUBLIC "_DEBUG_MEMBLOCK=1")
+    target_compile_definitions(morfuse PUBLIC "_DEBUG_MEMBLOCK=1")
 endif()
 
 if(WIN32)
-	target_compile_options(morfuse PRIVATE "/W3")
-	target_compile_definitions(morfuse PRIVATE "_CRT_SECURE_NO_WARNINGS=1")
+    target_compile_options(morfuse PRIVATE "/W3")
+    target_compile_definitions(morfuse PRIVATE "_CRT_SECURE_NO_WARNINGS=1")
 elseif(UNIX)
-	target_compile_options(morfuse PRIVATE "-Wall" "-Wextra")
-	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-		include(CheckCXXCompilerFlag)
-		check_cxx_compiler_flag("-fvisibility-global-new-delete=force-hidden" HAS_FORCE_HIDDEN)
+    target_compile_options(morfuse PRIVATE "-Wall" "-Wextra")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        include(CheckCXXCompilerFlag)
+        check_cxx_compiler_flag("-fvisibility-global-new-delete=force-hidden" HAS_FORCE_HIDDEN)
 
-		if (HAS_FORCE_HIDDEN)
-			target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete=force-hidden")
-		else()
-			check_cxx_compiler_flag("-fvisibility-global-new-delete=force-hidden" HAS_OLD_FORCE_HIDDEN)
-			if (HAS_OLD_FORCE_HIDDEN)
-				target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete-hidden")
-			endif()
-		endif()
-	endif()
-	set_target_properties(morfuse PROPERTIES
-		C_VISIBILITY_PRESET hidden
-		CXX_VISIBILITY_PRESET hidden
-	)
+        if (HAS_FORCE_HIDDEN)
+            target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete=force-hidden")
+        else()
+            check_cxx_compiler_flag("-fvisibility-global-new-delete=force-hidden" HAS_OLD_FORCE_HIDDEN)
+            if (HAS_OLD_FORCE_HIDDEN)
+                target_compile_options(morfuse PRIVATE "-fvisibility-global-new-delete-hidden")
+            endif()
+        endif()
+    endif()
+    set_target_properties(morfuse PROPERTIES
+        C_VISIBILITY_PRESET hidden
+        CXX_VISIBILITY_PRESET hidden
+    )
 
-	set_target_properties(morfuse PROPERTIES VISIBILITY_INLINES_HIDDEN 1)
+    set_target_properties(morfuse PROPERTIES VISIBILITY_INLINES_HIDDEN 1)
 endif()
 
 if(NOT ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug"))
-	include(CheckIPOSupported)
-	check_ipo_supported(RESULT ipo_supported OUTPUT error)
-	if(ipo_supported)
-		if(NOT DISABLE_LINK_OPTIMIZATION)
-			message(STATUS "Interprocedural optimization enabled")
-			set_property(TARGET morfuse PROPERTY INTERPROCEDURAL_OPTIMIZATION true)
-		endif()
-	endif()
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT error)
+    if(ipo_supported)
+        if(NOT DISABLE_LINK_OPTIMIZATION)
+            message(STATUS "Interprocedural optimization enabled")
+            set_property(TARGET morfuse PROPERTY INTERPROCEDURAL_OPTIMIZATION true)
+        endif()
+    endif()
 endif()
 
 target_compile_features(morfuse PUBLIC cxx_std_17)
 
 #set_target_properties(morfuse PROPERTIES
-#	CXX_STANDARD 17
-#	CXX_STANDARD_REQUIRED ON
-#	CXX_EXTENSIONS OFF
+#    CXX_STANDARD 17
+#    CXX_STANDARD_REQUIRED ON
+#    CXX_EXTENSIONS OFF
 #)
 
 target_compile_definitions(morfuse PRIVATE mfuse_DLL=1)
@@ -70,20 +70,20 @@ target_include_directories(morfuse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(morfuse PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated/)
 
 install(
-	TARGETS morfuse
-	DESTINATION ${CMAKE_INSTALL_PREFIX}
-	EXPORT morfuse-Targets
+    TARGETS morfuse
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    EXPORT morfuse-Targets
 )
 
 install(
-	DIRECTORY "${CMAKE_SOURCE_DIR}/include/morfuse"
-	DESTINATION include
+    DIRECTORY "${CMAKE_SOURCE_DIR}/include/morfuse"
+    DESTINATION include
 )
 
 install(
-	EXPORT morfuse-Targets
-	DESTINATION .
-	NAMESPACE mfuse::
+    EXPORT morfuse-Targets
+    DESTINATION .
+    NAMESPACE mfuse::
 )
 
 set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include)
@@ -96,7 +96,7 @@ configure_package_config_file(
   INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}
   PATH_VARS
     INCLUDE_INSTALL_DIR
-	LIB_INSTALL_DIR
+    LIB_INSTALL_DIR
 )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/morfuse-config.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})

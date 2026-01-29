@@ -35,7 +35,7 @@ extern "C" {
 #include <stdlib.h>
 //#include <getopt.h>
 
-#define STDIN_FILENO		0
+#define STDIN_FILENO        0
 
 int rmdir(const char *);
 #endif

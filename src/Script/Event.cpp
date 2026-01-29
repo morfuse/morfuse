@@ -20,98 +20,98 @@ size_t EventDef::defCount = 0;
 template<>
 intptr_t Hash<EventDefAttributes>::operator()(const EventDefAttributes& key) const
 {
-	intptr_t hash = 0;
+    intptr_t hash = 0;
 
-	for (const rawchar_t* p = key.GetString(); *p != 0; p++)
-	{
-		hash = str::tolower(*p) + 31 * hash;
-	}
+    for (const rawchar_t* p = key.GetString(); *p != 0; p++)
+    {
+        hash = str::tolower(*p) + 31 * hash;
+    }
 
-	return hash;
+    return hash;
 }
 
 EventDefAttributes::EventDefAttributes()
-	: name(nullptr)
-	, type(evType_e::None)
+    : name(nullptr)
+    , type(evType_e::None)
 {
 }
 
 EventDefAttributes::EventDefAttributes(const rawchar_t* inName, evType_e inType, eventNum_t inNum)
-	: name(inName)
-	, eventNum(inNum)
-	, type(inType)
+    : name(inName)
+    , eventNum(inNum)
+    , type(inType)
 {
 }
 
 EventDefAttributes::EventDefAttributes(const EventDefAttributes& other)
-	: name(other.name)
-	, eventNum(other.eventNum)
-	, type(other.type)
+    : name(other.name)
+    , eventNum(other.eventNum)
+    , type(other.type)
 {
 }
 
 EventDefAttributes& EventDefAttributes::operator=(const EventDefAttributes& other)
 {
-	name = other.name;
-	eventNum = other.eventNum;
-	type = other.type;
-	return *this;
+    name = other.name;
+    eventNum = other.eventNum;
+    type = other.type;
+    return *this;
 }
 
 EventDefAttributes::EventDefAttributes(EventDefAttributes&& other)
-	: name(other.name)
-	, eventNum(other.eventNum)
-	, type(other.type)
+    : name(other.name)
+    , eventNum(other.eventNum)
+    , type(other.type)
 {
-	other.name = nullptr;
-	other.eventNum = 0;
-	other.type = evType_e::None;
+    other.name = nullptr;
+    other.eventNum = 0;
+    other.type = evType_e::None;
 }
 
 EventDefAttributes& EventDefAttributes::operator=(EventDefAttributes&& other)
 {
-	name = other.name;
-	eventNum = other.eventNum;
-	type = other.type;
-	other.name = nullptr;
-	other.eventNum = 0;
-	other.type = evType_e::None;
-	return *this;
+    name = other.name;
+    eventNum = other.eventNum;
+    type = other.type;
+    other.name = nullptr;
+    other.eventNum = 0;
+    other.type = evType_e::None;
+    return *this;
 }
 
 const rawchar_t* EventDefAttributes::GetString() const
 {
-	return name;
+    return name;
 }
 
 eventNum_t EventDefAttributes::GetNum() const
 {
-	return eventNum;
+    return eventNum;
 }
 
 evType_e EventDefAttributes::GetType() const
 {
-	return type;
+    return type;
 }
 
 bool EventDefAttributes::operator==(const rawchar_t* inName) const
 {
-	return !str::icmp(inName, name);
+    return !str::icmp(inName, name);
 }
 
 bool EventDefAttributes::operator!=(const rawchar_t* inName) const
 {
-	return str::icmp(inName, name) != 0;
+    return str::icmp(inName, name) != 0;
 }
 
 bool EventDefAttributes::operator==(const EventDefAttributes& other) const
 {
-	return *this == other.name && (other.type == evType_e::None || other.type == type);
+    return *this == other.name && (other.type == evType_e::None || other.type == type);
 }
 
 bool EventDefAttributes::operator!=(const EventDefAttributes& other) const
 {
-	return !(*this == other);
+    return !(*this == other);
 }
 
 EventDef::EventDef()
@@ -119,250 +119,250 @@ EventDef::EventDef()
 }
 
 EventDef::EventDef(const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type)
-	: attributes(GetNewAttributes(command, type))
+    : attributes(GetNewAttributes(command, type))
 {
-	this->flags = flags;
-	this->formatspec = formatspec;
-	this->argument_names = argument_names;
-	this->documentation = documentation;
+    this->flags = flags;
+    this->formatspec = formatspec;
+    this->argument_names = argument_names;
+    this->documentation = documentation;
 
-	InitArgs();
+    InitArgs();
 }
 
 EventDef::EventDef(const NamespaceDef& def, const rawchar_t* command, uint32_t flags, const rawchar_t* formatspec, const rawchar_t* argument_names, const rawchar_t* documentation, evType_e type)
-	: ObjectInNamespace(def)
-	, attributes(GetNewAttributes(command, type))
+    : ObjectInNamespace(def)
+    , attributes(GetNewAttributes(command, type))
 {
-	this->flags = flags;
-	this->formatspec = formatspec;
-	this->argument_names = argument_names;
-	this->documentation = documentation;
+    this->flags = flags;
+    this->formatspec = formatspec;
+    this->argument_names = argument_names;
+    this->documentation = documentation;
 }
 
 EventDef::EventDef(EventDef&& other)
-	: ObjectInNamespace(std::move(other))
-	, attributes(std::move(other.attributes))
-	, formatspec(other.formatspec)
-	, argument_names(other.argument_names)
-	, documentation(other.documentation)
-	, minArgs(other.minArgs)
-	, flags(other.flags)
+    : ObjectInNamespace(std::move(other))
+    , attributes(std::move(other.attributes))
+    , formatspec(other.formatspec)
+    , argument_names(other.argument_names)
+    , documentation(other.documentation)
+    , minArgs(other.minArgs)
+    , flags(other.flags)
 {
-	prev = next = nullptr;
-	head.Move(this, &other);
+    prev = next = nullptr;
+    head.Move(this, &other);
 }
 
 EventDef& EventDef::operator=(EventDef&& other)
 {
-	ObjectInNamespace::operator=(std::move(other));
-	attributes = std::move(other.attributes);
-	formatspec = other.formatspec;
-	argument_names = other.argument_names;
-	documentation = other.documentation;
-	minArgs = other.minArgs;
-	flags = other.flags;
+    ObjectInNamespace::operator=(std::move(other));
+    attributes = std::move(other.attributes);
+    formatspec = other.formatspec;
+    argument_names = other.argument_names;
+    documentation = other.documentation;
+    minArgs = other.minArgs;
+    flags = other.flags;
 
-	head.Move(this, &other);
+    head.Move(this, &other);
 
-	return *this;
+    return *this;
 }
 
 EventDef::~EventDef()
 {
-	head.Remove(this);
+    head.Remove(this);
 
-	if (GetAttributes().GetType() != evType_e::None) {
-		--defCount;
-	}
+    if (GetAttributes().GetType() != evType_e::None) {
+        --defCount;
+    }
 }
 
 EventDefAttributes EventDef::GetNewAttributes(const rawchar_t* command, evType_e type)
 {
-	// try to find another event's attributes with similar name and type
-	// so that there is no conflict
-	for (const EventDef* e = GetHead(); e; e = e->GetNext())
-	{
-		const EventDefAttributes& eAttr = e->GetAttributes();
-		if (!str::icmp(eAttr.GetString(), command) && eAttr.GetType() == type)
-		{
-			next = prev = nullptr;
-			//head.AddFirst(this);
-			// use the matching event's attributes
-			return eAttr;
-		}
-	}
-	// add the event
-	head.AddFirst(this);
-	// create a new event with unique index
-	return EventDefAttributes(command, type, (eventNum_t)++defCount);
+    // try to find another event's attributes with similar name and type
+    // so that there is no conflict
+    for (const EventDef* e = GetHead(); e; e = e->GetNext())
+    {
+        const EventDefAttributes& eAttr = e->GetAttributes();
+        if (!str::icmp(eAttr.GetString(), command) && eAttr.GetType() == type)
+        {
+            next = prev = nullptr;
+            //head.AddFirst(this);
+            // use the matching event's attributes
+            return eAttr;
+        }
+    }
+    // add the event
+    head.AddFirst(this);
+    // create a new event with unique index
+    return EventDefAttributes(command, type, (eventNum_t)++defCount);
 }
 
 void EventDef::InitArgs()
 {
-	if (argument_names)
-	{
-		// get the number of args
-		minArgs = 1;
-		const rawchar_t* p = argument_names;
-		while (*p)
-		{
-			if (*p == ' ')
-			{
-				++minArgs;
-				while (*p++ == ' ');
-			}
-			else
-			{
-				p++;
-			}
-		}
-	}
-	else {
-		minArgs = 0;
-	}
+    if (argument_names)
+    {
+        // get the number of args
+        minArgs = 1;
+        const rawchar_t* p = argument_names;
+        while (*p)
+        {
+            if (*p == ' ')
+            {
+                ++minArgs;
+                while (*p++ == ' ');
+            }
+            else
+            {
+                p++;
+            }
+        }
+    }
+    else {
+        minArgs = 0;
+    }
 }
 
 bool EventDef::operator==(const rawchar_t* name) const
 {
-	return attributes == name;
+    return attributes == name;
 }
 
 bool EventDef::operator!=(const rawchar_t* name) const
 {
-	return attributes != name;
+    return attributes != name;
 }
 
 bool EventDef::operator==(const EventDef& other) const
 {
-	return other.attributes == attributes;
+    return other.attributes == attributes;
 }
 
 bool EventDef::operator!=(const EventDef& other) const
 {
-	return other.attributes != attributes;
+    return other.attributes != attributes;
 }
 
 const EventDefAttributes& EventDef::GetAttributes() const
 {
-	return attributes;
+    return attributes;
 }
 
 eventNum_t EventDef::GetEventNum() const
 {
-	return attributes.GetNum();
+    return attributes.GetNum();
 }
 
 size_t EventDef::GetDefCount()
 {
-	return defCount;
+    return defCount;
 }
 
 EventDef* EventDef::GetNext() const
 {
-	return next;
+    return next;
 }
 
 EventDef* EventDef::GetPrev() const
 {
-	return prev;
+    return prev;
 }
 
 const EventDef* EventDef::GetHead()
 {
-	return head.Root();
+    return head.Root();
 }
 
 EventDef::List::iterator EventDef::GetList()
 {
-	return head.CreateConstIterator();
+    return head.CreateConstIterator();
 }
 
 uint32_t EventDef::GetFlags() const
 {
-	return flags;
+    return flags;
 }
 
 const rawchar_t* EventDef::GetFormatSpec() const
 {
-	return formatspec;
+    return formatspec;
 }
 
 const rawchar_t* EventDef::GetArgumentNames() const
 {
-	return argument_names;
+    return argument_names;
 }
 
 const rawchar_t* EventDef::GetDocumentation() const
 {
-	return documentation;
+    return documentation;
 }
 
 MFUS_CLASS_DECLARATION(Class, Event, NULL)
 {
-	{ NULL, NULL }
+    { NULL, NULL }
 };
 
 Event::Event()
 {
-	fromScript = false;
-	eventnum = 0;
-	//dataSize = 0;
-	//data = nullptr;
+    fromScript = false;
+    eventnum = 0;
+    //dataSize = 0;
+    //data = nullptr;
 }
 
 Event::Event(const EventDef& def)
-	: Event(def.GetEventNum())
+    : Event(def.GetEventNum())
 {
 }
 
 Event::Event(const EventDef& def, size_t numArgs)
-	: Event(def.GetEventNum(), numArgs)
+    : Event(def.GetEventNum(), numArgs)
 {
 }
 
 Event::Event(eventNum_t eventnumValue)
-	: eventnum(eventnumValue)
-	, fromScript(false)
+    : eventnum(eventnumValue)
+    , fromScript(false)
 {
 }
 
 Event::Event(eventNum_t eventnumValue, size_t numArgs)
-	: data(numArgs)
-	, eventnum(eventnumValue)
-	, fromScript(false)
+    : data(numArgs)
+    , eventnum(eventnumValue)
+    , fromScript(false)
 {
 }
 
 Event::Event(const Event& other)
-	: data(other.data)
-	, eventnum(other.eventnum)
-	, fromScript(other.fromScript)
+    : data(other.data)
+    , eventnum(other.eventnum)
+    , fromScript(other.fromScript)
 {
-	/*
-	dataSize = other.dataSize;
+    /*
+    dataSize = other.dataSize;
 
-	if (dataSize)
-	{
-		data = new ScriptVariable[other.dataSize];
+    if (dataSize)
+    {
+        data = new ScriptVariable[other.dataSize];
 
-		for (uintptr_t i = 0; i < other.dataSize; i++)
-		{
-			data[i] = other.data[i];
-		}
-	}
-	else
-	{
-		data = NULL;
-	}
-	*/
+        for (uintptr_t i = 0; i < other.dataSize; i++)
+        {
+            data[i] = other.data[i];
+        }
+    }
+    else
+    {
+        data = NULL;
+    }
+    */
 }
 
 Event::Event(Event&& other)
-	: data(std::move(other.data))
-	, eventnum(other.eventnum)
-	, fromScript(other.fromScript)
+    : data(std::move(other.data))
+    , eventnum(other.eventnum)
+    , fromScript(other.fromScript)
 {
-	other.eventnum = 0;
+    other.eventnum = 0;
 }
 
 Event::~Event()
@@ -371,329 +371,329 @@ Event::~Event()
 
 Event& Event::operator=(const Event& other)
 {
-	data = other.data;
-	eventnum = other.eventnum;
-	fromScript = other.fromScript;
-	return *this;
+    data = other.data;
+    eventnum = other.eventnum;
+    fromScript = other.fromScript;
+    return *this;
 }
 
 Event& Event::operator=(Event&& other)
 {
-	data = std::move(other.data);
-	eventnum = other.eventnum;
-	fromScript = other.fromScript;
-	other.eventnum = 0;
-	return *this;
+    data = std::move(other.data);
+    eventnum = other.eventnum;
+    fromScript = other.fromScript;
+    other.eventnum = 0;
+    return *this;
 }
 
 void* Event::operator new(size_t)
 {
-	return EventContext::Get().GetAllocator().GetBlock<Event>().Alloc();
+    return EventContext::Get().GetAllocator().GetBlock<Event>().Alloc();
 }
 
 void Event::operator delete(void* ptr)
 {
-	return EventContext::Get().GetAllocator().GetBlock<Event>().Free(ptr);
+    return EventContext::Get().GetAllocator().GetBlock<Event>().Free(ptr);
 }
 
 bool Event::operator==(const Event& ev)
 {
-	return eventnum == ev.eventnum;
+    return eventnum == ev.eventnum;
 }
 
 bool Event::operator!=(const Event& ev)
 {
-	return eventnum != ev.eventnum;
+    return eventnum != ev.eventnum;
 }
 
 void Event::Archive(Archiver& arc)
 {
-	if (arc.Loading())
-	{
-		fromScript = false;
-	}
+    if (arc.Loading())
+    {
+        fromScript = false;
+    }
 
-	Class::Archive(arc);
+    Class::Archive(arc);
 
-	arc.ArchiveUInt32(eventnum);
+    arc.ArchiveUInt32(eventnum);
 
-	con::Archive(arc, data, &Event::ArchiveData);
+    con::Archive(arc, data, &Event::ArchiveData);
 }
 
 void Event::ArchiveData(Archiver& arc, ScriptVariable& var)
 {
-	var.ArchiveInternal(arc);
+    var.ArchiveInternal(arc);
 }
 
 void Event::Clear()
 {
-	data.ClearObjectList();
+    data.ClearObjectList();
 }
 
 void Event::ReserveArguments(size_t count)
 {
-	if (count > data.MaxObjects()) data.Resize(count);
+    if (count > data.MaxObjects()) data.Resize(count);
 }
 
 void Event::CheckPos(uintptr_t pos)
 {
-	if (pos > NumArgs()) {
-		throw ScriptException("Index " + str(pos) + " out of range");
-	}
+    if (pos > NumArgs()) {
+        throw ScriptException("Index " + str(pos) + " out of range");
+    }
 }
 const EventDef* Event::GetInfo() const
 {
-	return EventSystem::Get().GetEventDef(eventnum);
+    return EventSystem::Get().GetEventDef(eventnum);
 }
 
 const rawchar_t* Event::GetName() const
 {
-	return EventSystem::Get().GetEventName(eventnum);
+    return EventSystem::Get().GetEventName(eventnum);
 }
 
 const rawchar_t* Event::GetFormat() const
 {
-	const EventDef* const eventDef = GetInfo();
-	return eventDef ? eventDef->formatspec : nullptr;
+    const EventDef* const eventDef = GetInfo();
+    return eventDef ? eventDef->formatspec : nullptr;
 }
 
 eventNum_t Event::Num() const
 {
-	return eventnum;
+    return eventnum;
 }
 
 bool Event::IsFromScript() const
 {
-	return fromScript;
+    return fromScript;
 }
 
 void Event::AddContainer(const con::Container<ListenerPtr> *container)
 {
-	ConstructValue(container);
+    ConstructValue(container);
 }
 
 void Event::AddFloat(float number)
 {
-	ConstructValue(number);
+    ConstructValue(number);
 }
 
 void Event::AddInteger(int32_t number)
 {
-	ConstructValue(number);
+    ConstructValue(number);
 }
 
 void Event::AddLong(int64_t number)
 {
-	ConstructValue(number);
+    ConstructValue(number);
 }
 
 void Event::AddListener(Listener* listener)
 {
-	ConstructValue(listener);
+    ConstructValue(listener);
 }
 
 void Event::AddNil()
 {
-	ConstructValue();
+    ConstructValue();
 }
 
 void Event::AddConstString(const_str string)
 {
-	ConstructValue(string);
+    ConstructValue(string);
 }
 
 void Event::AddString(const str& string)
 {
-	ConstructValue(string);
+    ConstructValue(string);
 }
 
 void Event::AddString(const rawchar_t* string)
 {
-	ConstructValue(string);
+    ConstructValue(string);
 }
 
 void Event::AddTokens(size_t argc, const rawchar_t **argv)
 {
-	ReserveArguments(data.NumObjects() + argc);
+    ReserveArguments(data.NumObjects() + argc);
 
-	for (uintptr_t i = 0; i < argc; i++)
-	{
-		AddString(argv[i]);
-	}
+    for (uintptr_t i = 0; i < argc; i++)
+    {
+        AddString(argv[i]);
+    }
 }
 
 void Event::AddValue(const ScriptVariable& value)
 {
-	//ScriptVariable& variable = GetValue();
-	//variable = value;
-	ConstructValue(value);
+    //ScriptVariable& variable = GetValue();
+    //variable = value;
+    ConstructValue(value);
 }
 
 void Event::AddValue(ScriptVariable&& value)
 {
-	ConstructValue(std::move(value));
+    ConstructValue(std::move(value));
 }
 
 void Event::AddVector(const Vector& vector)
 {
-	ConstructValue(vector);
+    ConstructValue(vector);
 }
 
 bool Event::GetBoolean(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
-	return variable.booleanNumericValue();
+    ScriptVariable& variable = GetValue(pos);
+    return variable.booleanNumericValue();
 }
 
 const_str Event::GetConstString(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
-	return variable.constStringValue();
+    ScriptVariable& variable = GetValue(pos);
+    return variable.constStringValue();
 }
 
 float Event::GetFloat(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
-	return variable.floatValue();
+    ScriptVariable& variable = GetValue(pos);
+    return variable.floatValue();
 }
 
 int Event::GetInteger(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
-	return variable.intValue();
+    ScriptVariable& variable = GetValue(pos);
+    return variable.intValue();
 }
 
 Listener* Event::GetListener(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
-	return variable.listenerValue();
+    ScriptVariable& variable = GetValue(pos);
+    return variable.listenerValue();
 }
 
 str Event::GetString(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
-	return variable.stringValue();
+    ScriptVariable& variable = GetValue(pos);
+    return variable.stringValue();
 }
 
-ScriptVariable&	Event::GetValue(uintptr_t pos)
+ScriptVariable&    Event::GetValue(uintptr_t pos)
 {
-	CheckPos(pos);
+    CheckPos(pos);
 
-	return data[pos - 1];
+    return data[pos - 1];
 }
 
 ScriptVariable& Event::GetLastValue()
 {
-	return GetValue(NumArgs());
+    return GetValue(NumArgs());
 }
 
 ScriptVariable& Event::GetValueChecked(uintptr_t pos)
 {
-	assert(pos <= data.NumObjects());
-	return data[pos - 1];
+    assert(pos <= data.NumObjects());
+    return data[pos - 1];
 }
 
-ScriptVariable&	Event::GetValue()
+ScriptVariable&    Event::GetValue()
 {
 /*
-	ScriptVariable* tmp = data;
+    ScriptVariable* tmp = data;
 
-	const size_t dataSize = data.NumObjects();
-	data = new ScriptVariable[dataSize + 1];
+    const size_t dataSize = data.NumObjects();
+    data = new ScriptVariable[dataSize + 1];
 
-	if (tmp != NULL)
-	{
-		for (int i = 0; i < dataSize; i++)
-		{
-			data[i] = tmp[i];
-		}
+    if (tmp != NULL)
+    {
+        for (int i = 0; i < dataSize; i++)
+        {
+            data[i] = tmp[i];
+        }
 
-		delete[] tmp;
-	}
+        delete[] tmp;
+    }
 
-	dataSize++;
+    dataSize++;
 
-	return data[dataSize - 1];
+    return data[dataSize - 1];
 */
-	const uintptr_t index = data.AddObject();
-	return data[index];
+    const uintptr_t index = data.AddObject();
+    return data[index];
 }
 
 VarListView Event::GetListView() const
 {
-	return VarListView(data.Data(), NumArgs());
+    return VarListView(data.Data(), NumArgs());
 }
 
 VarListView Event::GetListView(uintptr_t startPos) const
 {
-	if (startPos < 1 || startPos > NumArgs()) {
-		return VarListView();
-	}
+    if (startPos < 1 || startPos > NumArgs()) {
+        return VarListView();
+    }
 
-	const size_t offset = startPos - 1;
-	return VarListView(data.Data() + offset, NumArgs() - offset);
+    const size_t offset = startPos - 1;
+    return VarListView(data.Data() + offset, NumArgs() - offset);
 }
 
 void* Event::GetUninitializedValue()
 {
-	const uintptr_t index = data.AddObjectUninitialized();
-	return &data[index];
+    const uintptr_t index = data.AddObjectUninitialized();
+    return &data[index];
 }
 
 ScriptVariable* Event::GetData()
 {
-	return data.NumObjects() ? data.Data() : nullptr;
+    return data.NumObjects() ? data.Data() : nullptr;
 }
 
 const ScriptVariable* Event::GetData() const
 {
-	return data.NumObjects() ? data.Data() : nullptr;
+    return data.NumObjects() ? data.Data() : nullptr;
 }
 
 Vector Event::GetVector(uintptr_t pos)
 {
-	ScriptVariable& variable = GetValue(pos);
+    ScriptVariable& variable = GetValue(pos);
 
-	return variable.vectorValue();
+    return variable.vectorValue();
 }
 
 bool Event::IsListenerAt(uintptr_t pos)
 {
-	CheckPos(pos);
+    CheckPos(pos);
 
-	return data[pos - 1].IsListener();
+    return data[pos - 1].IsListener();
 }
 
 bool Event::IsNilAt(uintptr_t pos)
 {
-	CheckPos(pos);
+    CheckPos(pos);
 
-	return data[pos - 1].GetType() == variableType_e::None;
+    return data[pos - 1].GetType() == variableType_e::None;
 }
 
 bool Event::IsNumericAt(uintptr_t pos)
 {
-	CheckPos(pos);
+    CheckPos(pos);
 
-	return data[pos - 1].IsNumeric();
+    return data[pos - 1].IsNumeric();
 }
 
 bool Event::IsStringAt(uintptr_t pos)
 {
-	CheckPos(pos);
+    CheckPos(pos);
 
-	return data[pos - 1].IsString();
+    return data[pos - 1].IsString();
 }
 
 bool Event::IsVectorAt(uintptr_t pos)
 {
-	CheckPos(pos);
+    CheckPos(pos);
 
-	return data[pos - 1].IsVector();
+    return data[pos - 1].IsVector();
 }
 
 size_t Event::NumArgs() const
 {
-	return data.NumObjects();
+    return data.NumObjects();
 }
 
