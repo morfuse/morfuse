@@ -21,6 +21,15 @@ namespace MEM
         SourceMalloc
     };
 
+    template<size_t bits>
+    struct selectType_t;
+
+    template<> struct selectType_t<8> { using type = uint8_t; };
+    template<> struct selectType_t<16> { using type = uint16_t; };
+    template<> struct selectType_t<32> { using type = uint32_t; };
+    template<> struct selectType_t<64> { using type = uint64_t; };
+
+
     template<typename aclass, size_t blocksize>
     class BlockAlloc_enum;
 
@@ -44,14 +53,6 @@ namespace MEM
         static constexpr size_t getHeaderSize();
 
     public:
-        template<size_t bits>
-        struct selectType_t;
-
-        template<> struct selectType_t<8> { using type = uint8_t; };
-        template<> struct selectType_t<16> { using type = uint16_t; };
-        template<> struct selectType_t<32> { using type = uint32_t; };
-        template<> struct selectType_t<64> { using type = uint64_t; };
-
         using offset_t = typename selectType_t<bitsNeeded>::type;
 
         struct info_t {
