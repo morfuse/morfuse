@@ -93,13 +93,11 @@ varname         [a-zA-Z0-9_\"$\\]+
                                                 }
 <VARIABLES>[ \t\r\n]                            {
                                                     BEGIN(INITIAL);
-                                                    unput(yytext[yyleng - 1]);
-                                                    yyreducepos(1);
+                                                    rollbackToken();
                                                 }
 <VARIABLES>.                                    {
                                                     BEGIN(INITIAL);
-                                                    unput(yytext[yyleng - 1]);
-                                                    yyreducepos(1);
+                                                    rollbackToken();
                                                 }
 
 
@@ -225,15 +223,13 @@ varname         [a-zA-Z0-9_\"$\\]+
                                 }
 <IDENTIFIER>[ \t\r\n]           {
                                     BEGIN(INITIAL);
-                                    unput(yytext[yyleng - 1]);
-                                    yyreducepos(1);
+                                    rollbackToken();
                                     TextEscapeValue(parsetree, yytext, yyleng - 1);
                                     YYLEXOFF(TOKEN_IDENTIFIER, 1);
                                 }
 <IDENTIFIER>.                   {
                                     BEGIN(INITIAL);
-                                    unput(yytext[yyleng - 1]);
-                                    yyreducepos(1);
+                                    rollbackToken();
                                     TextEscapeValue(parsetree, yytext, yyleng - 1);
                                     YYLEXOFF(TOKEN_IDENTIFIER, 1);
                                 }

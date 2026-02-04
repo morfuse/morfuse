@@ -44,6 +44,12 @@ void Lexer::yyreducepos(uint32_t off)
     pos -= off;
 }
 
+void Lexer::rollbackToken()
+{
+    yyunput(yytext[yyleng - 1], yytext);
+    yyreducepos(1);
+}
+
 int Lexer::get_prev_lex()
 {
     return prev_yylex;

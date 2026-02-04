@@ -39,6 +39,8 @@ namespace mfuse
 		void yyllocset(Parser::location_type* loc, uint32_t off);
 		void yyreducepos(uint32_t off);
 
+		void rollbackToken();
+
 	public:
 		Parser::semantic_type* yylval;
 		parseException_t exception;
