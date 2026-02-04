@@ -29,7 +29,7 @@ static const char scriptContent_level2[] =
 "{\n"
 "println \"Hello, world 2\\n\"\n"
 "local.i = 1\n\n"
-"local.j = \tùùù¨slash/dot.ccc\t + test\t\n"
+"local.j = \tï¿½ï¿½ï¿½ï¿½slash/dot.ccc\t + test\t\n"
 "println local.j\n"
 "if(1)\n { }\n else\n {\n \n}\n"
 "}\n"
@@ -146,6 +146,7 @@ static const char scriptContent_level16[] =
 static const char scriptContent_level17[] =
 "main:\n"
 "thread test2 (0 0 -170) .3\n"
+"thread test3 local .3\n"
 "local.value = 50a\n"
 "local.value = 0.50b\n"
 "local.value = 0.90`\n"
@@ -154,6 +155,9 @@ static const char scriptContent_level17[] =
 "test2 local.vec local.num:\n"
 "println (\"vec: \" + local.vec + \" num: \" + local.num)\n"
 "assert (local.vec == (0 0 -170))\n"
+"assert (local.num == .3)\n"
+"end\n"
+"test3 local.listener local.num:\n"
 "assert (local.num == .3)\n"
 "end\n";
 
@@ -186,7 +190,7 @@ void level2(ScriptMaster& director)
 	director.ExecuteThread(script, parms);
 
 	const str retVal = parms.GetString(1);
-	assertTest(!str::cmp(retVal.c_str(), "ùùù¨slash/dot.ccctest"));
+	assertTest(!str::cmp(retVal.c_str(), "ï¿½ï¿½ï¿½ï¿½slash/dot.ccctest"));
 }
 
 void level3(ScriptMaster& director)

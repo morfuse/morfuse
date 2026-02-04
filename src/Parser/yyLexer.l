@@ -59,6 +59,7 @@
 %x C_COMMENT
 %x C_LINE_COMMENT
 %x VARIABLES
+%x CHECK_VAR
 %x IDENTIFIER
 
 string          ([^\\\"\r\n]|\\.)*
@@ -67,6 +68,16 @@ nonexpr         [0-9a-zA-Z_\"'?@#`\.\x80-\xff]
 nonnumeric      [a-zA-Z_\"'?@#`\.\x80-\xff]
 alphanum        [a-zA-Z0-9_]+
 varname         [a-zA-Z0-9_\"$\\]+
+varspace        [ \t]*\.
+%{
+// Handle edge cases like decimal constants without the leading 0:
+//  thread test (0 0 3) .3
+//                      ^ The lexer must return 0.3, even if there is no space between the right bracket and the decimal.
+// But also:
+//  thread test (local.value.test) .3value
+//                                 ^ The lexer must return the identifier ".3value" for local.value.test
+%}
+vardigit        ([0-9]*[^0-9[:space:]])
 
 %%
 
@@ -84,8 +95,17 @@ varname         [a-zA-Z0-9_\"$\\]+
 \\[\r\n]+                       { ; }
 "//"[^\r\n]*                    { if (prev_yylex != mfuse::Parser::token::TOKEN_EOL) YYLEX(TOKEN_EOL); }
 
+
+%{
+// Valid situations:
+//  local.variable
+//  local.3variable
+//  local.    variable
+//  local."variable"
+//  local . variable
+%}
 <VARIABLES>"size"                               { BEGIN(INITIAL); YYLEX(TOKEN_SIZE); }
-<VARIABLES>[ \t]*\./([0-9]*[^0-9[:space:]])     { YYLEX(TOKEN_PERIOD); }
+<VARIABLES>{varspace}/{vardigit}                { YYLEX(TOKEN_PERIOD); }
 <VARIABLES>\"{string}\"                         { BEGIN(INITIAL); TextEscapeValue(parsetree, yytext + 1, strlen( yytext ) - 2 ); YYLEX(TOKEN_STRING); }
 <VARIABLES>{varname}                            {
                                                     TextEscapeValue(parsetree, yytext, strlen(yytext));
@@ -100,6 +120,24 @@ varname         [a-zA-Z0-9_\"$\\]+
                                                     rollbackToken();
                                                 }
 
+%{
+//
+// This is the initial variable check.
+// If there's a period, parse the variable, otherwise use the default rules.
+//
+%}
+<CHECK_VAR>{varspace}/{vardigit}    {
+                                        BEGIN(VARIABLES);
+                                        rollbackToken();
+                                    }
+<CHECK_VAR>[\r\n]                   {
+                                        BEGIN(INITIAL);
+                                        rollbackToken();
+                                    }
+<CHECK_VAR>.                        {
+                                        BEGIN(INITIAL);
+                                        rollbackToken();
+                                    }
 
 "?"                             { YYLEX(TOKEN_TERNARY); }
 "if"                            { YYLEX(TOKEN_IF); }
@@ -118,10 +156,16 @@ varname         [a-zA-Z0-9_\"$\\]+
 
 "{"                             { ++braces_count; YYLEX(TOKEN_LEFT_BRACES); }
 "}"                             { --braces_count; YYLEX(TOKEN_RIGHT_BRACES); }
+
+%{
+// These expressions must remain valid:
+//   if (cond)println "hello!"
+// So, after closing a bracket, parse the variable if it's the intent.
+%}
 "("                             { YYLEX(TOKEN_LEFT_BRACKET); }
-")"                             { BEGIN(VARIABLES); YYLEX(TOKEN_RIGHT_BRACKET); }
+")"                             { BEGIN(CHECK_VAR); YYLEX(TOKEN_RIGHT_BRACKET); }
 "["                             { YYLEX(TOKEN_LEFT_SQUARE_BRACKET); }
-"]"                             { BEGIN(VARIABLES); YYLEX(TOKEN_RIGHT_SQUARE_BRACKET); }
+"]"                             { BEGIN(CHECK_VAR); YYLEX(TOKEN_RIGHT_SQUARE_BRACKET); }
 
 "="                             { YYLEX(TOKEN_ASSIGNMENT); }
 ":"                             { YYLEX(TOKEN_COLON); }
