@@ -140,6 +140,7 @@ vardigit        ([0-9]*[^0-9[:space:]])
                                     }
 
 "?"                             { YYLEX(TOKEN_TERNARY); }
+"end"                           { TextEscapeValue(parsetree, yytext, strlen(yytext)); YYLEX(TOKEN_IDENTIFIER); }
 "if"                            { YYLEX(TOKEN_IF); }
 "else"                          { YYLEX(TOKEN_ELSE); }
 "while"                         { YYLEX(TOKEN_WHILE); }
