@@ -68,6 +68,14 @@ static const char scriptContent_level6[] =
 "println local.string\n"
 "end\n";
 
+static const char scriptContent_level7[] =
+"main:\n"
+"local.sz = $test.size\n"
+"assert (local.sz == 0)\n"
+"assert (0 == $test.size)\n"
+"println (\"size: \" + local.sz)\n"
+"end";
+
 void level1(ScriptMaster& director)
 {
 	const ProgramScript* const script = compile(director, "level1", scriptContent_level1);
@@ -118,6 +126,12 @@ void level6(ScriptMaster& director)
     director.ExecuteThread(script);
 }
 
+void level7(ScriptMaster& director)
+{
+    const ProgramScript* const script = compile(director, "level7", scriptContent_level7);
+    director.ExecuteThread(script);
+}
+
 const handler_t handlers[] =
 {
 	{ "level1", &level1 },
@@ -125,7 +139,8 @@ const handler_t handlers[] =
 	{ "level3", &level3 },
 	{ "level4", &level4 },
 	{ "level5", &level5 },
-	{ "level6", &level6 }
+	{ "level6", &level6 },
+	{ "level7", &level7 }
 };
 
 int main()

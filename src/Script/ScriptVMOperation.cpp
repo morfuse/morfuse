@@ -1466,19 +1466,25 @@ bool ScriptVM::Process(ScriptContext& context, uinttime_t interruptTime)
 
         case OP_UN_TARGETNAME:
         {
-            ScriptVariable& pTop = m_Stack.GetTop();
-            const ConTarget* const foundTargetList = targetList.GetExistingConstTargetList(pTop.constStringValue());
+            ScriptVariable &pTop = m_Stack.GetTop();
+            const ConTarget *const foundTargetList = targetList.GetExistingConstTargetList(pTop.constStringValue());
 
             if (!foundTargetList || !foundTargetList->NumObjects())
             {
-                const_str targetName = pTop.constStringValue();
-                pTop.setListenerValue(nullptr);
-
-                throw TargetListErrors::NoTargetException(targetName);
+                if (dbg)
+                {
+                    const_str targetName = pTop.constStringValue();
+                    pTop.setListenerValue(nullptr);
+                    throw TargetListErrors::NoTargetException(targetName);
+                }
+                else
+                {
+                    pTop.setListenerValue(nullptr);
+                }
             }
             else if (foundTargetList->NumObjects() == 1)
             {
-                Listener* const targetListener = foundTargetList->ObjectAt(1);
+                Listener *const targetListener = foundTargetList->ObjectAt(1);
                 pTop.setListenerValue(targetListener);
             }
             else if (foundTargetList->NumObjects() > 1)
