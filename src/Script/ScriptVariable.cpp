@@ -1213,11 +1213,15 @@ void ScriptVariable::evalArrayAt(const ScriptVariable &var)
         break;
 
     case variableType_e::Array:
+    {
+        ScriptVariable result;
+
         array = m_data.arrayValue->arrayValue.find(var);
 
         if (array)
         {
-            *this = *array;
+            result = *array;
+            *this = result;
         }
         else
         {
@@ -1225,8 +1229,12 @@ void ScriptVariable::evalArrayAt(const ScriptVariable &var)
         }
 
         break;
+    }
 
     case variableType_e::ConstArray:
+    {
+        ScriptVariable result;
+
         index = (size_t)var.longValue();
 
         if (!index || index > m_data.constArrayValue->size)
@@ -1234,8 +1242,10 @@ void ScriptVariable::evalArrayAt(const ScriptVariable &var)
             throw ScriptVariableErrors::TypeIndexOutOfRange("array", index);
         }
 
-        *this = m_data.constArrayValue->constArrayValue[index];
+        result = m_data.constArrayValue->constArrayValue[index];
+        *this = result;
         break;
+    }
 
     case variableType_e::Container:
         index = (size_t)var.longValue();
